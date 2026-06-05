@@ -31,7 +31,8 @@
 - [ ] Реальный LiveKit Egress (серверная запись) — сейчас сущность-заглушка (E2 Recordings).
 - [ ] Tauri desktop-клиент (prod-видео + anti-capture setContentProtected).
 - [ ] E3 планирование/уведомления · E4 CRM/Kanban · E5 анти-захват · E6 ML-liveness · E7 сеть/гео.
-- [ ] OneID/E-IMZO интеграция (гос-SSO) — заложить hook в auth.
+
+> ❌ **Не планируется:** OneID/E-IMZO интеграция (гос-SSO) — исключено (решение Otabek 2026-06-05). Внутренние учётки (Argon2id) + TOTP 2FA достаточно.
 
 ## 🔒 Security / hardening (из TODO E0)
 

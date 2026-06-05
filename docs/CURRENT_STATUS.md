@@ -37,8 +37,9 @@ DB_PORT=5434 mix run apps/svc/priv/repo/seeds.exs            # демо-данн
 **Oban v14. Cloak dev-key в config.exs, prod из env CLOAK_KEY.**
 **Тесты после redesign проверяют href (`/admin/users/new`), не текст кнопок.**
 
-## 📋 Backlog (docs/BACKLOG.md — feedback Otabek)
-i18n RU/UZ/EN · Tauri-клиент · реальный LiveKit Egress · E3/E4/E5/E6/E7 · OneID/E-IMZO.
+## 📋 Backlog (docs/BACKLOG.md) · слайс-трекер (docs/SLICES.md)
+i18n RU/UZ/EN · Tauri-клиент · реальный LiveKit Egress · E4/E6 · остатки E5/E7.
+> ❌ OneID/E-IMZO — НЕ планируется (решение 2026-06-05).
 
 ## ❓ Открытые вопросы заказчику
 Комплаенс O'zDSt/СКЗИ · парк Windows · каналы уведомлений E3 · смысл «CRM»(E4) · mobile-стек · хранение записей.

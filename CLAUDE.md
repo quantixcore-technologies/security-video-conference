@@ -8,10 +8,13 @@ B2G (Узбекистан) secure видеоконференц-платформ�
 
 ## Старт сессии (читать по порядку)
 1. [docs/CURRENT_STATUS.md](docs/CURRENT_STATUS.md) — где остановились
-2. [docs/ROADMAP.md](docs/ROADMAP.md) — фазы E0–E7
-3. [docs/ARCHITECTURE_DECISIONS.md](docs/ARCHITECTURE_DECISIONS.md) — 14 ADR (почему так)
-4. [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) — компоненты/потоки
-5. [docs/research/](docs/research/) — разведка (читать перед security-эпиками)
+2. [docs/SLICES.md](docs/SLICES.md) — **единый слайс-трекер** (прогресс, что закрыто/осталось)
+3. [docs/ROADMAP.md](docs/ROADMAP.md) — фазы E0–E7
+4. [docs/ARCHITECTURE_DECISIONS.md](docs/ARCHITECTURE_DECISIONS.md) — ADR (почему так)
+5. [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) — компоненты/потоки
+6. [docs/research/](docs/research/) — разведка (читать перед security-эпиками)
+
+> **ЗАКОН:** закрыл слайс → обнови `docs/SLICES.md` + `CURRENT_STATUS.md` ([.claude/rules/slice-tracking.md](.claude/rules/slice-tracking.md)).
 
 ## Стек (НЕ гадать версии — Context7 / `mix hex.info`)
 Elixir/Phoenix umbrella (`svc` core + `svc_web`) · PostgreSQL/Ecto · LiveKit self-host · Tauri desktop (Rust+WebView2+LiveKit JS) · LiveView web (без видео) · Python+Rust ML (E6) · MaxMind+Locus (E7) · K8s/ArgoCD.
