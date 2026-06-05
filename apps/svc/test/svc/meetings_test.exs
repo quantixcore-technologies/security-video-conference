@@ -1,5 +1,6 @@
 defmodule Svc.MeetingsTest do
   use Svc.DataCase, async: true
+  use Oban.Testing, repo: Svc.Repo
 
   alias Svc.{Meetings, Accounts, Orgs}
 
@@ -125,6 +126,54 @@ defmodule Svc.MeetingsTest do
       ids = Meetings.list_meetings(org.id) |> Enum.map(& &1.id)
       assert meeting.id in ids
       assert length(ids) == 1
+    end
+  end
+
+  describe "напоминания (E3 Oban)" do
+    test "create_meeting планирует напоминания T-24ч и T-1ч", %{manager: m} do
+      future = DateTime.add(DateTime.utc_now(), 3 * 86_400, :second)
+      {:ok, meeting} = Meetings.create_meeting(m, %{title: "Будущая", scheduled_start: future})
+
+      assert_enqueued(worker: Svc.Meetings.ReminderWorker, args: %{meeting_id: meeting.id, kind: "24h"})
+      assert_enqueued(worker: Svc.Meetings.ReminderWorker, args: %{meeting_id: meeting.id, kind: "1h"})
+    end
+
+    test "встреча без scheduled_start — без напоминаний", %{manager: m} do
+      {:ok, _} = Meetings.create_meeting(m, %{title: "Ad-hoc"})
+      refute_enqueued(worker: Svc.Meetings.ReminderWorker)
+    end
+
+    test "ReminderWorker рассылает in-app напоминания приглашённым", %{org: org, manager: m} do
+      future = DateTime.add(DateTime.utc_now(), 3 * 86_400, :second)
+      {:ok, meeting} = Meetings.create_meeting(m, %{title: "Будущая", scheduled_start: future})
+      {:ok, emp} = mk(org, "emp2", :employee)
+      Svc.Attendance.add_invitee(meeting, emp)
+
+      assert :ok =
+               perform_job(Svc.Meetings.ReminderWorker, %{
+                 "meeting_id" => meeting.id,
+                 "org_id" => org.id,
+                 "kind" => "1h"
+               })
+
+      assert Svc.Notifications.unread_count(emp.id) >= 1
+    end
+
+    test "ReminderWorker пропускает завершённую встречу", %{org: org, manager: m} do
+      future = DateTime.add(DateTime.utc_now(), 3 * 86_400, :second)
+      {:ok, meeting} = Meetings.create_meeting(m, %{title: "Будущая", scheduled_start: future})
+      {:ok, ended} = Meetings.end_meeting(meeting)
+      {:ok, emp} = mk(org, "emp3", :employee)
+      Svc.Attendance.add_invitee(ended, emp)
+
+      assert :ok =
+               perform_job(Svc.Meetings.ReminderWorker, %{
+                 "meeting_id" => ended.id,
+                 "org_id" => org.id,
+                 "kind" => "1h"
+               })
+
+      assert Svc.Notifications.unread_count(emp.id) == 0
     end
   end
 end
