@@ -1,7 +1,7 @@
 defmodule SvcWeb.WebhookControllerTest do
   use SvcWeb.ConnCase, async: true
 
-  alias Svc.{Meetings, Accounts, Orgs, Audit}
+  alias Svc.{Meetings, Accounts, Orgs, Audit, Attendance}
 
   @secret "devsecret_devsecret_devsecret_32x"
 
@@ -18,7 +18,7 @@ defmodule SvcWeb.WebhookControllerTest do
       })
 
     {:ok, meeting} = Meetings.create_meeting(mgr, %{title: "Совещание"})
-    %{org: org, meeting: meeting}
+    %{org: org, meeting: meeting, organizer: mgr}
   end
 
   # Валидный webhook-JWT: iss="webhook", подписан api_secret (как делает LiveKit).
@@ -67,5 +67,26 @@ defmodule SvcWeb.WebhookControllerTest do
       |> post(~p"/webhooks/livekit", body)
 
     assert response(conn, 401)
+  end
+
+  test "participant_joined создаёт attendance-запись (E2)", %{
+    conn: conn,
+    meeting: meeting,
+    organizer: user
+  } do
+    body =
+      Jason.encode!(%{
+        "event" => "participant_joined",
+        "room" => %{"name" => meeting.livekit_room_name},
+        "participant" => %{"identity" => "user-#{user.id}"},
+        "createdAt" => System.os_time(:second)
+      })
+
+    conn = post_webhook(conn, body, "Bearer #{webhook_jwt()}")
+    assert response(conn, 200)
+
+    assert [record] = Attendance.list_attendance(meeting.id)
+    assert record.user_id == user.id
+    assert record.status in [:present, :late]
   end
 end
