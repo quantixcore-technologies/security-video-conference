@@ -12,15 +12,39 @@ defmodule Svc.Geo do
   """
   import Ecto.Query
   alias Svc.Repo
-  alias Svc.Geo.NetworkGeoCheck
+  alias Svc.Geo.{NetworkGeoCheck, GeoPolicy}
+
+  @doc "Гео-политика организации (или дефолт flag_only/UZ, если не настроена)."
+  def get_policy(org_id) do
+    Repo.get_by(GeoPolicy, org_id: org_id) ||
+      %GeoPolicy{
+        org_id: org_id,
+        mode: :flag_only,
+        allowed_countries: ["UZ"],
+        block_vpn: true,
+        block_proxy: true,
+        whitelist_ips: []
+      }
+  end
+
+  @doc "Changeset для формы политики."
+  def change_policy(%GeoPolicy{} = policy, attrs \\ %{}), do: GeoPolicy.changeset(policy, attrs)
+
+  @doc "Создаёт/обновляет гео-политику организации."
+  def upsert_policy(org_id, attrs) do
+    base = Repo.get_by(GeoPolicy, org_id: org_id) || %GeoPolicy{}
+
+    base
+    |> GeoPolicy.changeset(Map.put(attrs, "org_id", org_id))
+    |> Repo.insert_or_update()
+  end
 
   @doc """
-  Pre-join проверка IP: классифицирует + записывает в журнал.
-  Возвращает {:allow | :block | :flag, reason}.
-  opts: :meeting_id, :user_id.
+  Pre-join проверка IP с учётом гео-политики org: классифицирует + журналирует.
+  Возвращает {:allow | :block | :flag, reason}. opts: :meeting_id, :user_id.
   """
   def gate(org_id, ip, opts \\ []) when is_binary(ip) do
-    {decision, reason, attrs} = classify_ip(ip)
+    {decision, reason, attrs} = decide(ip, get_policy(org_id))
 
     record_check(
       Map.merge(attrs, %{
@@ -36,13 +60,25 @@ defmodule Svc.Geo do
     {decision, reason}
   end
 
-  @doc "Классификация IP (без записи). MVP: private → allow, public → flag (нужна MMDB)."
-  def classify_ip(ip) when is_binary(ip) do
-    if private_ip?(ip) do
-      {:allow, "Локальная/внутренняя сеть", %{ip_country: "LOCAL"}}
-    else
-      {:flag, "Гео-данные недоступны (MMDB не загружена) — требуется ручная проверка",
-       %{ip_country: nil}}
+  @doc "Классификация IP с дефолтной политикой (flag_only) — без записи."
+  def classify_ip(ip) when is_binary(ip),
+    do: decide(ip, %GeoPolicy{mode: :flag_only, whitelist_ips: []})
+
+  # Решение по IP + политике. MVP: private/whitelist → allow, public → flag (нужна MMDB),
+  # mode off → всё allow. Реальный VPN/country block — после подключения MMDB (locus).
+  defp decide(ip, policy) do
+    cond do
+      policy.mode == :off ->
+        {:allow, "Гео-проверка отключена политикой", %{ip_country: nil}}
+
+      ip in (policy.whitelist_ips || []) ->
+        {:allow, "IP в whitelist организации", %{ip_country: nil}}
+
+      private_ip?(ip) ->
+        {:allow, "Локальная/внутренняя сеть", %{ip_country: "LOCAL"}}
+
+      true ->
+        {:flag, "Гео-данные недоступны (MMDB не загружена) — ручная проверка", %{ip_country: nil}}
     end
   end
 

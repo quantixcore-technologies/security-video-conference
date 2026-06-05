@@ -40,4 +40,30 @@ defmodule Svc.GeoTest do
     Geo.gate(other.id, "8.8.8.8")
     assert Geo.list_checks(org.id) == []
   end
+
+  describe "гео-политика (E7-B)" do
+    test "get_policy возвращает дефолт если не настроена", %{org: org} do
+      p = Geo.get_policy(org.id)
+      assert p.mode == :flag_only
+      assert p.allowed_countries == ["UZ"]
+    end
+
+    test "upsert_policy создаёт и обновляет (одна на org)", %{org: org} do
+      assert {:ok, p} = Geo.upsert_policy(org.id, %{"mode" => "enforce", "allowed_countries" => ["UZ", "KZ"]})
+      assert p.mode == :enforce
+      assert {:ok, p2} = Geo.upsert_policy(org.id, %{"mode" => "off"})
+      assert p2.mode == :off
+      assert Geo.get_policy(org.id).mode == :off
+    end
+
+    test "mode off → gate всегда allow (даже публичный IP)", %{org: org} do
+      Geo.upsert_policy(org.id, %{"mode" => "off"})
+      assert {:allow, _} = Geo.gate(org.id, "8.8.8.8")
+    end
+
+    test "whitelist_ips → allow для публичного IP", %{org: org} do
+      Geo.upsert_policy(org.id, %{"mode" => "flag_only", "whitelist_ips" => ["8.8.8.8"]})
+      assert {:allow, _} = Geo.gate(org.id, "8.8.8.8")
+    end
+  end
 end

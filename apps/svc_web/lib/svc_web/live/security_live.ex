@@ -17,7 +17,8 @@ defmodule SvcWeb.SecurityLive do
          events: AntiCapture.list_events(user.org_id, limit: 100),
          critical: AntiCapture.critical_count(user.org_id),
          geo_checks: Geo.list_checks(user.org_id, limit: 50),
-         flagged: Geo.flagged_count(user.org_id)
+         flagged: Geo.flagged_count(user.org_id),
+         policy: Geo.get_policy(user.org_id)
        )}
     else
       {:ok,
@@ -26,6 +27,30 @@ defmodule SvcWeb.SecurityLive do
        |> push_navigate(to: ~p"/admin")}
     end
   end
+
+  @impl true
+  def handle_event("save_policy", %{"policy" => params}, socket) do
+    user = socket.assigns.current_user
+
+    params =
+      params
+      |> Map.update("allowed_countries", ["UZ"], &split_csv/1)
+      |> Map.update("whitelist_ips", [], &split_csv/1)
+
+    case Geo.upsert_policy(user.org_id, params) do
+      {:ok, _} ->
+        {:noreply,
+         socket
+         |> put_flash(:info, "Гео-политика сохранена.")
+         |> assign(:policy, Geo.get_policy(user.org_id))}
+
+      {:error, _} ->
+        {:noreply, put_flash(socket, :error, "Не удалось сохранить политику.")}
+    end
+  end
+
+  defp split_csv(str) when is_binary(str), do: String.split(str, ~r/[,\s]+/, trim: true)
+  defp split_csv(list) when is_list(list), do: list
 
   @impl true
   def render(assigns) do
@@ -43,6 +68,60 @@ defmodule SvcWeb.SecurityLive do
           <.icon name="hero-exclamation-triangle" class="size-4" /> Критических: {@critical}
         </div>
       </div>
+
+      <div class="rounded-xl border border-base-300 bg-base-100/50 p-5 mb-6">
+        <h2 class="text-sm font-medium mb-4 flex items-center gap-2">
+          <.icon name="hero-adjustments-horizontal" class="size-4 text-base-content/45" /> Гео-политика (pre-join gate)
+        </h2>
+        <form phx-submit="save_policy" class="space-y-3">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <label class="block">
+              <span class="text-xs font-medium text-base-content/60 mb-1 block">Режим</span>
+              <select name="policy[mode]" class="select select-sm select-bordered w-full bg-base-100">
+                <option value="off" selected={@policy.mode == :off}>Выключен</option>
+                <option value="flag_only" selected={@policy.mode == :flag_only}>Только флаг</option>
+                <option value="enforce" selected={@policy.mode == :enforce}>Блокировка</option>
+              </select>
+            </label>
+            <label class="block">
+              <span class="text-xs font-medium text-base-content/60 mb-1 block">Разрешённые страны (ISO)</span>
+              <input
+                type="text"
+                name="policy[allowed_countries]"
+                value={Enum.join(@policy.allowed_countries, ", ")}
+                class="input input-sm input-bordered w-full bg-base-100 tabular"
+              />
+            </label>
+          </div>
+          <label class="block">
+            <span class="text-xs font-medium text-base-content/60 mb-1 block">Whitelist IP (через запятую)</span>
+            <input
+              type="text"
+              name="policy[whitelist_ips]"
+              value={Enum.join(@policy.whitelist_ips, ", ")}
+              placeholder="напр. 195.158.1.1"
+              class="input input-sm input-bordered w-full bg-base-100 tabular"
+            />
+          </label>
+          <div class="flex items-center gap-4 flex-wrap">
+            <label class="flex items-center gap-2 text-sm">
+              <input type="hidden" name="policy[block_vpn]" value="false" />
+              <input type="checkbox" name="policy[block_vpn]" value="true" checked={@policy.block_vpn} class="checkbox checkbox-sm" /> Блокировать VPN
+            </label>
+            <label class="flex items-center gap-2 text-sm">
+              <input type="hidden" name="policy[block_proxy]" value="false" />
+              <input type="checkbox" name="policy[block_proxy]" value="true" checked={@policy.block_proxy} class="checkbox checkbox-sm" /> Блокировать proxy
+            </label>
+            <button type="submit" class="btn btn-primary btn-sm ml-auto gap-1.5">
+              <.icon name="hero-check" class="size-4" /> Сохранить
+            </button>
+          </div>
+        </form>
+      </div>
+
+      <h2 class="text-sm font-medium mb-3 flex items-center gap-2">
+        <.icon name="hero-film" class="size-4 text-base-content/45" /> Журнал захвата контента
+      </h2>
 
       <div
         :if={@events == []}
