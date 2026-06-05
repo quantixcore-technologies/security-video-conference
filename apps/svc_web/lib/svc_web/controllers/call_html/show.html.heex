@@ -27,20 +27,65 @@
       </div>
     </header>
 
-    <main class="flex-1 min-h-0 p-4 overflow-auto">
-      <div
-        id="grid"
-        class="grid gap-4 h-full content-center justify-center"
-        style="grid-template-columns:repeat(auto-fit,minmax(min(100%,340px),480px))"
-      >
-        <div id="empty" class="col-span-full flex flex-col items-center justify-center text-center text-base-content/40 gap-3">
-          <.icon name="hero-users" class="size-10 opacity-40" />
-          <span class="text-sm">Подключение к комнате…</span>
+    <div class="flex-1 min-h-0 flex">
+      <main class="flex-1 min-w-0 p-4 overflow-auto">
+        <div
+          id="grid"
+          class="grid gap-4 h-full content-center justify-center"
+          style="grid-template-columns:repeat(auto-fit,minmax(min(100%,340px),480px))"
+        >
+          <div id="empty" class="col-span-full flex flex-col items-center justify-center text-center text-base-content/40 gap-3">
+            <.icon name="hero-users" class="size-10 opacity-40" />
+            <span class="text-sm">Подключение к комнате…</span>
+          </div>
         </div>
-      </div>
-    </main>
+      </main>
 
-    <footer class="flex items-center justify-center gap-3 h-20 border-t border-base-300 bg-base-100 shrink-0">
+      <aside id="panel" class="hidden w-80 shrink-0 border-l border-base-300 bg-base-100 flex-col">
+        <div class="flex border-b border-base-300 shrink-0">
+          <button id="tab-btn-people" onclick="showTab('people')"
+            class="flex-1 px-3 py-3 text-sm font-medium border-b-2 border-primary text-primary inline-flex items-center justify-center gap-1.5">
+            <.icon name="hero-users" class="size-4" /> Участники
+          </button>
+          <button id="tab-btn-chat" onclick="showTab('chat')"
+            class="flex-1 px-3 py-3 text-sm font-medium border-b-2 border-transparent text-base-content/55 inline-flex items-center justify-center gap-1.5">
+            <.icon name="hero-chat-bubble-left-right" class="size-4" /> Чат
+          </button>
+          <button id="tab-btn-settings" onclick="showTab('settings')"
+            class="px-3 py-3 text-base-content/55 inline-flex items-center justify-center" title="Устройства">
+            <.icon name="hero-cog-6-tooth" class="size-4" />
+          </button>
+        </div>
+
+        <div id="tab-people" class="flex-1 overflow-auto p-2 space-y-1"></div>
+
+        <div id="tab-chat" class="hidden flex-1 flex-col min-h-0">
+          <div id="chat-log" class="flex-1 overflow-auto p-3 space-y-2 text-sm"></div>
+          <form id="chat-form" class="p-3 border-t border-base-300 flex gap-2 shrink-0">
+            <input id="chat-input" type="text" placeholder="Сообщение…" autocomplete="off"
+              class="input input-sm input-bordered flex-1 bg-base-200/40" />
+            <button type="submit" class="btn btn-sm btn-primary btn-square">
+              <.icon name="hero-paper-airplane" class="size-4" />
+            </button>
+          </form>
+        </div>
+
+        <div id="tab-settings" class="hidden flex-1 overflow-auto p-4 space-y-4 text-sm">
+          <label class="block">
+            <span class="text-xs font-medium text-base-content/60 mb-1.5 block">Камера</span>
+            <select id="sel-cam" onchange="switchDevice('videoinput', this.value)"
+              class="select select-sm select-bordered w-full bg-base-200/40"></select>
+          </label>
+          <label class="block">
+            <span class="text-xs font-medium text-base-content/60 mb-1.5 block">Микрофон</span>
+            <select id="sel-mic" onchange="switchDevice('audioinput', this.value)"
+              class="select select-sm select-bordered w-full bg-base-200/40"></select>
+          </label>
+        </div>
+      </aside>
+    </div>
+
+    <footer class="flex items-center justify-center gap-2.5 h-20 border-t border-base-300 bg-base-100 shrink-0 px-4">
       <button id="btn-mic" onclick="toggleMic()" title="Микрофон"
         class="grid place-items-center size-12 rounded-full bg-base-200 hover:bg-base-300 transition">
         <.icon name="hero-microphone" class="size-5" />
@@ -49,6 +94,30 @@
         class="grid place-items-center size-12 rounded-full bg-base-200 hover:bg-base-300 transition">
         <.icon name="hero-video-camera" class="size-5" />
       </button>
+      <button id="btn-screen" onclick="toggleScreen()" title="Демонстрация экрана"
+        class="grid place-items-center size-12 rounded-full bg-base-200 hover:bg-base-300 transition">
+        <.icon name="hero-computer-desktop" class="size-5" />
+      </button>
+
+      <div class="w-px h-8 bg-base-300 mx-1"></div>
+
+      <button id="btn-people" onclick="togglePanel('people')" title="Участники"
+        class="relative grid place-items-center size-12 rounded-full bg-base-200 hover:bg-base-300 transition">
+        <.icon name="hero-users" class="size-5" />
+        <span id="people-badge" class="absolute -top-0.5 -right-0.5 min-w-5 h-5 px-1 grid place-items-center rounded-full bg-primary text-primary-content text-[11px] font-semibold tabular">1</span>
+      </button>
+      <button id="btn-chat" onclick="togglePanel('chat')" title="Чат"
+        class="relative grid place-items-center size-12 rounded-full bg-base-200 hover:bg-base-300 transition">
+        <.icon name="hero-chat-bubble-left-right" class="size-5" />
+        <span id="chat-badge" class="hidden absolute -top-0.5 -right-0.5 min-w-5 h-5 px-1 grid place-items-center rounded-full bg-error text-error-content text-[11px] font-semibold tabular">0</span>
+      </button>
+      <button id="btn-full" onclick="toggleFull()" title="На весь экран"
+        class="grid place-items-center size-12 rounded-full bg-base-200 hover:bg-base-300 transition">
+        <.icon name="hero-arrows-pointing-out" class="size-5" />
+      </button>
+
+      <div class="w-px h-8 bg-base-300 mx-1"></div>
+
       <button onclick="leave()" title="Покинуть звонок"
         class="grid place-items-center size-12 rounded-full bg-error/90 hover:bg-error transition text-error-content">
         <.icon name="hero-phone-x-mark" class="size-5" />
@@ -58,92 +127,233 @@
     <script src="https://cdn.jsdelivr.net/npm/livekit-client@2/dist/livekit-client.umd.min.js">
     </script>
     <script>
+      const LK = LivekitClient;
       const url = "<%= @livekit_url %>";
       const token = "<%= @token %>";
       const watermark = "<%= @current_user.full_name %>";
       const grid = document.getElementById("grid");
       const statusText = document.getElementById("status-text");
       const statusDot = document.getElementById("status-dot");
-      const room = new LivekitClient.Room({ adaptiveStream: true, dynacast: true });
+      const room = new LK.Room({ adaptiveStream: true, dynacast: true });
       const tiles = {};
-      let micOn = true, camOn = true;
+      let micOn = true, camOn = true, screenOn = false, panelOpen = false, unread = 0;
 
+      // ---------- утилиты ----------
       function initials(name) {
         return (name || "?").trim().split(/\s+/).slice(0, 2).map(w => w[0] || "").join("").toUpperCase();
       }
-
-      function tileFor(p, isLocal) {
-        document.getElementById("empty")?.remove();
-        if (tiles[p.identity]) return tiles[p.identity];
-        const tile = document.createElement("div");
-        tile.className = "relative rounded-2xl overflow-hidden bg-base-200 grid place-items-center aspect-video ring-1 " +
-          (isLocal ? "ring-primary/40" : "ring-base-300");
-        tile.innerHTML =
-          '<div class="ph grid place-items-center size-20 rounded-full bg-primary/15 text-primary text-2xl font-semibold">' + initials(p.name || p.identity) + '</div>' +
-          '<div class="absolute bottom-2.5 left-2.5 px-2 py-0.5 rounded-md bg-black/55 text-white text-xs">' + (isLocal ? "Вы · " : "") + (p.name || p.identity) + '</div>' +
-          '<div class="absolute top-2.5 right-2.5 text-[10px] text-white/35 pointer-events-none select-none">' + watermark + '</div>';
-        grid.appendChild(tile);
-        tiles[p.identity] = tile;
-        return tile;
+      function setBtn(id, on, onClass) {
+        document.getElementById(id).className =
+          "grid place-items-center size-12 rounded-full transition " +
+          (on ? onClass : "bg-base-200 hover:bg-base-300");
       }
 
-      function setVideo(p, track, isLocal) {
-        const tile = tileFor(p, isLocal);
+      // ---------- видео-плитки ----------
+      function tileKey(identity, source) { return identity + ":" + (source || "cam"); }
+
+      function tileFor(p, isLocal, source) {
+        document.getElementById("empty")?.remove();
+        const key = tileKey(p.identity, source);
+        if (tiles[key]) return tiles[key];
+        const tile = document.createElement("div");
+        tile.dataset.identity = p.identity;
+        tile.className = "tile relative rounded-2xl overflow-hidden bg-base-200 grid place-items-center aspect-video ring-1 ring-base-300 transition-all";
+        const label = (isLocal ? "Вы · " : "") + (p.name || p.identity) + (source === "screen" ? " · экран" : "");
+        tile.innerHTML =
+          '<div class="ph grid place-items-center size-20 rounded-full bg-primary/15 text-primary text-2xl font-semibold">' + initials(p.name || p.identity) + '</div>' +
+          '<div class="absolute bottom-2.5 left-2.5 flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-black/55 text-white text-xs">' +
+            '<span class="mic-ind hidden"></span><span>' + label + '</span></div>' +
+          '<div class="absolute top-2.5 right-2.5 text-[10px] text-white/35 pointer-events-none select-none">' + watermark + '</div>';
+        grid.appendChild(tile);
+        tiles[key] = tile;
+        return tile;
+      }
+      function setVideo(p, track, isLocal, source) {
+        const tile = tileFor(p, isLocal, source);
         tile.querySelector(".ph")?.remove();
         tile.querySelector("video")?.remove();
         const el = track.attach();
-        el.className = "absolute inset-0 w-full h-full object-cover";
+        el.className = "absolute inset-0 w-full h-full " + (source === "screen" ? "object-contain bg-black" : "object-cover");
         if (isLocal) el.muted = true;
         tile.insertBefore(el, tile.firstChild);
       }
-
-      function dropVideo(p) {
-        const tile = tiles[p.identity];
-        if (!tile || tile.querySelector(".ph")) return;
+      function dropVideo(p, source) {
+        const tile = tiles[tileKey(p.identity, source)];
+        if (!tile) return;
+        if (source === "screen") { removeTile(p, "screen"); return; }
+        if (tile.querySelector(".ph")) return;
         tile.querySelector("video")?.remove();
         const ph = document.createElement("div");
         ph.className = "ph grid place-items-center size-20 rounded-full bg-primary/15 text-primary text-2xl font-semibold";
         ph.textContent = initials(p.name || p.identity);
         tile.insertBefore(ph, tile.firstChild);
       }
-
-      function removeTile(p) { tiles[p.identity]?.remove(); delete tiles[p.identity]; }
-
-      function updateInfo() {
-        const all = [room.localParticipant, ...room.remoteParticipants.values()];
-        document.getElementById("participants-info").textContent =
-          "Участников: " + all.length + " — " + all.map(p => p.name || p.identity).join(" · ");
+      function removeTile(p, source) {
+        const key = tileKey(p.identity, source);
+        tiles[key]?.remove();
+        delete tiles[key];
       }
 
-      room.on(LivekitClient.RoomEvent.TrackSubscribed, (t, _pub, p) => { if (t.kind === "video") setVideo(p, t, false); });
-      room.on(LivekitClient.RoomEvent.TrackUnsubscribed, (t, _pub, p) => { if (t.kind === "video") dropVideo(p); });
-      room.on(LivekitClient.RoomEvent.LocalTrackPublished, (pub) => { if (pub.track?.kind === "video") setVideo(room.localParticipant, pub.track, true); });
-      room.on(LivekitClient.RoomEvent.LocalTrackUnpublished, (pub) => { if (pub.kind === "video") dropVideo(room.localParticipant); });
-      room.on(LivekitClient.RoomEvent.ParticipantConnected, (p) => { tileFor(p, false); updateInfo(); });
-      room.on(LivekitClient.RoomEvent.ParticipantDisconnected, (p) => { removeTile(p); updateInfo(); });
+      // ---------- говорящий + mute-индикаторы ----------
+      function markSpeaking(speakers) {
+        const ids = new Set(speakers.map(s => s.identity));
+        document.querySelectorAll(".tile").forEach(t => {
+          const on = ids.has(t.dataset.identity);
+          t.classList.toggle("ring-primary", on);
+          t.classList.toggle("ring-2", on);
+          t.classList.toggle("ring-base-300", !on);
+        });
+        renderPeople();
+      }
+      function updateMuteOnTiles(p) {
+        Object.keys(tiles).filter(k => k.startsWith(p.identity + ":cam")).forEach(k => {
+          const ind = tiles[k].querySelector(".mic-ind");
+          if (!ind) return;
+          if (p.isMicrophoneEnabled) { ind.className = "mic-ind hidden"; }
+          else { ind.className = "mic-ind text-error"; ind.innerHTML = '🔇'; }
+        });
+      }
 
-      window.toggleMic = async () => {
-        micOn = !micOn;
-        await room.localParticipant.setMicrophoneEnabled(micOn);
-        document.getElementById("btn-mic").className = "grid place-items-center size-12 rounded-full transition " +
-          (micOn ? "bg-base-200 hover:bg-base-300" : "bg-error/90 text-error-content");
+      // ---------- панель участников ----------
+      function renderPeople() {
+        const box = document.getElementById("tab-people");
+        const all = [room.localParticipant, ...room.remoteParticipants.values()];
+        document.getElementById("people-badge").textContent = all.length;
+        document.getElementById("participants-info").textContent =
+          "Участников: " + all.length + " — " + all.map(p => p.name || p.identity).join(" · ");
+        box.innerHTML = all.map(p => {
+          const speaking = p.isSpeaking;
+          const name = (p === room.localParticipant ? "Вы · " : "") + (p.name || p.identity);
+          return '<div class="flex items-center gap-2.5 px-2 py-2 rounded-lg ' + (speaking ? "bg-primary/10" : "hover:bg-base-200/50") + '">' +
+            '<span class="grid place-items-center size-8 rounded-full bg-primary/15 text-primary text-xs font-semibold shrink-0 ' + (speaking ? "ring-2 ring-primary" : "") + '">' + initials(p.name || p.identity) + '</span>' +
+            '<span class="flex-1 min-w-0 text-sm truncate">' + name + '</span>' +
+            '<span class="' + (p.isMicrophoneEnabled ? "text-base-content/30" : "text-error") + '" title="микрофон">' + (p.isMicrophoneEnabled ? "🎤" : "🔇") + '</span>' +
+            '<span class="' + (p.isCameraEnabled ? "text-base-content/30" : "text-base-content/20") + '" title="камера">' + (p.isCameraEnabled ? "📹" : "🚫") + '</span>' +
+            '</div>';
+        }).join("");
+      }
+
+      // ---------- чат ----------
+      const enc = new TextEncoder(), dec = new TextDecoder();
+      function addChat(author, text, mine) {
+        const log = document.getElementById("chat-log");
+        const wrap = document.createElement("div");
+        wrap.className = mine ? "text-right" : "";
+        wrap.innerHTML =
+          '<div class="text-[11px] text-base-content/40 mb-0.5">' + author + '</div>' +
+          '<div class="inline-block px-3 py-1.5 rounded-xl text-sm ' + (mine ? "bg-primary text-primary-content" : "bg-base-200") + '">' +
+          text.replace(/</g, "&lt;") + '</div>';
+        log.appendChild(wrap);
+        log.scrollTop = log.scrollHeight;
+        if (!(panelOpen && currentTab === "chat") && !mine) {
+          unread++;
+          const b = document.getElementById("chat-badge");
+          b.textContent = unread; b.classList.remove("hidden");
+        }
+      }
+      document.getElementById("chat-form").addEventListener("submit", (e) => {
+        e.preventDefault();
+        const input = document.getElementById("chat-input");
+        const text = input.value.trim();
+        if (!text) return;
+        room.localParticipant.publishData(enc.encode(JSON.stringify({ t: "chat", m: text })), { reliable: true });
+        addChat("Вы", text, true);
+        input.value = "";
+      });
+
+      // ---------- устройства ----------
+      async function loadDevices() {
+        try {
+          const cams = await LK.Room.getLocalDevices("videoinput");
+          const mics = await LK.Room.getLocalDevices("audioinput");
+          fillSelect("sel-cam", cams);
+          fillSelect("sel-mic", mics);
+        } catch (e) { console.error("devices:", e); }
+      }
+      function fillSelect(id, devices) {
+        document.getElementById(id).innerHTML = devices
+          .map((d, i) => '<option value="' + d.deviceId + '">' + (d.label || ("Устройство " + (i + 1))) + '</option>').join("");
+      }
+      window.switchDevice = async (kind, deviceId) => {
+        try { await room.switchActiveDevice(kind, deviceId); } catch (e) { console.error("switch:", e); }
       };
-      window.toggleCam = async () => {
-        camOn = !camOn;
-        await room.localParticipant.setCameraEnabled(camOn);
-        document.getElementById("btn-cam").className = "grid place-items-center size-12 rounded-full transition " +
-          (camOn ? "bg-base-200 hover:bg-base-300" : "bg-error/90 text-error-content");
+
+      // ---------- кнопки ----------
+      window.toggleMic = async () => { micOn = !micOn; await room.localParticipant.setMicrophoneEnabled(micOn); setBtn("btn-mic", !micOn, "bg-error/90 text-error-content"); renderPeople(); };
+      window.toggleCam = async () => { camOn = !camOn; await room.localParticipant.setCameraEnabled(camOn); setBtn("btn-cam", !camOn, "bg-error/90 text-error-content"); renderPeople(); };
+      window.toggleScreen = async () => {
+        screenOn = !screenOn;
+        try { await room.localParticipant.setScreenShareEnabled(screenOn); setBtn("btn-screen", screenOn, "bg-primary text-primary-content"); }
+        catch (e) { screenOn = false; console.error("screen:", e); }
+      };
+      let currentTab = "people";
+      window.showTab = (tab) => {
+        currentTab = tab;
+        ["people", "chat", "settings"].forEach(t => {
+          document.getElementById("tab-" + t).classList.toggle("hidden", t !== tab);
+          document.getElementById("tab-" + t).classList.toggle("flex", t === tab && t === "chat");
+          const btn = document.getElementById("tab-btn-" + t);
+          if (btn) {
+            btn.classList.toggle("border-primary", t === tab);
+            btn.classList.toggle("text-primary", t === tab);
+            btn.classList.toggle("border-transparent", t !== tab);
+            btn.classList.toggle("text-base-content/55", t !== tab);
+          }
+        });
+        if (tab === "chat") { unread = 0; document.getElementById("chat-badge").classList.add("hidden"); }
+      };
+      window.togglePanel = (tab) => {
+        const panel = document.getElementById("panel");
+        if (panelOpen && currentTab === tab) { panel.classList.add("hidden"); panel.classList.remove("flex"); panelOpen = false; return; }
+        panel.classList.remove("hidden"); panel.classList.add("flex"); panelOpen = true;
+        showTab(tab);
+      };
+      window.toggleFull = () => {
+        if (document.fullscreenElement) document.exitFullscreen();
+        else document.documentElement.requestFullscreen().catch(e => console.error("fullscreen:", e));
       };
       window.leave = () => { room.disconnect(); statusText.textContent = "Вы вышли"; statusDot.className = "size-2 rounded-full bg-base-content/30"; };
 
+      // ---------- события комнаты ----------
+      room.on(LK.RoomEvent.TrackSubscribed, (t, pub, p) => {
+        const src = pub.source === LK.Track.Source.ScreenShare ? "screen" : "cam";
+        if (t.kind === "video") setVideo(p, t, false, src);
+        renderPeople();
+      });
+      room.on(LK.RoomEvent.TrackUnsubscribed, (t, pub, p) => {
+        const src = pub.source === LK.Track.Source.ScreenShare ? "screen" : "cam";
+        if (t.kind === "video") dropVideo(p, src);
+      });
+      room.on(LK.RoomEvent.LocalTrackPublished, (pub) => {
+        if (pub.track?.kind !== "video") return;
+        const src = pub.source === LK.Track.Source.ScreenShare ? "screen" : "cam";
+        setVideo(room.localParticipant, pub.track, true, src);
+      });
+      room.on(LK.RoomEvent.LocalTrackUnpublished, (pub) => {
+        if (pub.kind !== "video" && pub.source !== LK.Track.Source.ScreenShare) return;
+        const src = pub.source === LK.Track.Source.ScreenShare ? "screen" : "cam";
+        dropVideo(room.localParticipant, src);
+      });
+      room.on(LK.RoomEvent.ParticipantConnected, (p) => { tileFor(p, false, "cam"); renderPeople(); });
+      room.on(LK.RoomEvent.ParticipantDisconnected, (p) => { removeTile(p, "cam"); removeTile(p, "screen"); renderPeople(); });
+      room.on(LK.RoomEvent.ActiveSpeakersChanged, markSpeaking);
+      room.on(LK.RoomEvent.TrackMuted, (_pub, p) => { updateMuteOnTiles(p); renderPeople(); });
+      room.on(LK.RoomEvent.TrackUnmuted, (_pub, p) => { updateMuteOnTiles(p); renderPeople(); });
+      room.on(LK.RoomEvent.DataReceived, (payload, p) => {
+        try { const d = JSON.parse(dec.decode(payload)); if (d.t === "chat") addChat(p?.name || p?.identity || "?", d.m, false); }
+        catch (_) {}
+      });
+
+      // ---------- подключение ----------
       (async () => {
         try {
           await room.connect(url, token);
           statusText.textContent = "В эфире";
           statusDot.className = "size-2 rounded-full bg-success";
-          tileFor(room.localParticipant, true);
-          room.remoteParticipants.forEach(p => tileFor(p, false));
-          updateInfo();
+          tileFor(room.localParticipant, true, "cam");
+          room.remoteParticipants.forEach(p => tileFor(p, false, "cam"));
+          renderPeople();
+          loadDevices();
         } catch (e) {
           statusText.textContent = "Ошибка: " + e.message;
           statusDot.className = "size-2 rounded-full bg-error";
@@ -152,12 +362,13 @@
         try {
           await room.localParticipant.setMicrophoneEnabled(true);
           await room.localParticipant.setCameraEnabled(true);
+          loadDevices();
         } catch (camErr) {
-          camOn = false;
-          document.getElementById("btn-cam").className = "grid place-items-center size-12 rounded-full bg-error/90 text-error-content";
+          camOn = false; setBtn("btn-cam", true, "bg-error/90 text-error-content");
           statusText.textContent = "В эфире · без камеры";
           console.error("camera:", camErr);
         }
+        renderPeople();
       })();
     </script>
   </body>
