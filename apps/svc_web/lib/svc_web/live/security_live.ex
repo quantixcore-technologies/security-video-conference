@@ -2,7 +2,7 @@ defmodule SvcWeb.SecurityLive do
   @moduledoc "Журнал событий захвата контента — для security-офицера/админа (E5)."
   use SvcWeb, :live_view
 
-  alias Svc.AntiCapture
+  alias Svc.{AntiCapture, Geo}
 
   @viewers [:super_admin, :security_officer]
 
@@ -15,7 +15,9 @@ defmodule SvcWeb.SecurityLive do
        assign(socket,
          page_title: "Безопасность",
          events: AntiCapture.list_events(user.org_id, limit: 100),
-         critical: AntiCapture.critical_count(user.org_id)
+         critical: AntiCapture.critical_count(user.org_id),
+         geo_checks: Geo.list_checks(user.org_id, limit: 50),
+         flagged: Geo.flagged_count(user.org_id)
        )}
     else
       {:ok,
@@ -85,9 +87,62 @@ defmodule SvcWeb.SecurityLive do
           </tbody>
         </table>
       </div>
+
+      <div class="flex items-center gap-2 mt-8 mb-3">
+        <.icon name="hero-globe-alt" class="size-4 text-base-content/45" />
+        <h2 class="text-sm font-medium">Сетевые / гео-проверки (pre-join)</h2>
+        <span :if={@flagged > 0} class="text-xs text-warning">· флагнуто: {@flagged}</span>
+      </div>
+
+      <div
+        :if={@geo_checks == []}
+        class="rounded-xl border border-base-300 bg-base-100/50 px-5 py-8 text-center text-sm text-base-content/40"
+      >
+        Проверок ещё не было
+      </div>
+
+      <div :if={@geo_checks != []} class="rounded-xl border border-base-300 bg-base-100/50 overflow-hidden">
+        <table class="w-full text-sm">
+          <thead>
+            <tr class="text-left text-xs uppercase tracking-wider text-base-content/40 border-b border-base-300">
+              <th class="font-medium px-5 py-2.5 tabular">IP</th>
+              <th class="font-medium px-5 py-2.5">Страна</th>
+              <th class="font-medium px-5 py-2.5">Решение</th>
+              <th class="font-medium px-5 py-2.5 tabular">Время</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-base-300/50">
+            <tr :for={c <- @geo_checks} class="hover:bg-base-200/40 transition">
+              <td class="px-5 py-3 tabular text-base-content/70">{c.ip}</td>
+              <td class="px-5 py-3 text-base-content/65">{c.ip_country || "—"}</td>
+              <td class="px-5 py-3">
+                <span class={"inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium #{dec_class(c.decision)}"}>
+                  <span class={"size-1.5 rounded-full #{dec_dot(c.decision)}"}></span>
+                  {dec_label(c.decision)}
+                </span>
+              </td>
+              <td class="px-5 py-3 tabular text-base-content/60">
+                {Calendar.strftime(c.checked_at, "%d.%m %H:%M")}
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
     </Layouts.app>
     """
   end
+
+  defp dec_label(:allow), do: "Разрешён"
+  defp dec_label(:block), do: "Заблокирован"
+  defp dec_label(:flag), do: "Флаг"
+
+  defp dec_class(:allow), do: "bg-success/10 text-success"
+  defp dec_class(:block), do: "bg-error/10 text-error"
+  defp dec_class(:flag), do: "bg-warning/10 text-warning"
+
+  defp dec_dot(:allow), do: "bg-success"
+  defp dec_dot(:block), do: "bg-error"
+  defp dec_dot(:flag), do: "bg-warning"
 
   defp kind_icon(:screenshot_detected), do: "hero-camera"
   defp kind_icon(:recorder_detected), do: "hero-film"

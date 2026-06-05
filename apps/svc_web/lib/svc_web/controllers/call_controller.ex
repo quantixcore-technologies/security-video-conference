@@ -5,11 +5,15 @@ defmodule SvcWeb.CallController do
   """
   use SvcWeb, :controller
 
-  alias Svc.{Meetings, LiveKit, Audit}
+  alias Svc.{Meetings, LiveKit, Audit, Geo}
 
   def show(conn, %{"id" => id}) do
     user = conn.assigns.current_user
     meeting = Meetings.get_meeting!(user.org_id, id)
+
+    # E7: pre-join сетевая/гео-проверка (flag-режим — логируем, не блокируем без MMDB)
+    ip = conn.remote_ip |> :inet.ntoa() |> to_string()
+    Geo.gate(user.org_id, ip, meeting_id: meeting.id, user_id: user.id)
 
     case LiveKit.join_token(user, meeting) do
       {:ok, token} ->
