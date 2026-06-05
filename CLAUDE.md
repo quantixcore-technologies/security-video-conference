@@ -21,11 +21,15 @@ Elixir/Phoenix umbrella (`svc` core + `svc_web`) · PostgreSQL/Ecto · LiveKit s
 
 ## Команды (после scaffold)
 ```bash
-mix deps.get && mix ecto.setup     # установка + БД
-mix test                            # тесты (TDD)
-mix phx.server                      # dev-сервер
-docker compose up -d                # LiveKit/Postgres/Redis локально
-cd desktop && cargo tauri dev       # Tauri-клиент
+# ⚠️ Локально: docker-Postgres `svc-postgres` на порту 5434
+#    (хостовый brew postgresql@17 занимает 5432). Префикс DB_PORT=5434.
+#    CI/prod: дефолт 5432 (config env-based: DB_PORT/DB_HOST).
+#    docker run -d --name svc-postgres -e POSTGRES_PASSWORD=postgres \
+#      -e POSTGRES_USER=postgres -p 5434:5432 postgres:16
+DB_PORT=5434 mix ecto.setup         # установка + БД
+DB_PORT=5434 mix test               # тесты (TDD)
+DB_PORT=5434 mix phx.server         # dev-сервер
+cd desktop && cargo tauri dev       # Tauri-клиент (E1)
 ```
 
 ## Железные правила проекта
