@@ -39,6 +39,7 @@ defmodule SvcWeb.Router do
     pipe_through :api_authenticated
 
     post "/meetings/:id/join", MeetingController, :join
+    post "/capture-events", CaptureController, :create
   end
 
   ## LiveKit вебхуки (E1) — без session-auth, подпись проверяется в контроллере
@@ -74,6 +75,7 @@ defmodule SvcWeb.Router do
     live_session :admin,
       on_mount: [{SvcWeb.UserAuth, :require_authenticated}, {SvcWeb.UserAuth, :mount_notifications}] do
       live "/", DashboardLive, :index
+      live "/security", SecurityLive, :index
       live "/calendar", CalendarLive, :index
       live "/notifications", NotificationLive, :index
       live "/profile", ProfileLive, :index

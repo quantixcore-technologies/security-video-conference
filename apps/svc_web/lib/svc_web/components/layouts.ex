@@ -56,6 +56,13 @@ defmodule SvcWeb.Layouts do
           <.nav_item navigate={~p"/admin/calendar"} icon="hero-calendar-days" label="Календарь" on={@active == "calendar"} />
           <.nav_item navigate={~p"/admin/users"} icon="hero-users" label="Сотрудники" on={@active == "users"} />
           <.nav_item navigate={~p"/admin/meetings"} icon="hero-video-camera" label="Встречи" on={@active == "meetings"} />
+          <.nav_item
+            :if={@current_user && @current_user.role in [:super_admin, :security_officer]}
+            navigate={~p"/admin/security"}
+            icon="hero-shield-exclamation"
+            label="Безопасность"
+            on={@active == "security"}
+          />
         </nav>
 
         <div class="p-3 border-t border-base-300">
