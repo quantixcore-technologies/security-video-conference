@@ -2,33 +2,35 @@
 
 > Обновлять в конце каждой сессии. Снимок состояния для следующего агента/сессии.
 
-## Прогресс: E0 ✅ · E1-backend ✅ · E2-backend ✅ (Срез 1 backend готов)
+## Срез 1 ПОЛНОСТЬЮ ГОТОВ и работает вживую ✅ (E0+E1+E2+UI+LiveKit+полировка)
 
-### Сессия 2026-06-05 (S1) — Брейншторм + Срез 1 backend целиком
-**Сделано:**
-- ✅ Дизайн: брейншторм, 14 ADR, мастер-план E0–E7, разведка 4 отрядов.
-- ✅ Документация: 19 доков + 8 эпик-спеков.
-- ✅ **E0 Фундамент** (5 слайсов): Orgs, Accounts (Argon2+TOTP), Authz (RBAC), Audit, LiveView-админка.
-- ✅ **E1 Ядро конференций — backend** (3 слайса): Meetings, LiveKit (JWT), webhook + join API.
-- ✅ **E2 Посещаемость — backend** (3 слайса): Attendance (ростер+журнал+статусы), Oban FinalizeWorker, Recordings (Egress-сущность).
-- ✅ **99 тестов, 0 failures.** 16 коммитов, запушено на git.n3xt.uz/legion-cyber-arena (private).
+### Сессия 2026-06-05 (S1) — с нуля до живого Среза 1
+**Построено и доказано вживую:**
+- ✅ Дизайн: 14 ADR, мастер-план E0–E7, разведка 4 отрядов, 19 доков + 8 спеков.
+- ✅ **E0** Фундамент: Orgs, Accounts (Argon2+TOTP), Authz (RBAC), Audit, LiveView-админка.
+- ✅ **E1** Ядро: Meetings, LiveKit (JWT), webhook, join-API, **живой видеозвонок** (docker LiveKit).
+- ✅ **E2** Посещаемость: ростер, журнал (статусы), Oban, записи (Egress-сущность), **журнал-UI**.
+- ✅ **Полировка:** SVC-navbar, фото-upload (enrollment), **totp_secret шифрование at-rest (Cloak)**.
+- ✅ **104 теста, 0 failures.** 22 коммита на git.n3xt.uz/legion-cyber-arena (private).
+- ✅ **Проверено в браузере:** login→dashboard→встречи→журнал; реальный звонок → webhook → авто-attendance.
 
 **Окружение:** Elixir 1.19.5/OTP 28 · Rust 1.93 · Node 25 · Docker 29.
-**⚠️ Локально:** Postgres docker `svc-postgres` на **5434**. Префикс `DB_PORT=5434` для mix-команд.
-**Oban:** версия **14** (не 12 — Oban 2.23 требует v14).
+**⚠️ Локально:** Postgres docker `svc-postgres` :5434 (`DB_PORT=5434`). LiveKit docker :7880
+(`docker compose -f deploy/livekit/docker-compose.yml up -d`). phx.server :4000 (`admin`/`AdminPass12345`).
+**Oban v14. Cloak dev-key — в prod из env `CLOAK_KEY`.**
 
-### TODO / не закрыто (для следующих слоёв)
-- **Журнал-UI** (LiveView таблица посещаемости) — backend готов, UI нет.
-- **Tauri-клиент** + PoC-спайк — требует Windows-машину.
-- **Реальный LiveKit Egress-вызов** (Recordings.start_recording) — TODO, требует LiveKit running.
-- **Инфра:** docker-compose LiveKit (server/coTURN) + config dev/runtime LiveKit env — для E2E видеозвонка.
-- Фото-upload UI (E2 enrollment), шифрование totp_secret (Cloak), политика паролей (заказчик).
+### Что НЕ сделано (следующие фазы)
+- **Tauri-клиент** (prod-видео с anti-capture, требует Windows). DEV-звонок пока через браузер `/admin/meetings/:id/call`.
+- **Реальный LiveKit Egress** (запись) — TODO (сущность есть).
+- **E3** планирование/уведомления · **E4** CRM/Kanban · **E5** анти-захват · **E6** ML-liveness · **E7** сеть/гео.
 
-### Следующие шаги (на выбор)
-1. **Журнал-UI** (LiveView) — видимый результат посещаемости в админке (RBAC-scoped).
-2. **Tauri-клиент** (desktop/) — нужен Windows для теста.
-3. **Инфра LiveKit** (docker-compose) — запустить реальный видеозвонок end-to-end.
-4. Перейти к E3 (планирование/уведомления) или security-эпикам (E5/E6/E7).
+### Команды
+```
+docker compose -f deploy/livekit/docker-compose.yml up -d   # LiveKit
+DB_PORT=5434 mix phx.server                                  # Phoenix
+DB_PORT=5434 mix test                                        # тесты
+DB_PORT=5434 mix run apps/svc/priv/repo/seeds.exs            # демо-данные
+```
 
 ### Открытые вопросы заказчику
-Комплаенс O'zDSt/СКЗИ · парк Windows · каналы уведомлений E3 · смысл «CRM» (E4) · mobile-стек · OneID/E-IMZO · хранение записей.
+Комплаенс O'zDSt/СКЗИ · парк Windows · каналы уведомлений E3 · смысл «CRM» (E4) · mobile-стек · OneID/E-IMZO.
