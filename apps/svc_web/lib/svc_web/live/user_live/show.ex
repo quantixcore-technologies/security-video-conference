@@ -120,7 +120,7 @@ defmodule SvcWeb.UserLive.Show do
   @impl true
   def render(assigns) do
     ~H"""
-    <Layouts.app flash={@flash} active="users" current_user={@current_user}>
+    <Layouts.app flash={@flash} active="users" current_user={@current_user} unread_count={@unread_count}>
       <.link
         navigate={~p"/admin/users"}
         class="inline-flex items-center gap-1.5 text-sm text-base-content/55 hover:text-base-content transition mb-5"

@@ -91,7 +91,7 @@ defmodule SvcWeb.ProfileLive do
   @impl true
   def render(assigns) do
     ~H"""
-    <Layouts.app flash={@flash} current_user={@current_user}>
+    <Layouts.app flash={@flash} current_user={@current_user} unread_count={@unread_count}>
       <h1 class="text-2xl font-semibold tracking-tight">Профиль</h1>
       <p class="text-sm text-base-content/55 mt-1 mb-6">Ваши данные и безопасность аккаунта</p>
 

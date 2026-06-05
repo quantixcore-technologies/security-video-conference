@@ -84,6 +84,14 @@ defmodule SvcWeb.UserAuth do
     {:cont, mount_current_user(socket, session)}
   end
 
+  def on_mount(:mount_notifications, _params, _session, socket) do
+    user = socket.assigns[:current_user]
+    {:cont, Phoenix.Component.assign_new(socket, :unread_count, fn -> unread(user) end)}
+  end
+
+  defp unread(nil), do: 0
+  defp unread(user), do: Svc.Notifications.unread_count(user.id)
+
   defp mount_current_user(socket, session) do
     Phoenix.Component.assign_new(socket, :current_user, fn ->
       current_user_from_session(session["user_id"], session["org_id"])

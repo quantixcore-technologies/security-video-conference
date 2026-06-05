@@ -180,7 +180,7 @@ defmodule SvcWeb.UserLive.Index do
   @impl true
   def render(assigns) do
     ~H"""
-    <Layouts.app flash={@flash} active="users" current_user={@current_user}>
+    <Layouts.app flash={@flash} active="users" current_user={@current_user} unread_count={@unread_count}>
       <div class="flex items-start justify-between gap-4 mb-6">
         <div>
           <h1 class="text-2xl font-semibold tracking-tight">Сотрудники</h1>

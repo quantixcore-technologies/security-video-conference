@@ -70,8 +70,10 @@ defmodule SvcWeb.Router do
     # DEV: живой звонок из браузера (тест инфры LiveKit; в проде — Tauri)
     get "/meetings/:id/call", CallController, :show
 
-    live_session :admin, on_mount: [{SvcWeb.UserAuth, :require_authenticated}] do
+    live_session :admin,
+      on_mount: [{SvcWeb.UserAuth, :require_authenticated}, {SvcWeb.UserAuth, :mount_notifications}] do
       live "/", DashboardLive, :index
+      live "/notifications", NotificationLive, :index
       live "/profile", ProfileLive, :index
       live "/users", UserLive.Index, :index
       live "/users/new", UserLive.Index, :new

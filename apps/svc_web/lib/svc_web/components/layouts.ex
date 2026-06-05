@@ -35,6 +35,7 @@ defmodule SvcWeb.Layouts do
 
   attr :active, :string, default: nil, doc: "активный раздел: dashboard|users|meetings"
   attr :current_user, :map, default: nil
+  attr :unread_count, :integer, default: 0
 
   def app(assigns) do
     ~H"""
@@ -93,12 +94,28 @@ defmodule SvcWeb.Layouts do
           </div>
           <span class="hidden lg:block"></span>
 
-          <div :if={@current_user} class="dropdown dropdown-end">
-            <div
-              tabindex="0"
-              role="button"
-              class="flex items-center gap-2.5 pl-1.5 pr-2.5 py-1.5 rounded-xl hover:bg-base-200 transition cursor-pointer"
+          <div class="flex items-center gap-1.5">
+            <.link
+              :if={@current_user}
+              navigate={~p"/admin/notifications"}
+              class="relative grid place-items-center size-9 rounded-lg hover:bg-base-200 transition"
+              aria-label="Уведомления"
             >
+              <.icon name="hero-bell" class="size-5 text-base-content/70" />
+              <span
+                :if={@unread_count > 0}
+                class="absolute top-1 right-1 min-w-4 h-4 px-1 grid place-items-center rounded-full bg-error text-error-content text-[10px] font-semibold tabular"
+              >
+                {@unread_count}
+              </span>
+            </.link>
+
+            <div :if={@current_user} class="dropdown dropdown-end">
+              <div
+                tabindex="0"
+                role="button"
+                class="flex items-center gap-2.5 pl-1.5 pr-2.5 py-1.5 rounded-xl hover:bg-base-200 transition cursor-pointer"
+              >
               <span class="grid place-items-center size-8 rounded-full bg-primary/15 text-primary text-xs font-semibold ring-1 ring-primary/15 overflow-hidden shrink-0">
                 <img :if={@current_user.photo_path} src={@current_user.photo_path} class="w-full h-full object-cover" alt="" />
                 <span :if={!@current_user.photo_path}>{user_initials(@current_user.full_name)}</span>
@@ -127,6 +144,7 @@ defmodule SvcWeb.Layouts do
                 </.link>
               </li>
             </ul>
+            </div>
           </div>
         </header>
 

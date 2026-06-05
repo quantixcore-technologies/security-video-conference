@@ -72,6 +72,7 @@ defmodule SvcWeb.MeetingLive.Index do
     case Meetings.create_meeting(actor, attrs) do
       {:ok, meeting} ->
         add_roster(meeting, params["invitee_ids"])
+        notify_invitees(meeting, params["invitee_ids"], actor)
 
         {:noreply,
          socket
@@ -99,6 +100,25 @@ defmodule SvcWeb.MeetingLive.Index do
   end
 
   defp add_roster(_, _), do: :ok
+
+  defp notify_invitees(_meeting, nil, _actor), do: :ok
+
+  defp notify_invitees(meeting, ids, actor) when is_list(ids) do
+    invited =
+      meeting.org_id
+      |> Accounts.list_users()
+      |> Enum.filter(&(to_string(&1.id) in ids))
+
+    Svc.Notifications.notify_many(
+      invited,
+      :invite,
+      "Приглашение на встречу: #{meeting.title}",
+      body: "Организатор: #{actor.full_name}",
+      meeting_id: meeting.id
+    )
+  end
+
+  defp notify_invitees(_, _, _), do: :ok
 
   def handle_event("filter", %{"q" => q, "status" => status}, socket) do
     {:noreply, push_patch(socket, to: ~p"/admin/meetings?#{filter_params(q, status)}")}
@@ -164,7 +184,7 @@ defmodule SvcWeb.MeetingLive.Index do
   @impl true
   def render(assigns) do
     ~H"""
-    <Layouts.app flash={@flash} active="meetings" current_user={@current_user}>
+    <Layouts.app flash={@flash} active="meetings" current_user={@current_user} unread_count={@unread_count}>
       <div class="flex items-start justify-between gap-4 mb-6">
         <div>
           <h1 class="text-2xl font-semibold tracking-tight">Встречи</h1>
