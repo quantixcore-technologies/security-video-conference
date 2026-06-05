@@ -13,7 +13,7 @@ Secure Zoom-class платформа: видеоконференции с жёс
 
 | Слой | Технология |
 |------|-----------|
-| Backend-ядро | Elixir / Phoenix umbrella (`svc_core` / `svc_web` / `svc_shared`) |
+| Backend-ядро | Elixir / Phoenix umbrella (`svc` core + `svc_web`) |
 | БД | PostgreSQL (Ecto, `org_id`-scoped) |
 | Медиа (SFU) | LiveKit (self-host, K8s) — hop-by-hop DTLS-SRTP |
 | Desktop-клиент | **Tauri** (Rust + WebView2 + LiveKit JS) — Windows-first |

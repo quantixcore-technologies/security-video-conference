@@ -14,7 +14,7 @@ B2G (Узбекистан) secure видеоконференц-платформ�
 5. [docs/research/](docs/research/) — разведка (читать перед security-эпиками)
 
 ## Стек (НЕ гадать версии — Context7 / `mix hex.info`)
-Elixir/Phoenix umbrella (`svc_core`/`svc_web`/`svc_shared`) · PostgreSQL/Ecto · LiveKit self-host · Tauri desktop (Rust+WebView2+LiveKit JS) · LiveView web (без видео) · Python+Rust ML (E6) · MaxMind+Locus (E7) · K8s/ArgoCD.
+Elixir/Phoenix umbrella (`svc` core + `svc_web`) · PostgreSQL/Ecto · LiveKit self-host · Tauri desktop (Rust+WebView2+LiveKit JS) · LiveView web (без видео) · Python+Rust ML (E6) · MaxMind+Locus (E7) · K8s/ArgoCD.
 
 ## Ключевые библиотеки
 `livekitex` (LiveKit SDK) · `argon2_elixir` · `nimble_totp` · `oban` · `finch` · `locus` (E7).
@@ -40,7 +40,7 @@ cd desktop && cargo tauri dev       # Tauri-клиент
 
 ## Структура
 ```
-apps/{svc_core,svc_web,svc_shared}  # Phoenix umbrella (после scaffold)
+apps/{svc,svc_web}                  # Phoenix umbrella (svc=core: contexts+Repo+schemas)
 desktop/                            # Tauri-клиент
 ml_service/                         # E6 ML (Python+Rust)
 deploy/                             # K8s, helm, ArgoCD

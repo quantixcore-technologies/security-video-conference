@@ -15,11 +15,11 @@
   │ Phoenix umbrella (on-prem)          │   │ LiveKit (self-host, K8s)     │
   │  • svc_web: LiveView, JSON API,     │◄──┤  • livekit-server (SFU)      │
   │      /webhooks/livekit              │   │  • Redis, coTURN             │
-  │  • svc_core: contexts (Accounts/    │   │  • [E2: Egress — опц.запись] │
+  │  • svc (core): contexts (Accounts/  │   │  • [E2: Egress — опц.запись] │
   │      Orgs/Meetings/Attendance/      │   │  • [E6: Agents — ML-кадры]   │
-  │      Audit), livekitex, Presence,   │   │     webhooks ──────────────► │
-  │      Oban                           │   └──────────────────────────────┘
-  │  • svc_shared: Repo, схемы, миграции│
+  │      Audit), Repo, livekitex,       │   │     webhooks ──────────────► │
+  │      Presence, Oban                 │   └──────────────────────────────┘
+  │                                     │
   │            │ Ecto                    │   ┌──────────────────────────────┐
   │            ▼                          │   │ ML-сервис (E6, GPU)          │
   │   PostgreSQL (org_id-scoped,        │◄──┤  Python (FastAPI) + Rust(ort)│
@@ -29,10 +29,9 @@
 
 **Принцип:** медиа идёт напрямую клиент↔LiveKit (DTLS-SRTP); Phoenix в медиа-тракте НЕ участвует — только управление (JWT-токены, приём webhooks). ML получает кадры server-side через Egress/Agents (E2EE off — D-010).
 
-## Слои umbrella
-- **svc_shared** — `Repo`, общие схемы/типы, миграции. Базовый слой.
-- **svc_core** — бизнес-домен: contexts `Accounts`, `Orgs`, `Meetings`, `Attendance`, `Audit`; интеграция LiveKit (`livekitex`); `Presence`; `Oban`-воркеры. Не знает про web.
-- **svc_web** — Phoenix endpoint: LiveView админка (без видео), JSON API для Tauri, `/webhooks/livekit`, auth-плаги. Зависит от core.
+## Слои umbrella (фактическая структура: `apps/svc` + `apps/svc_web`)
+- **svc** (core) — `Repo`, Ecto-схемы/миграции + бизнес-домен: contexts `Accounts`, `Orgs`, `Meetings`, `Attendance`, `Audit`; интеграция LiveKit (`livekitex`); `Presence`; `Oban`-воркеры. Не знает про web. Модули — `Svc.*`.
+- **svc_web** — Phoenix endpoint: LiveView админка (без видео), JSON API для Tauri, `/webhooks/livekit`, auth-плаги. Зависит от core. Модули — `SvcWeb.*`.
 
 ## Потоки (Срез 1)
 1. **Auth+2FA:** админ создаёт user → пароль (Argon2id) → TOTP enrollment (`nimble_totp`) → вход пароль+TOTP. Session-timeout, rate-limit, audit.

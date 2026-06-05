@@ -21,7 +21,7 @@
 **Решение:** LiveKit, self-host на on-prem K8s. **Обоснование:** open-source, E2EE-опция, SDK для всех платформ, Elixir SDK (`livekitex`), self-host под «Max Data Security». **Последствия:** host-networking, 1 SFU/нода, Redis, coTURN.
 
 ## D-004: Backend-ядро — Elixir/Phoenix umbrella
-**Решение:** Phoenix umbrella (`svc_core` / `svc_web` / `svc_shared`). **Обоснование:** совпадает со стеком (N3XT-One); Presence=журнал посещаемости из коробки; Channels=сигналинг; PubSub=уведомления; чёткие границы под рост; «foundation overkill». **Последствия:** umbrella-церемония оправдана масштабом.
+**Решение:** Phoenix umbrella — `svc` (core: contexts + Repo + schemas) + `svc_web` (LiveView/API). **Обоснование:** совпадает со стеком (N3XT-One); Presence=журнал посещаемости из коробки; Channels=сигналинг; PubSub=уведомления; чёткие границы под рост; «foundation overkill». **Последствия:** umbrella-церемония оправдана масштабом.
 
 ## D-005: Тенантность — single + задел на multi
 **Решение:** Single-tenant, но `org_id` во всех таблицах + изоляция с дня 1. **Обоснование:** B2G (одно ведомство сейчас), но multi-ведомства/продажа без переписывания. **Последствия:** `org_id`-scoping во всех запросах.
