@@ -25,11 +25,49 @@ import {LiveSocket} from "phoenix_live_view"
 import {hooks as colocatedHooks} from "phoenix-colocated/svc_web"
 import topbar from "../vendor/topbar"
 
+// Kanban drag-drop (E4-B): нативный HTML5 DnD без внешних зависимостей.
+// Используем on*-свойства (не addEventListener) — идемпотентно при LiveView-патчах.
+const Hooks = {
+  Kanban: {
+    mounted() { this.setupDnd() },
+    updated() { this.setupDnd() },
+    setupDnd() {
+      let dragId = null
+
+      this.el.querySelectorAll("[data-task-id]").forEach(card => {
+        card.ondragstart = e => {
+          dragId = card.dataset.taskId
+          e.dataTransfer.effectAllowed = "move"
+          e.dataTransfer.setData("text/plain", dragId)
+          card.classList.add("opacity-40")
+        }
+        card.ondragend = () => { dragId = null; card.classList.remove("opacity-40") }
+      })
+
+      this.el.querySelectorAll("[data-status]").forEach(col => {
+        col.ondragover = e => {
+          e.preventDefault()
+          e.dataTransfer.dropEffect = "move"
+          col.classList.add("ring-2", "ring-primary/40")
+        }
+        col.ondragleave = () => col.classList.remove("ring-2", "ring-primary/40")
+        col.ondrop = e => {
+          e.preventDefault()
+          col.classList.remove("ring-2", "ring-primary/40")
+          const id = e.dataTransfer.getData("text/plain") || dragId
+          const status = col.dataset.status
+          if (id && status) this.pushEvent("move_task", {id, status})
+        }
+      })
+    }
+  }
+}
+
 const csrfToken = document.querySelector("meta[name='csrf-token']").getAttribute("content")
 const liveSocket = new LiveSocket("/live", Socket, {
   longPollFallbackMs: 2500,
   params: {_csrf_token: csrfToken},
-  hooks: {...colocatedHooks},
+  hooks: {...colocatedHooks, ...Hooks},
 })
 
 // Show progress bar on live navigation and form submits

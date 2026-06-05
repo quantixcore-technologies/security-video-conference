@@ -8,6 +8,9 @@ defmodule Svc.Tasks do
   alias Svc.Tasks.Task
   alias Svc.Accounts.User
 
+  @doc "Кто вправе ставить поручения и двигать карточки (руководство). D-015."
+  def can_manage?(%User{role: role}), do: role in [:super_admin, :admin_hr, :manager]
+
   @doc "Создаёт поручение/задачу от имени автора (creator)."
   def create_task(%User{} = creator, attrs) do
     attrs

@@ -56,6 +56,7 @@ defmodule SvcWeb.Layouts do
           <.nav_item navigate={~p"/admin/calendar"} icon="hero-calendar-days" label="Календарь" on={@active == "calendar"} />
           <.nav_item navigate={~p"/admin/users"} icon="hero-users" label="Сотрудники" on={@active == "users"} />
           <.nav_item navigate={~p"/admin/meetings"} icon="hero-video-camera" label="Встречи" on={@active == "meetings"} />
+          <.nav_item navigate={~p"/admin/tasks"} icon="hero-clipboard-document-list" label="Поручения" on={@active == "tasks"} />
           <.nav_item
             :if={@current_user && @current_user.role in [:super_admin, :security_officer]}
             navigate={~p"/admin/security"}
@@ -96,6 +97,11 @@ defmodule SvcWeb.Layouts do
                 <li>
                   <.link navigate={~p"/admin/meetings"} class={["gap-2.5 rounded-lg", @active == "meetings" && "bg-primary/10 text-primary"]}>
                     <.icon name="hero-video-camera" class="size-4" /> Встречи
+                  </.link>
+                </li>
+                <li>
+                  <.link navigate={~p"/admin/tasks"} class={["gap-2.5 rounded-lg", @active == "tasks" && "bg-primary/10 text-primary"]}>
+                    <.icon name="hero-clipboard-document-list" class="size-4" /> Поручения
                   </.link>
                 </li>
               </ul>
