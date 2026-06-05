@@ -50,6 +50,19 @@ defmodule Svc.LiveKit do
     end
   end
 
+  @doc """
+  Проверяет HMAC-подпись LiveKit-вебхука и парсит событие.
+  Возвращает {:ok, event} | {:error, reason}. `event.event` — тип
+  (room_started, participant_joined/left, room_finished).
+  """
+  def verify_webhook(raw_body, auth_header)
+      when is_binary(raw_body) and is_binary(auth_header) do
+    case config(:webhook_key) || config(:api_secret) do
+      nil -> {:error, :not_configured}
+      secret -> Livekitex.Webhook.validate_webhook(raw_body, auth_header, secret)
+    end
+  end
+
   @doc "LiveKit WS URL для клиента."
   def url, do: config(:url)
 

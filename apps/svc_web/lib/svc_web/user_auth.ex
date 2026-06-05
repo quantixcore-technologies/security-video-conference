@@ -42,6 +42,18 @@ defmodule SvcWeb.UserAuth do
     end
   end
 
+  @doc "Plug для JSON API: 401 вместо редиректа, если не аутентифицирован."
+  def require_authenticated_api(conn, _opts) do
+    if conn.assigns[:current_user] do
+      conn
+    else
+      conn
+      |> put_status(:unauthorized)
+      |> json(%{error: "unauthorized"})
+      |> halt()
+    end
+  end
+
   @doc "Plug: редирект уже залогиненных со страницы логина."
   def redirect_if_user_is_authenticated(conn, _opts) do
     if conn.assigns[:current_user] do

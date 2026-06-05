@@ -17,10 +17,35 @@ defmodule SvcWeb.Router do
     plug :accepts, ["json"]
   end
 
+  pipeline :api_authenticated do
+    plug :accepts, ["json"]
+    plug :fetch_session
+    plug :fetch_current_user
+    plug :require_authenticated_api
+  end
+
+  pipeline :webhook do
+    plug :accepts, ["json"]
+  end
+
   scope "/", SvcWeb do
     pipe_through :browser
 
     get "/", PageController, :home
+  end
+
+  ## API для Tauri-клиента (E1) — 401 JSON при отсутствии auth
+  scope "/api", SvcWeb.API do
+    pipe_through :api_authenticated
+
+    post "/meetings/:id/join", MeetingController, :join
+  end
+
+  ## LiveKit вебхуки (E1) — без session-auth, подпись проверяется в контроллере
+  scope "/webhooks", SvcWeb do
+    pipe_through :webhook
+
+    post "/livekit", WebhookController, :livekit
   end
 
   ## Аутентификация (E0, D-006)
