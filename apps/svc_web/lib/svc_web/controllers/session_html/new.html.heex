@@ -1,0 +1,37 @@
+<div class="mx-auto max-w-sm px-4 mt-20">
+  <h1 class="text-2xl font-bold text-center">Security Video Conference</h1>
+  <p class="text-center text-gray-500 mb-6">Вход в систему</p>
+
+  <div :if={@error_message} class="mb-4 rounded bg-red-100 p-3 text-sm text-red-700">
+    {@error_message}
+  </div>
+
+  <.form for={to_form(%{}, as: :user)} action={~p"/login"} class="space-y-4">
+    <div>
+      <label class="block text-sm font-medium mb-1">Логин</label>
+      <input
+        type="text"
+        name="user[username]"
+        required
+        autocomplete="username"
+        class="w-full rounded border px-3 py-2"
+      />
+    </div>
+    <div>
+      <label class="block text-sm font-medium mb-1">Пароль</label>
+      <input
+        type="password"
+        name="user[password]"
+        required
+        autocomplete="current-password"
+        class="w-full rounded border px-3 py-2"
+      />
+    </div>
+    <button
+      type="submit"
+      class="w-full rounded bg-blue-600 px-4 py-2 font-medium text-white hover:bg-blue-700"
+    >
+      Войти
+    </button>
+  </.form>
+</div>

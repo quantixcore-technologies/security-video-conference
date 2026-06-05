@@ -1,6 +1,8 @@
 defmodule SvcWeb.Router do
   use SvcWeb, :router
 
+  import SvcWeb.UserAuth
+
   pipeline :browser do
     plug :accepts, ["html"]
     plug :fetch_session
@@ -8,6 +10,7 @@ defmodule SvcWeb.Router do
     plug :put_root_layout, html: {SvcWeb.Layouts, :root}
     plug :protect_from_forgery
     plug :put_secure_browser_headers
+    plug :fetch_current_user
   end
 
   pipeline :api do
@@ -18,6 +21,32 @@ defmodule SvcWeb.Router do
     pipe_through :browser
 
     get "/", PageController, :home
+  end
+
+  ## Аутентификация (E0, D-006)
+  scope "/", SvcWeb do
+    pipe_through [:browser, :redirect_if_user_is_authenticated]
+
+    get "/login", SessionController, :new
+    post "/login", SessionController, :create
+    get "/login/totp", SessionController, :totp_form
+    post "/login/totp", SessionController, :totp_verify
+  end
+
+  scope "/", SvcWeb do
+    pipe_through :browser
+    delete "/logout", SessionController, :delete
+  end
+
+  ## Админка — требует аутентификации (RBAC scoping внутри LiveView)
+  scope "/admin", SvcWeb do
+    pipe_through [:browser, :require_authenticated_user]
+
+    live_session :admin, on_mount: [{SvcWeb.UserAuth, :require_authenticated}] do
+      live "/", DashboardLive, :index
+      live "/users", UserLive.Index, :index
+      live "/users/new", UserLive.Index, :new
+    end
   end
 
   # Other scopes may use custom stacks.

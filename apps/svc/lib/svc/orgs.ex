@@ -17,6 +17,12 @@ defmodule Svc.Orgs do
 
   def list_organizations, do: Repo.all(from o in Organization, order_by: o.name)
 
+  @doc """
+  Единственная организация (single-tenant, D-005). В multi-tenant
+  заменится на разрешение org из контекста (subdomain/slug).
+  """
+  def default_organization, do: Repo.one(from o in Organization, order_by: o.id, limit: 1)
+
   ## Departments (всё scoped по org_id — D-005)
 
   def create_department(attrs) do

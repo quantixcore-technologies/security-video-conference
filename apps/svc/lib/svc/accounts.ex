@@ -16,6 +16,11 @@ defmodule Svc.Accounts do
     %User{} |> User.create_changeset(attrs) |> Repo.insert()
   end
 
+  @doc "Changeset для формы создания пользователя (LiveView)."
+  def change_user_creation(attrs \\ %{}) do
+    User.create_changeset(%User{}, attrs)
+  end
+
   def get_user!(org_id, id), do: Repo.get_by!(User, id: id, org_id: org_id)
 
   def get_user_by_username(org_id, username) when is_binary(username) do
