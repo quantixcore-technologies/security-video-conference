@@ -69,6 +69,7 @@ defmodule SvcWeb.Router do
 
     # DEV: живой звонок из браузера (тест инфры LiveKit; в проде — Tauri)
     get "/meetings/:id/call", CallController, :show
+    get "/meetings/:id/ics", MeetingController, :ics
 
     live_session :admin,
       on_mount: [{SvcWeb.UserAuth, :require_authenticated}, {SvcWeb.UserAuth, :mount_notifications}] do

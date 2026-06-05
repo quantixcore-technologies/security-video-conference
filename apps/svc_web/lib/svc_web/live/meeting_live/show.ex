@@ -149,6 +149,13 @@ defmodule SvcWeb.MeetingLive.Show do
         </div>
         <div :if={@live_action == :show} class="flex items-center gap-2 shrink-0">
           <.link
+            href={~p"/admin/meetings/#{@meeting.id}/ics"}
+            class="btn btn-ghost btn-sm gap-1.5"
+            title="Экспорт в календарь (.ics)"
+          >
+            <.icon name="hero-arrow-down-tray" class="size-4" /> .ics
+          </.link>
+          <.link
             :if={@can_organize}
             navigate={~p"/admin/meetings/#{@meeting.id}/edit"}
             class="btn btn-ghost btn-sm gap-1.5"
