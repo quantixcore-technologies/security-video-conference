@@ -60,9 +60,17 @@ defmodule SvcWeb.ProfileLive do
   end
 
   @impl true
-  def handle_event("change_password", %{"password" => %{"current" => cur, "new" => new}}, socket) do
+  def handle_event("change_password", %{"password" => %{"current" => cur, "new" => new} = params}, socket) do
     user = socket.assigns.current_user
 
+    if new != Map.get(params, "confirm") do
+      {:noreply, put_flash(socket, :error, "Новый пароль и подтверждение не совпадают.")}
+    else
+      do_change_password(socket, user, cur, new)
+    end
+  end
+
+  defp do_change_password(socket, user, cur, new) do
     case Accounts.update_password(user, cur, new) do
       {:ok, _user} ->
         Audit.log_action(user, :password_changed, resource_type: :user, resource_id: user.id)
@@ -211,6 +219,15 @@ defmodule SvcWeb.ProfileLive do
                   type="password"
                   name="password[new]"
                   placeholder="Новый пароль (мин. 12 символов)"
+                  required
+                  minlength="12"
+                  autocomplete="new-password"
+                  class="input input-sm input-bordered w-full bg-base-200/40"
+                />
+                <input
+                  type="password"
+                  name="password[confirm]"
+                  placeholder="Повторите новый пароль"
                   required
                   minlength="12"
                   autocomplete="new-password"

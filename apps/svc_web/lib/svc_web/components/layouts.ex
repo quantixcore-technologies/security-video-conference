@@ -63,11 +63,34 @@ defmodule SvcWeb.Layouts do
 
       <div class="flex-1 flex flex-col min-w-0">
         <header class="sticky top-0 z-20 flex items-center justify-between gap-3 px-4 sm:px-8 h-14 border-b border-base-300 bg-base-100/85 backdrop-blur">
-          <nav class="flex items-center gap-1 lg:hidden">
-            <.link navigate={~p"/admin"} class="btn btn-ghost btn-sm btn-square"><.icon name="hero-squares-2x2" class="size-4" /></.link>
-            <.link navigate={~p"/admin/users"} class="btn btn-ghost btn-sm btn-square"><.icon name="hero-users" class="size-4" /></.link>
-            <.link navigate={~p"/admin/meetings"} class="btn btn-ghost btn-sm btn-square"><.icon name="hero-video-camera" class="size-4" /></.link>
-          </nav>
+          <div class="flex items-center gap-2 lg:hidden">
+            <div class="dropdown">
+              <div tabindex="0" role="button" class="btn btn-ghost btn-sm btn-square" aria-label="Меню">
+                <.icon name="hero-bars-3" class="size-5" />
+              </div>
+              <ul tabindex="0" class="dropdown-content menu mt-2 w-56 rounded-xl border border-base-300 bg-base-100 shadow-xl z-30 p-1.5 gap-0.5">
+                <li>
+                  <.link navigate={~p"/admin"} class={["gap-2.5 rounded-lg", @active == "dashboard" && "bg-primary/10 text-primary"]}>
+                    <.icon name="hero-squares-2x2" class="size-4" /> Панель
+                  </.link>
+                </li>
+                <li>
+                  <.link navigate={~p"/admin/users"} class={["gap-2.5 rounded-lg", @active == "users" && "bg-primary/10 text-primary"]}>
+                    <.icon name="hero-users" class="size-4" /> Сотрудники
+                  </.link>
+                </li>
+                <li>
+                  <.link navigate={~p"/admin/meetings"} class={["gap-2.5 rounded-lg", @active == "meetings" && "bg-primary/10 text-primary"]}>
+                    <.icon name="hero-video-camera" class="size-4" /> Встречи
+                  </.link>
+                </li>
+              </ul>
+            </div>
+            <.link navigate={~p"/admin"} class="flex items-center gap-1.5">
+              <.icon name="hero-shield-check" class="size-5 text-primary" />
+              <span class="font-semibold text-sm">SVC</span>
+            </.link>
+          </div>
           <span class="hidden lg:block"></span>
 
           <div :if={@current_user} class="dropdown dropdown-end">
