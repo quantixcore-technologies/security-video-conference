@@ -73,6 +73,7 @@ defmodule SvcWeb.Router do
     live_session :admin,
       on_mount: [{SvcWeb.UserAuth, :require_authenticated}, {SvcWeb.UserAuth, :mount_notifications}] do
       live "/", DashboardLive, :index
+      live "/calendar", CalendarLive, :index
       live "/notifications", NotificationLive, :index
       live "/profile", ProfileLive, :index
       live "/users", UserLive.Index, :index

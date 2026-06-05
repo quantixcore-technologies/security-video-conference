@@ -60,6 +60,17 @@ defmodule Svc.Meetings do
     Repo.all(from m in Meeting, where: m.org_id == ^org_id, order_by: [desc: m.inserted_at])
   end
 
+  @doc "Встречи с scheduled_start в диапазоне [from, to] — для календаря (E3)."
+  def list_in_range(org_id, %DateTime{} = from, %DateTime{} = to) do
+    Repo.all(
+      from m in Meeting,
+        where:
+          m.org_id == ^org_id and not is_nil(m.scheduled_start) and
+            m.scheduled_start >= ^from and m.scheduled_start <= ^to,
+        order_by: m.scheduled_start
+    )
+  end
+
   def start_meeting(%Meeting{} = m), do: update_status(m, :live)
   def end_meeting(%Meeting{} = m), do: update_status(m, :ended)
 

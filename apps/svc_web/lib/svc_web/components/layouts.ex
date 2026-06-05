@@ -53,6 +53,7 @@ defmodule SvcWeb.Layouts do
 
         <nav class="flex-1 p-3 space-y-0.5">
           <.nav_item navigate={~p"/admin"} icon="hero-squares-2x2" label="Панель" on={@active == "dashboard"} />
+          <.nav_item navigate={~p"/admin/calendar"} icon="hero-calendar-days" label="Календарь" on={@active == "calendar"} />
           <.nav_item navigate={~p"/admin/users"} icon="hero-users" label="Сотрудники" on={@active == "users"} />
           <.nav_item navigate={~p"/admin/meetings"} icon="hero-video-camera" label="Встречи" on={@active == "meetings"} />
         </nav>
@@ -73,6 +74,11 @@ defmodule SvcWeb.Layouts do
                 <li>
                   <.link navigate={~p"/admin"} class={["gap-2.5 rounded-lg", @active == "dashboard" && "bg-primary/10 text-primary"]}>
                     <.icon name="hero-squares-2x2" class="size-4" /> Панель
+                  </.link>
+                </li>
+                <li>
+                  <.link navigate={~p"/admin/calendar"} class={["gap-2.5 rounded-lg", @active == "calendar" && "bg-primary/10 text-primary"]}>
+                    <.icon name="hero-calendar-days" class="size-4" /> Календарь
                   </.link>
                 </li>
                 <li>
