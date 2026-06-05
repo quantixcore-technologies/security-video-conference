@@ -32,14 +32,14 @@ defmodule SvcWeb.UserLiveTest do
     {:ok, _lv, html} = conn |> login(admin) |> live(~p"/admin/users")
     assert html =~ "Админ Адмов"
     assert html =~ "Сотрудник Сотов"
-    assert html =~ "+ Сотрудник"
+    assert html =~ "/admin/users/new"
   end
 
   test "employee видит только себя, без кнопки создания (RBAC, D-007)", %{conn: conn, emp: emp} do
     {:ok, _lv, html} = conn |> login(emp) |> live(~p"/admin/users")
     assert html =~ "Сотрудник Сотов"
     refute html =~ "Админ Адмов"
-    refute html =~ "+ Сотрудник"
+    refute html =~ "/admin/users/new"
   end
 
   test "employee не может открыть форму создания", %{conn: conn, emp: emp} do

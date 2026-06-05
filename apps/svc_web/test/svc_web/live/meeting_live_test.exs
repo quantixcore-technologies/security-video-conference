@@ -34,12 +34,12 @@ defmodule SvcWeb.MeetingLiveTest do
     {:ok, _m} = Meetings.create_meeting(mgr, %{title: "Существующая встреча"})
     {:ok, _lv, html} = conn |> login(mgr) |> live(~p"/admin/meetings")
     assert html =~ "Существующая встреча"
-    assert html =~ "+ Встреча"
+    assert html =~ "/admin/meetings/new"
   end
 
   test "employee не видит кнопку создания и не может открыть /new", %{conn: conn, emp: emp} do
     {:ok, _lv, html} = conn |> login(emp) |> live(~p"/admin/meetings")
-    refute html =~ "+ Встреча"
+    refute html =~ "/admin/meetings/new"
 
     assert {:error, {:live_redirect, %{to: "/admin/meetings"}}} =
              conn |> login(emp) |> live(~p"/admin/meetings/new")
