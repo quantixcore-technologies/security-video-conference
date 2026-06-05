@@ -1,0 +1,24 @@
+# LiveKit server config (dev). Hop-by-hop DTLS-SRTP, E2EE off (D-010).
+port: 7880
+
+rtc:
+  tcp_port: 7881
+  port_range_start: 50000
+  port_range_end: 50050
+  use_external_ip: false  # dev/loopback; в prod — true + STUN/TURN
+
+redis:
+  address: redis:6379
+
+# API-ключи (dev). В prod — из секрета (НЕ в git, D: CRED-CHECK).
+keys:
+  devkey: devsecret_devsecret_devsecret_32x
+
+# Вебхуки → Phoenix (E1/E2: журнал посещаемости)
+webhook:
+  api_key: devkey
+  urls:
+    - http://host.docker.internal:4000/webhooks/livekit
+
+logging:
+  level: info

@@ -67,6 +67,9 @@ defmodule SvcWeb.Router do
   scope "/admin", SvcWeb do
     pipe_through [:browser, :require_authenticated_user]
 
+    # DEV: живой звонок из браузера (тест инфры LiveKit; в проде — Tauri)
+    get "/meetings/:id/call", CallController, :show
+
     live_session :admin, on_mount: [{SvcWeb.UserAuth, :require_authenticated}] do
       live "/", DashboardLive, :index
       live "/users", UserLive.Index, :index

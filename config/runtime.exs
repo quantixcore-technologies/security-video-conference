@@ -47,6 +47,14 @@ if config_env() == :prod do
     ],
     secret_key_base: secret_key_base
 
+  # LiveKit (E1, D-003) — обязательные секреты из env (CRED-CHECK: не в git)
+  config :svc, Svc.LiveKit,
+    url: System.get_env("LIVEKIT_URL") || raise("LIVEKIT_URL is missing"),
+    api_key: System.get_env("LIVEKIT_API_KEY") || raise("LIVEKIT_API_KEY is missing"),
+    api_secret: System.get_env("LIVEKIT_API_SECRET") || raise("LIVEKIT_API_SECRET is missing"),
+    webhook_key:
+      System.get_env("LIVEKIT_WEBHOOK_KEY") || System.get_env("LIVEKIT_API_SECRET")
+
   # ## Using releases
   #
   # If you are doing OTP releases, you need to instruct Phoenix

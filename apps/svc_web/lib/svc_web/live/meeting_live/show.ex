@@ -64,6 +64,9 @@ defmodule SvcWeb.MeetingLive.Show do
         </:subtitle>
         <:actions>
           <.link navigate={~p"/admin/meetings"} class="btn btn-ghost btn-sm">← Встречи</.link>
+          <.link href={~p"/admin/meetings/#{@meeting.id}/call"} class="btn btn-primary btn-sm">
+            🎥 Войти в звонок
+          </.link>
         </:actions>
       </.header>
 

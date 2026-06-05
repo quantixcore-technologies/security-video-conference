@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{@meeting.title} — SVC</title>
+    <style>
+      body { font-family: system-ui, sans-serif; background:#0f172a; color:#e2e8f0; margin:0; padding:16px; }
+      h1 { font-size:18px; margin:0 0 4px; }
+      #status { font-size:14px; color:#94a3b8; margin-bottom:12px; }
+      #grid { display:flex; flex-wrap:wrap; gap:10px; }
+      .tile { position:relative; }
+      .tile video { width:360px; max-width:90vw; border:2px solid #334155; border-radius:10px; background:#000; display:block; }
+      .tile .name { position:absolute; bottom:8px; left:8px; background:rgba(0,0,0,.6); padding:2px 8px; border-radius:6px; font-size:12px; }
+      .wm { position:absolute; top:8px; right:8px; font-size:11px; color:rgba(255,255,255,.5); pointer-events:none; }
+      .bar { margin-top:12px; }
+      button { background:#2563eb; color:#fff; border:0; padding:8px 14px; border-radius:8px; cursor:pointer; }
+    </style>
+  </head>
+  <body>
+    <h1>{@meeting.title}</h1>
+    <div id="status">Подключение к LiveKit…</div>
+    <div id="grid"></div>
+    <div class="bar"><button onclick="leave()">Выйти из звонка</button></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/livekit-client@2/dist/livekit-client.umd.min.js"></script>
+    <script>
+      const url = "<%= @livekit_url %>";
+      const token = "<%= @token %>";
+      const watermark = "<%= @current_user.full_name %>";
+      const statusEl = document.getElementById("status");
+      const grid = document.getElementById("grid");
+      const room = new LivekitClient.Room({ adaptiveStream: true, dynacast: true });
+
+      function attach(track, identity, isLocal) {
+        const tile = document.createElement("div");
+        tile.className = "tile";
+        tile.id = "p-" + identity + "-" + track.sid;
+        const el = track.attach();
+        if (isLocal) el.muted = true;
+        const name = document.createElement("div");
+        name.className = "name";
+        name.textContent = isLocal ? "Вы (" + identity + ")" : identity;
+        // E5-предвестник: видимый per-user watermark
+        const wm = document.createElement("div");
+        wm.className = "wm";
+        wm.textContent = watermark;
+        tile.appendChild(el); tile.appendChild(name); tile.appendChild(wm);
+        grid.appendChild(tile);
+      }
+
+      room.on(LivekitClient.RoomEvent.TrackSubscribed, (track, pub, p) => {
+        if (track.kind === "video") attach(track, p.identity, false);
+      });
+      room.on(LivekitClient.RoomEvent.ParticipantDisconnected, (p) => {
+        document.querySelectorAll('[id^="p-' + p.identity + '"]').forEach(e => e.remove());
+      });
+
+      window.leave = () => { room.disconnect(); statusEl.textContent = "Вы вышли из звонка."; };
+
+      (async () => {
+        try {
+          await room.connect(url, token);
+          statusEl.textContent = "Подключено · комната: " + room.name + " · участников: " + (room.numParticipants + 1);
+          await room.localParticipant.enableCameraAndMicrophone();
+          room.localParticipant.videoTrackPublications.forEach(pub => {
+            if (pub.track) attach(pub.track, room.localParticipant.identity, true);
+          });
+        } catch (e) {
+          statusEl.textContent = "Ошибка подключения: " + e.message;
+        }
+      })();
+    </script>
+  </body>
+</html>

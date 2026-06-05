@@ -11,6 +11,13 @@ config :svc, Svc.Repo,
   show_sensitive_data_on_connection_error: true,
   pool_size: 10
 
+# LiveKit (E1, D-003) — локальный docker (deploy/livekit/docker-compose.yml)
+config :svc, Svc.LiveKit,
+  url: System.get_env("LIVEKIT_URL") || "ws://127.0.0.1:7880",
+  api_key: System.get_env("LIVEKIT_API_KEY") || "devkey",
+  api_secret: System.get_env("LIVEKIT_API_SECRET") || "devsecret_devsecret_devsecret_32x",
+  webhook_key: System.get_env("LIVEKIT_WEBHOOK_KEY") || "devsecret_devsecret_devsecret_32x"
+
 # For development, we disable any cache and enable
 # debugging and code reloading.
 #

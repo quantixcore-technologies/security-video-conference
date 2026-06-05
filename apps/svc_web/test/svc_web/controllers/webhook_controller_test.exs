@@ -26,8 +26,9 @@ defmodule SvcWeb.WebhookControllerTest do
   # Валидный webhook-JWT: iss="webhook", подписан api_secret (как делает LiveKit).
   defp webhook_jwt do
     signer = Joken.Signer.create("HS256", @secret)
+    # iss = api_key (как шлёт LiveKit), не "webhook"
     {:ok, jwt, _} =
-      Joken.encode_and_sign(%{"iss" => "webhook", "exp" => System.os_time(:second) + 60}, signer)
+      Joken.encode_and_sign(%{"iss" => "devkey", "exp" => System.os_time(:second) + 60}, signer)
 
     jwt
   end

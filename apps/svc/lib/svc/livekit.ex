@@ -57,9 +57,21 @@ defmodule Svc.LiveKit do
   """
   def verify_webhook(raw_body, auth_header)
       when is_binary(raw_body) and is_binary(auth_header) do
-    case config(:webhook_key) || config(:api_secret) do
-      nil -> {:error, :not_configured}
-      secret -> Livekitex.Webhook.validate_webhook(raw_body, auth_header, secret)
+    # LiveKit шлёт raw JWT (без "Bearer"), iss = api_key. livekitex Webhook.validate_webhook
+    # хардкодит issuer "webhook" → обходим: верифицируем JWT через TokenVerifier с реальным api_key.
+    token = String.replace_prefix(auth_header, "Bearer ", "")
+    api_key = config(:api_key)
+    secret = config(:webhook_key) || config(:api_secret)
+
+    if is_nil(api_key) or is_nil(secret) do
+      {:error, :not_configured}
+    else
+      verifier = Livekitex.TokenVerifier.new(api_key, secret)
+
+      case Livekitex.TokenVerifier.verify(verifier, token) do
+        {:ok, _claims} -> Livekitex.Webhook.parse_webhook_event(raw_body)
+        {:error, reason} -> {:error, reason}
+      end
     end
   end
 
