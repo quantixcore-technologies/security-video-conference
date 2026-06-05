@@ -71,6 +71,9 @@ defmodule SvcWeb.Router do
       live "/", DashboardLive, :index
       live "/users", UserLive.Index, :index
       live "/users/new", UserLive.Index, :new
+      live "/meetings", MeetingLive.Index, :index
+      live "/meetings/new", MeetingLive.Index, :new
+      live "/meetings/:id", MeetingLive.Show, :show
     end
   end
 

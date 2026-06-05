@@ -38,9 +38,12 @@ defmodule SvcWeb.DashboardLive do
           <div class="text-sm opacity-60">Видимых сотрудников</div>
           <div class="text-3xl font-bold">{@visible_users}</div>
         </div>
-        <div class="card bg-base-200 p-5 flex items-center justify-center">
-          <.link navigate={~p"/admin/users"} class="btn btn-primary">
+        <div class="card bg-base-200 p-5 flex flex-col items-center justify-center gap-2">
+          <.link navigate={~p"/admin/users"} class="btn btn-primary btn-sm w-full">
             Сотрудники <span aria-hidden="true">&rarr;</span>
+          </.link>
+          <.link navigate={~p"/admin/meetings"} class="btn btn-primary btn-sm w-full">
+            Встречи <span aria-hidden="true">&rarr;</span>
           </.link>
         </div>
       </div>
