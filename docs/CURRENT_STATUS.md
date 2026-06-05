@@ -2,32 +2,36 @@
 
 > Обновлять в конце каждой сессии. Снимок состояния для следующего агента/сессии.
 
-## Фаза: 0 — Документация + каркас (почти завершена)
+## Фаза: 1 (E0) ЗАВЕРШЕНА ✅ → следующая Фаза 2 (E1)
 
-### Сессия 2026-06-05 (S1) — Брейншторм + Фаза 0
+### Сессия 2026-06-05 (S1) — Брейншторм + Фаза 0 + E0 целиком
 **Сделано:**
-- ✅ Брейншторм (superpowers). 14 решений → [ARCHITECTURE_DECISIONS.md](ARCHITECTURE_DECISIONS.md).
-- ✅ Разведка 4 отрядов → [research/](research/) (ML-стек, anti-capture, LiveKit/E2EE, desktop).
-- ✅ Мастер-план E0–E7 утверждён → `~/.claude/plans/security-video-conference-zoom-serene-perlis.md`.
-- ✅ Документация: README, ROADMAP, ARCHITECTURE, ADR, CURRENT_STATUS, CLAUDE.md.
-- ✅ Security-доки: SECURITY (threat model), encryption, anti-capture-matrix, compliance (каркас).
-- ✅ Спеки **всех 8 эпиков** E0–E7 ([superpowers/specs/](superpowers/specs/)). E0/E1/E2 — детально; E3–E7 — план-спеки.
-- ✅ **Scaffold Phoenix umbrella компилируется:** `apps/svc` (core) + `apps/svc_web`.
-- ✅ Боевые deps в `svc`: livekitex 0.1.34, argon2_elixir 4.1, nimble_totp 1.0, oban 2.23, bodyguard 2.4.
-- ✅ Фикс: protobuf override 0.16.1 (livekitex несовместим с Elixir 1.19/OTP 28 без него).
-- ✅ Коммиты: 9363564 (docs), 021bebf (scaffold+security), df055cb (specs) + naming-fix.
+- ✅ Брейншторм (14 ADR), мастер-план E0–E7, разведка 4 отрядов.
+- ✅ Документация: 19 доков (README/ROADMAP/ARCHITECTURE/security/specs/research).
+- ✅ Scaffold Phoenix umbrella (`svc` + `svc_web`), 5 боевых библиотек, protobuf override.
+- ✅ **E0 Фундамент — 5 слайсов, 55 тестов, 0 failures:**
+  - 1.1 `Svc.Orgs` — организации + иерархия отделов (рекурсивный CTE) + org-изоляция
+  - 1.2 `Svc.Accounts` — auth Argon2id + TOTP 2FA + lockout
+  - 1.3 `Svc.Authz` — RBAC department-scoping
+  - 1.4 `Svc.Audit` — append-only audit-log
+  - 1.5 LiveView админка — login(пароль→TOTP), dashboard, users CRUD (RBAC в UI)
+- ✅ 9 коммитов (локально, без remote).
 
-**Окружение:** Elixir 1.19.5/OTP 28 · Rust 1.93 · Node 25 · Docker 29 · Git 2.50 (psql нет → Postgres через Docker).
+**Окружение:** Elixir 1.19.5/OTP 28 · Rust 1.93 · Node 25 · Docker 29.
+**⚠️ Локально:** Postgres в docker `svc-postgres` на **5434** (brew-postgres@17 на 5432). Префикс `DB_PORT=5434`.
 
-**Структура (фактическая):** `apps/svc` (core: contexts+Repo+schemas, модули `Svc.*`) + `apps/svc_web` (LiveView/API, `SvcWeb.*`). Tauri-клиент → `desktop/` (ещё нет). ML → `ml_service/` (E6).
+### ⚠️ TODO из E0 (честно — не закрыто, для следующих слоёв)
+- **Фото-upload UI** (enrollment Фото) — поле `photo_path` есть, загрузка файла → E2 (enrollment).
+- **Шифрование `totp_secret` at-rest** (app-level Cloak) — сейчас raw binary. → слой хардненинга.
+- **Политика паролей** (точные требования) — у заказчика (комплаенс).
+- Git remote `git.n3xt.uz` — Otabek подтвердил Gitea, ждёт namespace для добавления remote.
 
-**Git:** локальный, **без remote** (push ждёт команды Otabek). Вопрос: remote на `git.n3xt.uz`?
-
-### Следующие шаги (Фаза 0 → 0.5 → 1)
-1. Конфиг: Oban в `Svc.Application` + очереди; `config/runtime.exs` (LiveKit env, ключ шифрования).
-2. `deploy/`: docker-compose (LiveKit/Postgres/Redis/coTURN локально) + helm values (K8s).
-3. **🔬 Фаза 0.5 — PoC-спайк:** Tauri+WebView2+LiveKit JS на Windows (камера/мик/screen-share + setContentProtected). De-risk. **Требует Windows-машину** (192.168.0.115 / их парк).
-4. **Фаза 1 (E0)** по [specs/E0-foundation.md](superpowers/specs/E0-foundation.md): TDD — миграции (orgs/departments/users/audit) → контексты `Svc.Orgs`/`Svc.Accounts`/`Svc.Authz`/`Svc.Audit` → auth+TOTP → RBAC scoping → LiveView админка.
+### Следующие шаги (Фаза 2 = E1, см. specs/E1-conferencing-core.md)
+1. **🔬 PoC-спайк** Tauri+WebView2+LiveKit JS на Windows (de-risk MODERATE) — требует Windows-машину.
+2. LiveKit self-host: docker-compose локально (server/Redis/coTURN) — инфра-агенты.
+3. `Svc.Meetings` context + `Svc.LiveKit` (livekitex: JWT, RoomService, webhooks).
+4. Webhook endpoint `/webhooks/livekit` (HMAC).
+5. Tauri-клиент: join + A/V + setContentProtected.
 
 ### Открытые вопросы заказчику
-Комплаенс (O'zDSt/СКЗИ — см. [security/compliance.md](security/compliance.md)) · парк Windows-версий · каналы уведомлений E3 · смысл «CRM» (E4, блокер) · mobile-стек фазы 2 · OneID/E-IMZO задел · политика хранения записей.
+Комплаенс O'zDSt/СКЗИ · парк Windows · каналы уведомлений E3 · смысл «CRM» (E4) · mobile-стек · OneID/E-IMZO задел · хранение записей.
