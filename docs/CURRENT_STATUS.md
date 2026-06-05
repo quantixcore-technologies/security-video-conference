@@ -12,19 +12,19 @@
 - ✅ **31 коммит · 104 теста 0 failures**, запушено git.n3xt.uz/legion-cyber-arena (private).
 - ✅ Доказано вживую: login→dashboard→встречи→журнал; реальный звонок 2 участника→webhook→авто-посещаемость.
 
-## ✅ Сделано после редизайна (51 коммит, 150 тестов 0 failures)
+## ✅ Сделано после редизайна (53 коммита, 154 теста 0 failures)
 - Расширенные контролы звонка (screen-share, участники+говорящий, чат, mute, fullscreen, устройства).
 - Профиль-рефактор: top-right avatar dropdown + `/admin/profile` (дублирование убрано).
 - **UX-аудит P0+P1+P2 закрыт** (`docs/UX-AUDIT.md`): управление сотрудниками/встречами + карточка `users/:id`, 2FA enrollment (QR/eqrcode), mobile-бургер, emerald loading-bar, повтор пароля, поиск/фильтр/пагинация таблиц, локализация статусов/действий, a11y (alt).
 - **Эпик E3 (A–F)** — планирование: уведомления+колокольчик · напоминания (Oban T-24ч/1ч) · календарь (месяц) · RSVP · recurring-встречи · `.ics`-экспорт. _(внешние каналы email/SMS/Telegram — blocked заказчиком)._
 - **E5 анти-захват (A+B):** per-user watermark на звонке · юр-баннер · `capture_events` журнал + API `/api/capture-events` · `SecurityLive` (`/admin/security`) · матрица. _(ENFORCE setContentProtected/FLAG_SECURE — Tauri/mobile-фаза)._
-- **E7 сеть/гео (A):** pre-join gate в CallController · `Svc.Geo` (classify_ip RFC1918) · `network_geo_checks` журнал · UI на `/admin/security`. _(реальный VPN/country = MaxMind MMDB, открытый вопрос лицензии)._
+- **E7 сеть/гео (A+B):** pre-join gate + `Svc.Geo` (classify_ip RFC1918, журнал) · **гео-политика per-org** (`geo_policies`: mode off/flag_only/enforce, allowed_countries, whitelist_ips, block_vpn/proxy) · полная security-панель `/admin/security` (политика + журнал захвата + журнал гео). _(реальный VPN/country = MaxMind MMDB через locus, открытый вопрос лицензии)._
 
 ## ⏭️ СЛЕДУЮЩИЙ КВЕСТ (на выбор Otabek)
-- **E7-B:** geo-политика per-org (allowed_countries, enforce/flag mode) + `locus`/MaxMind интеграция.
 - **E5-C:** anti-capture политика per-meeting (watermark on/off, реакция warn/eject).
-- **E6** ML-liveness/deepfake · **Tauri** desktop-клиент (prod-видео+enforce) · **i18n** RU/UZ/EN.
-> Открытые вопросы заказчику (E5/E7): MaxMind-лицензия · каналы уведомлений · парк Windows · kiosk/TPM.
+- **E7-C:** `locus`/MaxMind интеграция (реальный country+VPN-детект) — нужна MMDB-лицензия.
+- **E6** ML-liveness/deepfake (Python+Rust ML-сервис) · **Tauri** desktop-клиент (prod-видео+enforce setContentProtected) · **i18n** RU/UZ/EN.
+> Открытые вопросы заказчику: MaxMind-лицензия · каналы уведомлений (E3) · парк Windows · kiosk/TPM (E5) · allowed-countries/whitelist (E7).
 
 ## ⚠️ Локальный запуск (КРИТИЧНО)
 ```bash
