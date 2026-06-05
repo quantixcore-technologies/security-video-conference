@@ -19,45 +19,38 @@
         <span class="font-medium text-sm truncate">{@meeting.title}</span>
       </div>
       <div class="flex items-center gap-4 shrink-0">
-        <span id="participants-info" class="text-xs text-base-content/55 tabular"></span>
-        <span id="status" class="inline-flex items-center gap-1.5 text-xs text-base-content/50">
+        <span id="participants-info" class="hidden sm:inline text-xs text-base-content/50 tabular"></span>
+        <span class="inline-flex items-center gap-1.5 text-xs text-base-content/55">
           <span id="status-dot" class="size-2 rounded-full bg-warning animate-pulse"></span>
           <span id="status-text">Подключение…</span>
         </span>
       </div>
     </header>
 
-    <main class="flex-1 p-4 overflow-auto">
+    <main class="flex-1 min-h-0 p-4 overflow-auto">
       <div
         id="grid"
-        class="grid gap-3 h-full content-start"
-        style="grid-template-columns:repeat(auto-fit,minmax(min(100%,360px),1fr))"
+        class="grid gap-3 h-full content-center justify-center"
+        style="grid-template-columns:repeat(auto-fit,minmax(min(100%,420px),1fr))"
       >
+        <div id="empty" class="col-span-full flex flex-col items-center justify-center text-center text-base-content/40 gap-3">
+          <.icon name="hero-users" class="size-10 opacity-40" />
+          <span class="text-sm">Подключение к комнате…</span>
+        </div>
       </div>
     </main>
 
-    <footer class="flex items-center justify-center gap-3 h-18 py-3 border-t border-base-300 bg-base-100 shrink-0">
-      <button
-        id="btn-mic"
-        onclick="toggleMic()"
-        title="Микрофон"
-        class="grid place-items-center size-11 rounded-full bg-base-200 hover:bg-base-300 transition text-base-content"
-      >
+    <footer class="flex items-center justify-center gap-3 h-20 border-t border-base-300 bg-base-100 shrink-0">
+      <button id="btn-mic" onclick="toggleMic()" title="Микрофон"
+        class="grid place-items-center size-12 rounded-full bg-base-200 hover:bg-base-300 transition">
         <.icon name="hero-microphone" class="size-5" />
       </button>
-      <button
-        id="btn-cam"
-        onclick="toggleCam()"
-        title="Камера"
-        class="grid place-items-center size-11 rounded-full bg-base-200 hover:bg-base-300 transition text-base-content"
-      >
+      <button id="btn-cam" onclick="toggleCam()" title="Камера"
+        class="grid place-items-center size-12 rounded-full bg-base-200 hover:bg-base-300 transition">
         <.icon name="hero-video-camera" class="size-5" />
       </button>
-      <button
-        onclick="leave()"
-        title="Покинуть звонок"
-        class="grid place-items-center size-11 rounded-full bg-error/90 hover:bg-error transition text-error-content"
-      >
+      <button onclick="leave()" title="Покинуть звонок"
+        class="grid place-items-center size-12 rounded-full bg-error/90 hover:bg-error transition text-error-content">
         <.icon name="hero-phone-x-mark" class="size-5" />
       </button>
     </footer>
@@ -72,39 +65,75 @@
       const statusText = document.getElementById("status-text");
       const statusDot = document.getElementById("status-dot");
       const room = new LivekitClient.Room({ adaptiveStream: true, dynacast: true });
+      const tiles = {};
       let micOn = true, camOn = true;
 
-      function attach(track, identity, isLocal) {
+      function initials(name) {
+        return (name || "?").trim().split(/\s+/).slice(0, 2).map(w => w[0] || "").join("").toUpperCase();
+      }
+
+      function tileFor(p, isLocal) {
+        document.getElementById("empty")?.remove();
+        if (tiles[p.identity]) return tiles[p.identity];
         const tile = document.createElement("div");
-        tile.className = "relative rounded-xl overflow-hidden bg-black ring-1 " +
-          (isLocal ? "ring-primary/40" : "ring-base-300") + " aspect-video";
-        tile.id = "p-" + identity + "-" + track.sid;
-        const el = track.attach();
-        el.className = "w-full h-full object-cover";
-        if (isLocal) el.muted = true;
-        const name = document.createElement("div");
-        name.className = "absolute bottom-2 left-2 px-2 py-0.5 rounded-md bg-black/60 text-white text-xs backdrop-blur";
-        name.textContent = isLocal ? "Вы · " + identity : identity;
-        const wm = document.createElement("div");
-        wm.className = "absolute top-2 right-2 text-[10px] text-white/40 pointer-events-none select-none";
-        wm.textContent = watermark;
-        tile.append(el, name, wm);
+        tile.className = "relative rounded-2xl overflow-hidden bg-base-200 grid place-items-center aspect-video ring-1 " +
+          (isLocal ? "ring-primary/40" : "ring-base-300");
+        tile.innerHTML =
+          '<div class="ph grid place-items-center size-20 rounded-full bg-primary/15 text-primary text-2xl font-semibold">' + initials(p.name || p.identity) + '</div>' +
+          '<div class="absolute bottom-2.5 left-2.5 px-2 py-0.5 rounded-md bg-black/55 text-white text-xs">' + (isLocal ? "Вы · " : "") + (p.name || p.identity) + '</div>' +
+          '<div class="absolute top-2.5 right-2.5 text-[10px] text-white/35 pointer-events-none select-none">' + watermark + '</div>';
         grid.appendChild(tile);
+        tiles[p.identity] = tile;
+        return tile;
       }
 
-      function updateParticipants() {
+      function setVideo(p, track, isLocal) {
+        const tile = tileFor(p, isLocal);
+        tile.querySelector(".ph")?.remove();
+        tile.querySelector("video")?.remove();
+        const el = track.attach();
+        el.className = "absolute inset-0 w-full h-full object-cover";
+        if (isLocal) el.muted = true;
+        tile.insertBefore(el, tile.firstChild);
+      }
+
+      function dropVideo(p) {
+        const tile = tiles[p.identity];
+        if (!tile || tile.querySelector(".ph")) return;
+        tile.querySelector("video")?.remove();
+        const ph = document.createElement("div");
+        ph.className = "ph grid place-items-center size-20 rounded-full bg-primary/15 text-primary text-2xl font-semibold";
+        ph.textContent = initials(p.name || p.identity);
+        tile.insertBefore(ph, tile.firstChild);
+      }
+
+      function removeTile(p) { tiles[p.identity]?.remove(); delete tiles[p.identity]; }
+
+      function updateInfo() {
         const all = [room.localParticipant, ...room.remoteParticipants.values()];
-        const names = all.map(p => p.name || p.identity).join(" · ");
-        document.getElementById("participants-info").textContent = "Участников: " + all.length + " — " + names;
+        document.getElementById("participants-info").textContent =
+          "Участников: " + all.length + " — " + all.map(p => p.name || p.identity).join(" · ");
       }
 
-      room.on(LivekitClient.RoomEvent.TrackSubscribed, (t, _p, p) => { if (t.kind === "video") attach(t, p.identity, false); });
-      room.on(LivekitClient.RoomEvent.LocalTrackPublished, (pub) => { if (pub.track?.kind === "video") attach(pub.track, room.localParticipant.identity, true); });
-      room.on(LivekitClient.RoomEvent.ParticipantDisconnected, (p) => { document.querySelectorAll('[id^="p-' + p.identity + '"]').forEach(e => e.remove()); updateParticipants(); });
-      room.on(LivekitClient.RoomEvent.ParticipantConnected, updateParticipants);
+      room.on(LivekitClient.RoomEvent.TrackSubscribed, (t, _pub, p) => { if (t.kind === "video") setVideo(p, t, false); });
+      room.on(LivekitClient.RoomEvent.TrackUnsubscribed, (t, _pub, p) => { if (t.kind === "video") dropVideo(p); });
+      room.on(LivekitClient.RoomEvent.LocalTrackPublished, (pub) => { if (pub.track?.kind === "video") setVideo(room.localParticipant, pub.track, true); });
+      room.on(LivekitClient.RoomEvent.LocalTrackUnpublished, (pub) => { if (pub.kind === "video") dropVideo(room.localParticipant); });
+      room.on(LivekitClient.RoomEvent.ParticipantConnected, (p) => { tileFor(p, false); updateInfo(); });
+      room.on(LivekitClient.RoomEvent.ParticipantDisconnected, (p) => { removeTile(p); updateInfo(); });
 
-      window.toggleMic = async () => { micOn = !micOn; await room.localParticipant.setMicrophoneEnabled(micOn); document.getElementById("btn-mic").className = "grid place-items-center size-11 rounded-full transition " + (micOn ? "bg-base-200 hover:bg-base-300 text-base-content" : "bg-error/90 text-error-content"); };
-      window.toggleCam = async () => { camOn = !camOn; await room.localParticipant.setCameraEnabled(camOn); document.getElementById("btn-cam").className = "grid place-items-center size-11 rounded-full transition " + (camOn ? "bg-base-200 hover:bg-base-300 text-base-content" : "bg-error/90 text-error-content"); };
+      window.toggleMic = async () => {
+        micOn = !micOn;
+        await room.localParticipant.setMicrophoneEnabled(micOn);
+        document.getElementById("btn-mic").className = "grid place-items-center size-12 rounded-full transition " +
+          (micOn ? "bg-base-200 hover:bg-base-300" : "bg-error/90 text-error-content");
+      };
+      window.toggleCam = async () => {
+        camOn = !camOn;
+        await room.localParticipant.setCameraEnabled(camOn);
+        document.getElementById("btn-cam").className = "grid place-items-center size-12 rounded-full transition " +
+          (camOn ? "bg-base-200 hover:bg-base-300" : "bg-error/90 text-error-content");
+      };
       window.leave = () => { room.disconnect(); statusText.textContent = "Вы вышли"; statusDot.className = "size-2 rounded-full bg-base-content/30"; };
 
       (async () => {
@@ -112,7 +141,9 @@
           await room.connect(url, token);
           statusText.textContent = "В эфире";
           statusDot.className = "size-2 rounded-full bg-success";
-          updateParticipants();
+          tileFor(room.localParticipant, true);
+          room.remoteParticipants.forEach(p => tileFor(p, false));
+          updateInfo();
         } catch (e) {
           statusText.textContent = "Ошибка: " + e.message;
           statusDot.className = "size-2 rounded-full bg-error";
@@ -122,7 +153,9 @@
           await room.localParticipant.setMicrophoneEnabled(true);
           await room.localParticipant.setCameraEnabled(true);
         } catch (camErr) {
-          statusText.textContent = "В эфире · камера: " + camErr.name;
+          camOn = false;
+          document.getElementById("btn-cam").className = "grid place-items-center size-12 rounded-full bg-error/90 text-error-content";
+          statusText.textContent = "В эфире · без камеры";
           console.error("camera:", camErr);
         }
       })();
