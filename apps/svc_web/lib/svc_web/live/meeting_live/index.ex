@@ -98,10 +98,6 @@ defmodule SvcWeb.MeetingLive.Index do
 
   defp policy_options, do: [{"Без записи", "off"}, {"Опционально", "optional"}, {"Обязательно", "required"}]
 
-  defp status_badge(:planned), do: "badge-ghost"
-  defp status_badge(:live), do: "badge-success"
-  defp status_badge(:ended), do: "badge-neutral"
-
   defp status_label(:planned), do: "Запланирована"
   defp status_label(:live), do: "Идёт"
   defp status_label(:ended), do: "Завершена"
@@ -110,22 +106,24 @@ defmodule SvcWeb.MeetingLive.Index do
   def render(assigns) do
     ~H"""
     <Layouts.app flash={@flash} active="meetings">
-      <.header>
-        Встречи
-        <:actions>
-          <.link navigate={~p"/admin"} class="btn btn-ghost btn-sm">← Панель</.link>
-          <.link
-            :if={@can_organize and @live_action == :index}
-            navigate={~p"/admin/meetings/new"}
-            class="btn btn-primary btn-sm"
-          >
-            + Встреча
-          </.link>
-        </:actions>
-      </.header>
+      <div class="flex items-start justify-between gap-4 mb-6">
+        <div>
+          <h1 class="text-2xl font-semibold tracking-tight">Встречи</h1>
+          <p class="text-sm text-base-content/55 mt-1">Видеоконференции организации</p>
+        </div>
+        <.link
+          :if={@can_organize and @live_action == :index}
+          navigate={~p"/admin/meetings/new"}
+          class="btn btn-primary gap-2"
+        >
+          <.icon name="hero-plus" class="size-4" /> Встреча
+        </.link>
+      </div>
 
-      <div :if={@live_action == :new} class="card bg-base-200 p-5 mt-4">
-        <h3 class="font-semibold mb-3">Новая встреча</h3>
+      <div :if={@live_action == :new} class="rounded-xl border border-base-300 bg-base-100/50 p-5 mb-5">
+        <h3 class="font-medium mb-4 flex items-center gap-2">
+          <.icon name="hero-video-camera" class="size-4 text-primary" /> Новая встреча
+        </h3>
         <.form for={@form} phx-submit="save" class="space-y-3">
           <.input field={@form[:title]} type="text" label="Название" required />
           <div class="grid grid-cols-2 gap-3">
@@ -156,17 +154,51 @@ defmodule SvcWeb.MeetingLive.Index do
         </.form>
       </div>
 
-      <.table id="meetings" rows={@meetings}>
-        <:col :let={m} label="Название">
-          <.link navigate={~p"/admin/meetings/#{m.id}"} class="link link-primary">{m.title}</.link>
-        </:col>
-        <:col :let={m} label="Тип">{if m.type == :ad_hoc, do: "Ad-hoc", else: "План"}</:col>
-        <:col :let={m} label="Статус">
-          <span class={"badge #{status_badge(m.status)}"}>{status_label(m.status)}</span>
-        </:col>
-        <:col :let={m} label="Запись">{if m.recording_policy == :off, do: "—", else: "✓"}</:col>
-      </.table>
+      <div class="rounded-xl border border-base-300 bg-base-100/50 overflow-hidden">
+        <div :if={@meetings == []} class="px-5 py-10 text-center text-sm text-base-content/40">
+          <.icon name="hero-video-camera-slash" class="size-8 mx-auto mb-2 opacity-40" /> Встреч пока нет
+        </div>
+        <table :if={@meetings != []} class="w-full text-sm">
+          <thead>
+            <tr class="text-left text-xs uppercase tracking-wider text-base-content/40 border-b border-base-300">
+              <th class="font-medium px-5 py-2.5">Название</th>
+              <th class="font-medium px-5 py-2.5">Тип</th>
+              <th class="font-medium px-5 py-2.5">Статус</th>
+              <th class="font-medium px-5 py-2.5">Запись</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-base-300/50">
+            <tr :for={m <- @meetings} class="hover:bg-base-200/40 transition">
+              <td class="px-5 py-3">
+                <.link navigate={~p"/admin/meetings/#{m.id}"} class="font-medium hover:text-primary transition inline-flex items-center gap-2">
+                  <.icon name="hero-video-camera" class="size-4 text-base-content/35" />
+                  {m.title}
+                </.link>
+              </td>
+              <td class="px-5 py-3 text-base-content/60">{if m.type == :ad_hoc, do: "Ad-hoc", else: "План"}</td>
+              <td class="px-5 py-3">
+                <span class={"inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium #{status_class(m.status)}"}>
+                  <span class={"size-1.5 rounded-full #{status_dot(m.status)}"}></span>
+                  {status_label(m.status)}
+                </span>
+              </td>
+              <td class="px-5 py-3">
+                <.icon :if={m.recording_policy != :off} name="hero-check-circle" class="size-4 text-success" />
+                <span :if={m.recording_policy == :off} class="text-base-content/30">—</span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
     </Layouts.app>
     """
   end
+
+  defp status_class(:planned), do: "bg-base-200 text-base-content/70"
+  defp status_class(:live), do: "bg-success/10 text-success"
+  defp status_class(:ended), do: "bg-base-200 text-base-content/50"
+
+  defp status_dot(:planned), do: "bg-base-content/40"
+  defp status_dot(:live), do: "bg-success animate-pulse"
+  defp status_dot(:ended), do: "bg-base-content/30"
 end

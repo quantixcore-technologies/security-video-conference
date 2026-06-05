@@ -1,102 +1,129 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="ru" data-theme="dark">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>{@meeting.title} — SVC</title>
-    <style>
-      body { font-family: system-ui, sans-serif; background:#0f172a; color:#e2e8f0; margin:0; padding:16px; }
-      h1 { font-size:18px; margin:0 0 4px; }
-      #status { font-size:14px; color:#94a3b8; margin-bottom:12px; }
-      #grid { display:flex; flex-wrap:wrap; gap:10px; }
-      .tile { position:relative; }
-      .tile video { width:360px; max-width:90vw; border:2px solid #334155; border-radius:10px; background:#000; display:block; }
-      .tile .name { position:absolute; bottom:8px; left:8px; background:rgba(0,0,0,.6); padding:2px 8px; border-radius:6px; font-size:12px; }
-      .wm { position:absolute; top:8px; right:8px; font-size:11px; color:rgba(255,255,255,.5); pointer-events:none; }
-      .bar { margin-top:12px; }
-      button { background:#2563eb; color:#fff; border:0; padding:8px 14px; border-radius:8px; cursor:pointer; }
-    </style>
+    <title>{@meeting.title} — звонок · SVC</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href={~p"/assets/css/app.css"} />
   </head>
-  <body>
-    <h1>{@meeting.title}</h1>
-    <div id="status">Подключение к LiveKit…</div>
-    <div id="participants-info" style="font-size:15px;color:#38bdf8;margin-bottom:12px;font-weight:700"></div>
-    <div id="grid"></div>
-    <div class="bar"><button onclick="leave()">Выйти из звонка</button></div>
+  <body class="app-bg h-screen flex flex-col overflow-hidden">
+    <header class="flex items-center justify-between px-5 h-14 border-b border-base-300 bg-base-100 shrink-0">
+      <div class="flex items-center gap-2.5 min-w-0">
+        <.icon name="hero-shield-check" class="size-5 text-primary shrink-0" />
+        <span class="font-medium text-sm truncate">{@meeting.title}</span>
+      </div>
+      <div class="flex items-center gap-4 shrink-0">
+        <span id="participants-info" class="text-xs text-base-content/55 tabular"></span>
+        <span id="status" class="inline-flex items-center gap-1.5 text-xs text-base-content/50">
+          <span id="status-dot" class="size-2 rounded-full bg-warning animate-pulse"></span>
+          <span id="status-text">Подключение…</span>
+        </span>
+      </div>
+    </header>
 
-    <script src="https://cdn.jsdelivr.net/npm/livekit-client@2/dist/livekit-client.umd.min.js"></script>
+    <main class="flex-1 p-4 overflow-auto">
+      <div
+        id="grid"
+        class="grid gap-3 h-full content-start"
+        style="grid-template-columns:repeat(auto-fit,minmax(min(100%,360px),1fr))"
+      >
+      </div>
+    </main>
+
+    <footer class="flex items-center justify-center gap-3 h-18 py-3 border-t border-base-300 bg-base-100 shrink-0">
+      <button
+        id="btn-mic"
+        onclick="toggleMic()"
+        title="Микрофон"
+        class="grid place-items-center size-11 rounded-full bg-base-200 hover:bg-base-300 transition text-base-content"
+      >
+        <.icon name="hero-microphone" class="size-5" />
+      </button>
+      <button
+        id="btn-cam"
+        onclick="toggleCam()"
+        title="Камера"
+        class="grid place-items-center size-11 rounded-full bg-base-200 hover:bg-base-300 transition text-base-content"
+      >
+        <.icon name="hero-video-camera" class="size-5" />
+      </button>
+      <button
+        onclick="leave()"
+        title="Покинуть звонок"
+        class="grid place-items-center size-11 rounded-full bg-error/90 hover:bg-error transition text-error-content"
+      >
+        <.icon name="hero-phone-x-mark" class="size-5" />
+      </button>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/livekit-client@2/dist/livekit-client.umd.min.js">
+    </script>
     <script>
       const url = "<%= @livekit_url %>";
       const token = "<%= @token %>";
       const watermark = "<%= @current_user.full_name %>";
-      const statusEl = document.getElementById("status");
       const grid = document.getElementById("grid");
+      const statusText = document.getElementById("status-text");
+      const statusDot = document.getElementById("status-dot");
       const room = new LivekitClient.Room({ adaptiveStream: true, dynacast: true });
+      let micOn = true, camOn = true;
 
       function attach(track, identity, isLocal) {
         const tile = document.createElement("div");
-        tile.className = "tile";
+        tile.className = "relative rounded-xl overflow-hidden bg-black ring-1 " +
+          (isLocal ? "ring-primary/40" : "ring-base-300") + " aspect-video";
         tile.id = "p-" + identity + "-" + track.sid;
         const el = track.attach();
+        el.className = "w-full h-full object-cover";
         if (isLocal) el.muted = true;
         const name = document.createElement("div");
-        name.className = "name";
-        name.textContent = isLocal ? "Вы (" + identity + ")" : identity;
-        // E5-предвестник: видимый per-user watermark
+        name.className = "absolute bottom-2 left-2 px-2 py-0.5 rounded-md bg-black/60 text-white text-xs backdrop-blur";
+        name.textContent = isLocal ? "Вы · " + identity : identity;
         const wm = document.createElement("div");
-        wm.className = "wm";
+        wm.className = "absolute top-2 right-2 text-[10px] text-white/40 pointer-events-none select-none";
         wm.textContent = watermark;
-        tile.appendChild(el); tile.appendChild(name); tile.appendChild(wm);
+        tile.append(el, name, wm);
         grid.appendChild(tile);
       }
-
-      room.on(LivekitClient.RoomEvent.TrackSubscribed, (track, pub, p) => {
-        if (track.kind === "video") attach(track, p.identity, false);
-      });
-      room.on(LivekitClient.RoomEvent.ParticipantDisconnected, (p) => {
-        document.querySelectorAll('[id^="p-' + p.identity + '"]').forEach(e => e.remove());
-      });
-
-      window.leave = () => { room.disconnect(); statusEl.textContent = "Вы вышли из звонка."; };
-
-      // локальный видео-трек публикуется → показываем
-      room.on(LivekitClient.RoomEvent.LocalTrackPublished, (pub) => {
-        if (pub.track && pub.track.kind === "video") {
-          attach(pub.track, room.localParticipant.identity, true);
-        }
-      });
 
       function updateParticipants() {
         const all = [room.localParticipant, ...room.remoteParticipants.values()];
         const names = all.map(p => p.name || p.identity).join(" · ");
-        document.getElementById("participants-info").textContent =
-          "👥 Участников: " + all.length + " — " + names;
+        document.getElementById("participants-info").textContent = "Участников: " + all.length + " — " + names;
       }
-      room.on(LivekitClient.RoomEvent.ParticipantConnected, updateParticipants);
-      room.on(LivekitClient.RoomEvent.ParticipantDisconnected, updateParticipants);
 
-      window._room = room; // для отладки из DevTools
+      room.on(LivekitClient.RoomEvent.TrackSubscribed, (t, _p, p) => { if (t.kind === "video") attach(t, p.identity, false); });
+      room.on(LivekitClient.RoomEvent.LocalTrackPublished, (pub) => { if (pub.track?.kind === "video") attach(pub.track, room.localParticipant.identity, true); });
+      room.on(LivekitClient.RoomEvent.ParticipantDisconnected, (p) => { document.querySelectorAll('[id^="p-' + p.identity + '"]').forEach(e => e.remove()); updateParticipants(); });
+      room.on(LivekitClient.RoomEvent.ParticipantConnected, updateParticipants);
+
+      window.toggleMic = async () => { micOn = !micOn; await room.localParticipant.setMicrophoneEnabled(micOn); document.getElementById("btn-mic").className = "grid place-items-center size-11 rounded-full transition " + (micOn ? "bg-base-200 hover:bg-base-300 text-base-content" : "bg-error/90 text-error-content"); };
+      window.toggleCam = async () => { camOn = !camOn; await room.localParticipant.setCameraEnabled(camOn); document.getElementById("btn-cam").className = "grid place-items-center size-11 rounded-full transition " + (camOn ? "bg-base-200 hover:bg-base-300 text-base-content" : "bg-error/90 text-error-content"); };
+      window.leave = () => { room.disconnect(); statusText.textContent = "Вы вышли"; statusDot.className = "size-2 rounded-full bg-base-content/30"; };
 
       (async () => {
         try {
           await room.connect(url, token);
-          statusEl.textContent = "Подключено · комната: " + room.name;
+          statusText.textContent = "В эфире";
+          statusDot.className = "size-2 rounded-full bg-success";
           updateParticipants();
         } catch (e) {
-          statusEl.textContent = "Ошибка подключения: " + e.message;
-          console.error("LiveKit connect error:", e);
+          statusText.textContent = "Ошибка: " + e.message;
+          statusDot.className = "size-2 rounded-full bg-error";
           return;
         }
-        // камера/микрофон — отдельно, чтобы видеть именно camera-ошибку
         try {
-          console.log("Запрашиваю микрофон…");
           await room.localParticipant.setMicrophoneEnabled(true);
-          console.log("Запрашиваю камеру…");
           await room.localParticipant.setCameraEnabled(true);
-          statusEl.textContent += " · 🎥 камера и микрофон включены";
         } catch (camErr) {
-          statusEl.textContent += " · ⚠️ камера недоступна: " + camErr.name + " — " + camErr.message;
-          console.error("getUserMedia/camera error:", camErr);
+          statusText.textContent = "В эфире · камера: " + camErr.name;
+          console.error("camera:", camErr);
         }
       })();
     </script>

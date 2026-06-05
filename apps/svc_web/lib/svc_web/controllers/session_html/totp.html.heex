@@ -1,31 +1,43 @@
-<div class="mx-auto max-w-sm px-4 mt-20">
-  <h1 class="text-2xl font-bold text-center">Двухфакторная аутентификация</h1>
-  <p class="text-center text-gray-500 mb-6">Введите 6-значный код из приложения-аутентификатора</p>
-
-  <div :if={@error_message} class="mb-4 rounded bg-red-100 p-3 text-sm text-red-700">
-    {@error_message}
-  </div>
-
-  <.form for={to_form(%{}, as: :totp)} action={~p"/login/totp"} class="space-y-4">
-    <div>
-      <label class="block text-sm font-medium mb-1">Код 2FA</label>
-      <input
-        type="text"
-        name="totp[code]"
-        inputmode="numeric"
-        pattern="[0-9]*"
-        maxlength="6"
-        required
-        autofocus
-        autocomplete="one-time-code"
-        class="w-full rounded border px-3 py-2 text-center text-lg tracking-widest"
-      />
+<div class="min-h-screen flex items-center justify-center px-4">
+  <div class="w-full max-w-sm">
+    <div class="flex flex-col items-center mb-8">
+      <div class="grid place-items-center size-14 rounded-2xl bg-primary/15 text-primary ring-1 ring-primary/20 mb-4">
+        <.icon name="hero-finger-print" class="size-7" />
+      </div>
+      <h1 class="text-xl font-semibold tracking-tight text-center">Двухфакторная аутентификация</h1>
+      <p class="text-sm text-base-content/50 mt-1 text-center">Код из приложения-аутентификатора</p>
     </div>
-    <button
-      type="submit"
-      class="w-full rounded bg-blue-600 px-4 py-2 font-medium text-white hover:bg-blue-700"
-    >
-      Подтвердить
-    </button>
-  </.form>
+
+    <div class="rounded-2xl border border-base-300 bg-base-100/60 p-6">
+      <div
+        :if={@error_message}
+        class="mb-4 flex items-center gap-2 rounded-lg bg-error/10 border border-error/20 px-3 py-2.5 text-sm text-error"
+      >
+        <.icon name="hero-exclamation-triangle" class="size-4 shrink-0" />
+        {@error_message}
+      </div>
+
+      <.form for={to_form(%{}, as: :totp)} action={~p"/login/totp"} class="space-y-4">
+        <input
+          type="text"
+          name="totp[code]"
+          inputmode="numeric"
+          pattern="[0-9]*"
+          maxlength="6"
+          required
+          autofocus
+          autocomplete="one-time-code"
+          placeholder="000000"
+          class="input input-bordered w-full bg-base-200/40 text-center text-2xl tracking-[0.5em] tabular font-medium"
+        />
+        <button type="submit" class="btn btn-primary w-full gap-2">
+          <.icon name="hero-check" class="size-4" /> Подтвердить
+        </button>
+      </.form>
+    </div>
+
+    <p class="text-center text-xs text-base-content/35 mt-6 flex items-center justify-center gap-1.5">
+      <.icon name="hero-shield-check" class="size-3" /> Защита аккаунта · 2FA
+    </p>
+  </div>
 </div>

@@ -113,23 +113,24 @@ defmodule SvcWeb.UserLive.Index do
   def render(assigns) do
     ~H"""
     <Layouts.app flash={@flash} active="users">
-      <.header>
-        Сотрудники
-        <:subtitle>Список ограничен вашей ролью (department-scoping, D-007)</:subtitle>
-        <:actions>
-          <.link navigate={~p"/admin"} class="btn btn-ghost btn-sm">← Панель</.link>
-          <.link
-            :if={@can_manage and @live_action == :index}
-            navigate={~p"/admin/users/new"}
-            class="btn btn-primary btn-sm"
-          >
-            + Сотрудник
-          </.link>
-        </:actions>
-      </.header>
+      <div class="flex items-start justify-between gap-4 mb-6">
+        <div>
+          <h1 class="text-2xl font-semibold tracking-tight">Сотрудники</h1>
+          <p class="text-sm text-base-content/55 mt-1">Список ограничен вашей ролью · department-scoping</p>
+        </div>
+        <.link
+          :if={@can_manage and @live_action == :index}
+          navigate={~p"/admin/users/new"}
+          class="btn btn-primary gap-2"
+        >
+          <.icon name="hero-plus" class="size-4" /> Сотрудник
+        </.link>
+      </div>
 
-      <div :if={@live_action == :new} class="card bg-base-200 p-5 mt-4">
-        <h3 class="font-semibold mb-3">Новый сотрудник</h3>
+      <div :if={@live_action == :new} class="rounded-xl border border-base-300 bg-base-100/50 p-5 mb-5">
+        <h3 class="font-medium mb-4 flex items-center gap-2">
+          <.icon name="hero-user-plus" class="size-4 text-primary" /> Новый сотрудник
+        </h3>
         <.form for={@form} phx-change="validate" phx-submit="save" class="space-y-3">
           <.input field={@form[:full_name]} type="text" label="ФИО" required />
           <.input field={@form[:username]} type="text" label="Логин" required />
@@ -168,14 +169,62 @@ defmodule SvcWeb.UserLive.Index do
         </.form>
       </div>
 
-      <.table id="users" rows={@users}>
-        <:col :let={u} label="ФИО">{u.full_name}</:col>
-        <:col :let={u} label="Логин">{u.username}</:col>
-        <:col :let={u} label="Роль">{role_label(u.role)}</:col>
-        <:col :let={u} label="2FA">{if u.totp_enabled, do: "✓", else: "—"}</:col>
-        <:col :let={u} label="Статус">{u.status}</:col>
-      </.table>
+      <div class="rounded-xl border border-base-300 bg-base-100/50 overflow-hidden">
+        <table class="w-full text-sm">
+          <thead>
+            <tr class="text-left text-xs uppercase tracking-wider text-base-content/40 border-b border-base-300">
+              <th class="font-medium px-5 py-2.5">Сотрудник</th>
+              <th class="font-medium px-5 py-2.5">Логин</th>
+              <th class="font-medium px-5 py-2.5">Роль</th>
+              <th class="font-medium px-5 py-2.5">2FA</th>
+              <th class="font-medium px-5 py-2.5">Статус</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-base-300/50">
+            <tr :for={u <- @users} class="hover:bg-base-200/40 transition">
+              <td class="px-5 py-3">
+                <div class="flex items-center gap-3">
+                  <.avatar user={u} />
+                  <span class="font-medium">{u.full_name}</span>
+                </div>
+              </td>
+              <td class="px-5 py-3 tabular text-base-content/65">{u.username}</td>
+              <td class="px-5 py-3">
+                <span class="text-xs px-2 py-0.5 rounded-full bg-base-200 text-base-content/75">
+                  {role_label(u.role)}
+                </span>
+              </td>
+              <td class="px-5 py-3">
+                <span :if={u.totp_enabled} class="inline-flex items-center gap-1 text-xs text-success">
+                  <.icon name="hero-shield-check" class="size-3.5" /> вкл
+                </span>
+                <span :if={!u.totp_enabled} class="text-xs text-base-content/30">—</span>
+              </td>
+              <td class="px-5 py-3">
+                <span class={["text-xs", u.status == :active && "text-success", u.status != :active && "text-base-content/40"]}>
+                  {u.status}
+                </span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
     </Layouts.app>
     """
+  end
+
+  attr :user, :map, required: true
+
+  defp avatar(assigns) do
+    ~H"""
+    <span class="grid place-items-center size-8 rounded-full bg-primary/15 text-primary text-xs font-medium ring-1 ring-primary/15 overflow-hidden shrink-0">
+      <img :if={@user.photo_path} src={@user.photo_path} class="w-full h-full object-cover" alt="" />
+      <span :if={!@user.photo_path}>{initials(@user.full_name)}</span>
+    </span>
+    """
+  end
+
+  defp initials(name) do
+    name |> String.split() |> Enum.take(2) |> Enum.map_join(&String.first/1)
   end
 end
