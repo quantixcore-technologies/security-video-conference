@@ -18,6 +18,19 @@ config :svc, Oban,
   repo: Svc.Repo,
   queues: [default: 10, attendance: 5, notifications: 5]
 
+# Cloak — шифрование полей at-rest (totp_secret). CLOAK_KEY из env в prod (CRED-CHECK).
+config :svc, Svc.Vault,
+  ciphers: [
+    default:
+      {Cloak.Ciphers.AES.GCM,
+       tag: "AES.GCM.V1",
+       key:
+         Base.decode64!(
+           System.get_env("CLOAK_KEY") || "dGhpc19pc19hX2Rldl9rZXlfMzJfYnl0ZXNfbG9uZyE="
+         ),
+       iv_length: 12}
+  ]
+
 # Configure the mailer
 #
 # By default it uses the "Local" adapter which stores the emails

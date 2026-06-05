@@ -51,7 +51,9 @@ defmodule Svc.MixProject do
       {:argon2_elixir, "~> 4.1"},
       {:nimble_totp, "~> 1.0"},
       {:oban, "~> 2.23"},
-      {:bodyguard, "~> 2.4"}
+      {:bodyguard, "~> 2.4"},
+      # шифрование чувствительных полей at-rest (totp_secret, D-010/D-014)
+      {:cloak_ecto, "~> 1.3"}
     ]
   end
 

@@ -8,6 +8,7 @@ defmodule Svc.Application do
   @impl true
   def start(_type, _args) do
     children = [
+      Svc.Vault,
       Svc.Repo,
       {DNSCluster, query: Application.get_env(:svc, :dns_cluster_query) || :ignore},
       {Phoenix.PubSub, name: Svc.PubSub},

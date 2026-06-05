@@ -19,7 +19,7 @@ defmodule Svc.Accounts.User do
     field :photo_path, :string
 
     field :role, Ecto.Enum, values: @roles, default: :employee
-    field :totp_secret, :binary, redact: true
+    field :totp_secret, Svc.Encrypted.Binary, redact: true
     field :totp_enabled, :boolean, default: false
     field :status, Ecto.Enum, values: @statuses, default: :active
     field :last_login_at, :utc_datetime_usec
