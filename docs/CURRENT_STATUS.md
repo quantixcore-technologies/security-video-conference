@@ -1,36 +1,43 @@
 # Current Status — Security Video Conference
 
-> Обновлять в конце каждой сессии. Снимок состояния для следующего агента/сессии.
+> Снимок состояния для следующей сессии / после /compact. Обновлять в конце сессии.
 
-## Срез 1 ПОЛНОСТЬЮ ГОТОВ и работает вживую ✅ (E0+E1+E2+UI+LiveKit+полировка)
+## Срез 1 ГОТОВ + редизайн + профиль ✅ (работает вживую)
 
-### Сессия 2026-06-05 (S1) — с нуля до живого Среза 1
-**Построено и доказано вживую:**
-- ✅ Дизайн: 14 ADR, мастер-план E0–E7, разведка 4 отрядов, 19 доков + 8 спеков.
-- ✅ **E0** Фундамент: Orgs, Accounts (Argon2+TOTP), Authz (RBAC), Audit, LiveView-админка.
-- ✅ **E1** Ядро: Meetings, LiveKit (JWT), webhook, join-API, **живой видеозвонок** (docker LiveKit).
-- ✅ **E2** Посещаемость: ростер, журнал (статусы), Oban, записи (Egress-сущность), **журнал-UI**.
-- ✅ **Полировка:** SVC-navbar, фото-upload (enrollment), **totp_secret шифрование at-rest (Cloak)**.
-- ✅ **104 теста, 0 failures.** 22 коммита на git.n3xt.uz/legion-cyber-arena (private).
-- ✅ **Проверено в браузере:** login→dashboard→встречи→журнал; реальный звонок → webhook → авто-attendance.
+### Сессия 2026-06-05 (S1) — с нуля до живого продукта с enterprise-UI
+- ✅ **E0** Фундамент: Orgs(иерархия), Accounts(Argon2+TOTP+lockout), Authz(RBAC scoping), Audit(append-only), LiveView-админка.
+- ✅ **E1** Ядро: LiveKit self-host(docker), Svc.LiveKit(JWT), Meetings, webhook(HMAC), join-API, **живой видеозвонок** (dev: `/admin/meetings/:id/call`).
+- ✅ **E2** Посещаемость: ростер, attendance(статусы), Oban FinalizeWorker, Recordings(Egress-сущность), журнал-UI.
+- ✅ **Редизайн «Secure Operations»**: тёмная slate+emerald, IBM Plex, sidebar+heroicons, все 8 страниц переделаны (login/totp/dashboard/users/meetings/show/call), фото-upload, totp Cloak-шифрование, **профиль в sidebar везде** + профиль-карточка на dashboard, карточки участников звонка (аватары).
+- ✅ **31 коммит · 104 теста 0 failures**, запушено git.n3xt.uz/legion-cyber-arena (private).
+- ✅ Доказано вживую: login→dashboard→встречи→журнал; реальный звонок 2 участника→webhook→авто-посещаемость.
 
-**Окружение:** Elixir 1.19.5/OTP 28 · Rust 1.93 · Node 25 · Docker 29.
-**⚠️ Локально:** Postgres docker `svc-postgres` :5434 (`DB_PORT=5434`). LiveKit docker :7880
-(`docker compose -f deploy/livekit/docker-compose.yml up -d`). phx.server :4000 (`admin`/`AdminPass12345`).
-**Oban v14. Cloak dev-key — в prod из env `CLOAK_KEY`.**
+## ⏭️ СЛЕДУЮЩИЙ КВЕСТ (выбран Otabek): Расширенные контролы звонка
+Файл: `apps/svc_web/lib/svc_web/controllers/call_html/show.html.heex` (standalone HTML+LiveKit JS).
+Добавить во время звонка:
+- screen-share (`room.localParticipant.setScreenShareEnabled(true)`) + кнопка
+- боковая панель списка участников + индикатор говорящего (ActiveSpeakersChanged)
+- mute-индикаторы каждого участника (TrackMuted/Unmuted)
+- fullscreen, выбор камеры/микрофона (enumerateDevices)
+- чат в звонке (room.localParticipant.publishData)
+> Спека: `docs/superpowers/specs/E5-anti-capture.md` (звонок-клиент) + backlog.
 
-### Что НЕ сделано (следующие фазы)
-- **Tauri-клиент** (prod-видео с anti-capture, требует Windows). DEV-звонок пока через браузер `/admin/meetings/:id/call`.
-- **Реальный LiveKit Egress** (запись) — TODO (сущность есть).
-- **E3** планирование/уведомления · **E4** CRM/Kanban · **E5** анти-захват · **E6** ML-liveness · **E7** сеть/гео.
-
-### Команды
+## ⚠️ Локальный запуск (КРИТИЧНО)
+```bash
+docker compose -f deploy/livekit/docker-compose.yml up -d   # LiveKit :7880
+# Postgres docker svc-postgres :5434 (brew-postgres@17 на 5432!) — префикс DB_PORT=5434
+DB_PORT=5434 mix phx.server                                  # :4000, admin/AdminPass12345
+DB_PORT=5434 mix test                                        # 104 теста
+DB_PORT=5434 mix run apps/svc/priv/repo/seeds.exs            # демо-данные (6 юзеров)
 ```
-docker compose -f deploy/livekit/docker-compose.yml up -d   # LiveKit
-DB_PORT=5434 mix phx.server                                  # Phoenix
-DB_PORT=5434 mix test                                        # тесты
-DB_PORT=5434 mix run apps/svc/priv/repo/seeds.exs            # демо-данные
-```
+**Oban v14. Cloak dev-key в config.exs, prod из env CLOAK_KEY.**
+**Тесты после redesign проверяют href (`/admin/users/new`), не текст кнопок.**
 
-### Открытые вопросы заказчику
-Комплаенс O'zDSt/СКЗИ · парк Windows · каналы уведомлений E3 · смысл «CRM» (E4) · mobile-стек · OneID/E-IMZO.
+## 📋 Backlog (docs/BACKLOG.md — feedback Otabek)
+i18n RU/UZ/EN · Tauri-клиент · реальный LiveKit Egress · E3/E4/E5/E6/E7 · OneID/E-IMZO.
+
+## ❓ Открытые вопросы заказчику
+Комплаенс O'zDSt/СКЗИ · парк Windows · каналы уведомлений E3 · смысл «CRM»(E4) · mobile-стек · хранение записей.
+
+## 📚 Ключевые доки
+ADR: `docs/ARCHITECTURE_DECISIONS.md` (14) · разведка: `docs/research/` (4) · спеки: `docs/superpowers/specs/E0-E7` · итоги: `docs/sessions/2026-06-05.md` · `CLAUDE.md`(навигация).
