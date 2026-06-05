@@ -12,15 +12,15 @@
 - ✅ **31 коммит · 104 теста 0 failures**, запушено git.n3xt.uz/legion-cyber-arena (private).
 - ✅ Доказано вживую: login→dashboard→встречи→журнал; реальный звонок 2 участника→webhook→авто-посещаемость.
 
-## ⏭️ СЛЕДУЮЩИЙ КВЕСТ (выбран Otabek): Расширенные контролы звонка
-Файл: `apps/svc_web/lib/svc_web/controllers/call_html/show.html.heex` (standalone HTML+LiveKit JS).
-Добавить во время звонка:
-- screen-share (`room.localParticipant.setScreenShareEnabled(true)`) + кнопка
-- боковая панель списка участников + индикатор говорящего (ActiveSpeakersChanged)
-- mute-индикаторы каждого участника (TrackMuted/Unmuted)
-- fullscreen, выбор камеры/микрофона (enumerateDevices)
-- чат в звонке (room.localParticipant.publishData)
-> Спека: `docs/superpowers/specs/E5-anti-capture.md` (звонок-клиент) + backlog.
+## ✅ Сделано после редизайна (38 коммитов)
+- Расширенные контролы звонка (screen-share, участники+говорящий, чат, mute-индикаторы, fullscreen, выбор устройств).
+- Профиль-рефактор: top-right avatar dropdown + страница `/admin/profile` (убрано дублирование).
+- **ВСЕ 4 P0 из UX-аудита закрыты** (Слайсы A/B/C): управление сотрудниками (edit/deactivate/reset + карточка `users/:id`) · управление встречами (edit/end) · 2FA enrollment (QR через eqrcode).
+
+## ⏭️ СЛЕДУЮЩИЙ КВЕСТ: P1/P2 из `docs/UX-AUDIT.md`
+P1: mobile-меню (бургер вместо иконок) · loading-состояния (skeleton) · повтор нового пароля.
+P2: поиск/фильтр/пагинация таблиц (сотни сотрудников) · audit-фильтр · i18n RU/UZ/EN · a11y.
+> `data-confirm` для опасных действий уже добавлен (deactivate/reset/end).
 
 ## ⚠️ Локальный запуск (КРИТИЧНО)
 ```bash
