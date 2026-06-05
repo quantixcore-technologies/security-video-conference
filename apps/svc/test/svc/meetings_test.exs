@@ -176,4 +176,45 @@ defmodule Svc.MeetingsTest do
       assert Svc.Notifications.unread_count(emp.id) == 0
     end
   end
+
+  describe "recurring (E3)" do
+    defp future_start, do: DateTime.add(DateTime.utc_now(), 86_400, :second)
+
+    test "create_recurring создаёт серию с общим recurrence_group", %{manager: m} do
+      assert {:ok, group, meetings} =
+               Meetings.create_recurring(m, %{title: "Планёрка", scheduled_start: future_start()}, "weekly", 4)
+
+      assert length(meetings) == 4
+      assert Enum.all?(meetings, &(&1.recurrence_group == group))
+    end
+
+    test "weekly — экземпляры разнесены по неделям", %{manager: m} do
+      {:ok, _g, [m1, m2 | _]} =
+        Meetings.create_recurring(m, %{title: "Планёрка", scheduled_start: future_start()}, "weekly", 3)
+
+      assert DateTime.diff(m2.scheduled_start, m1.scheduled_start, :second) == 7 * 86_400
+    end
+
+    test "daily — шаг сутки и сохраняется длительность", %{manager: m} do
+      start = future_start()
+      finish = DateTime.add(start, 3600, :second)
+
+      {:ok, _g, [m1, m2 | _]} =
+        Meetings.create_recurring(m, %{title: "Планёрка", scheduled_start: start, scheduled_end: finish}, "daily", 3)
+
+      assert DateTime.diff(m2.scheduled_start, m1.scheduled_start, :second) == 86_400
+      assert DateTime.diff(m1.scheduled_end, m1.scheduled_start, :second) == 3600
+    end
+
+    test "без scheduled_start → no_start", %{manager: m} do
+      assert {:error, :no_start} = Meetings.create_recurring(m, %{title: "Планёрка"}, "daily", 3)
+    end
+
+    test "ограничено 52 повторениями", %{manager: m} do
+      {:ok, _g, meetings} =
+        Meetings.create_recurring(m, %{title: "Планёрка", scheduled_start: future_start()}, "daily", 100)
+
+      assert length(meetings) == 52
+    end
+  end
 end

@@ -50,6 +50,53 @@ defmodule Svc.Meetings do
     :ok
   end
 
+  @max_occurrences 52
+
+  @doc """
+  Создаёт серию повторяющихся встреч (E3). freq ∈ "daily"|"weekly", count повторений.
+  Каждый экземпляр — обычная встреча с общим `recurrence_group` (напоминания планируются
+  для каждой). Требует scheduled_start. Возвращает {:ok, group, [meeting]} | {:error, reason}.
+  """
+  def create_recurring(%User{} = organizer, attrs, freq, count)
+      when freq in ["daily", "weekly"] and is_integer(count) and count > 1 do
+    count = min(count, @max_occurrences)
+    start = fetch_start(attrs)
+
+    if is_nil(start) do
+      {:error, :no_start}
+    else
+      group = Ecto.UUID.generate()
+      duration = duration_seconds(attrs)
+
+      results =
+        for i <- 0..(count - 1) do
+          inst_start = shift(start, freq, i)
+
+          attrs
+          |> Map.put(:scheduled_start, inst_start)
+          |> Map.put(:scheduled_end, duration && DateTime.add(inst_start, duration, :second))
+          |> Map.put(:recurrence_group, group)
+          |> then(&create_meeting(organizer, &1))
+        end
+
+      case Enum.find(results, &match?({:error, _}, &1)) do
+        nil -> {:ok, group, Enum.map(results, fn {:ok, m} -> m end)}
+        error -> error
+      end
+    end
+  end
+
+  defp fetch_start(attrs), do: Map.get(attrs, :scheduled_start) || Map.get(attrs, "scheduled_start")
+
+  defp duration_seconds(attrs) do
+    s = fetch_start(attrs)
+    e = Map.get(attrs, :scheduled_end) || Map.get(attrs, "scheduled_end")
+    if s && e, do: DateTime.diff(e, s, :second), else: nil
+  end
+
+  defp shift(dt, "daily", n), do: DateTime.add(dt, n * 86_400, :second)
+  defp shift(dt, "weekly", n), do: DateTime.add(dt, n * 7 * 86_400, :second)
+
   def get_meeting!(org_id, id), do: Repo.get_by!(Meeting, id: id, org_id: org_id)
 
   def get_meeting_by_room(room_name) do

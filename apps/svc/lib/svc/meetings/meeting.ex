@@ -18,6 +18,7 @@ defmodule Svc.Meetings.Meeting do
     field :livekit_room_name, :string
     field :recording_policy, Ecto.Enum, values: @recording_policies, default: :off
     field :late_threshold_seconds, :integer, default: 300
+    field :recurrence_group, :string
 
     belongs_to :organization, Svc.Orgs.Organization, foreign_key: :org_id
     belongs_to :organizer, Svc.Accounts.User, foreign_key: :organizer_id
@@ -32,7 +33,8 @@ defmodule Svc.Meetings.Meeting do
     meeting
     |> cast(attrs, [
       :org_id, :organizer_id, :title, :type, :scheduled_start,
-      :scheduled_end, :recording_policy, :late_threshold_seconds, :livekit_room_name
+      :scheduled_end, :recording_policy, :late_threshold_seconds, :livekit_room_name,
+      :recurrence_group
     ])
     |> validate_required([:org_id, :organizer_id, :title, :livekit_room_name])
     |> validate_length(:title, min: 2, max: 300)

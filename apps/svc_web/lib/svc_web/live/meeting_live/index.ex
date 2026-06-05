@@ -69,10 +69,21 @@ defmodule SvcWeb.MeetingLive.Index do
       scheduled_end: parse_dt(params["scheduled_end"])
     }
 
+    freq = params["repeat"] || "none"
+    count = parse_count(params["repeat_count"])
+
+    if freq in ["daily", "weekly"] and attrs.scheduled_start && count > 1 do
+      save_recurring(socket, actor, attrs, freq, count, params["invitee_ids"])
+    else
+      save_single(socket, actor, attrs, params["invitee_ids"])
+    end
+  end
+
+  defp save_single(socket, actor, attrs, invitee_ids) do
     case Meetings.create_meeting(actor, attrs) do
       {:ok, meeting} ->
-        add_roster(meeting, params["invitee_ids"])
-        notify_invitees(meeting, params["invitee_ids"], actor)
+        add_roster(meeting, invitee_ids)
+        notify_invitees(meeting, invitee_ids, actor)
 
         {:noreply,
          socket
@@ -84,6 +95,33 @@ defmodule SvcWeb.MeetingLive.Index do
 
       {:error, :unauthorized} ->
         {:noreply, put_flash(socket, :error, "Недостаточно прав.")}
+    end
+  end
+
+  defp save_recurring(socket, actor, attrs, freq, count, invitee_ids) do
+    case Meetings.create_recurring(actor, attrs, freq, count) do
+      {:ok, _group, meetings} ->
+        Enum.each(meetings, fn m ->
+          add_roster(m, invitee_ids)
+          notify_invitees(m, invitee_ids, actor)
+        end)
+
+        {:noreply,
+         socket
+         |> put_flash(:info, "Создана серия из #{length(meetings)} встреч.")
+         |> push_navigate(to: ~p"/admin/meetings")}
+
+      {:error, _} ->
+        {:noreply, put_flash(socket, :error, "Не удалось создать серию встреч.")}
+    end
+  end
+
+  defp parse_count(nil), do: 1
+
+  defp parse_count(s) do
+    case Integer.parse(to_string(s)) do
+      {n, _} -> n
+      _ -> 1
     end
   end
 
@@ -215,6 +253,28 @@ defmodule SvcWeb.MeetingLive.Index do
             label="Запись"
             options={policy_options()}
           />
+
+          <div class="grid grid-cols-2 gap-3">
+            <label class="block">
+              <span class="text-sm font-medium mb-1 block">Повтор</span>
+              <select name="meeting[repeat]" class="select select-bordered w-full">
+                <option value="none">Не повторять</option>
+                <option value="daily">Ежедневно</option>
+                <option value="weekly">Еженедельно</option>
+              </select>
+            </label>
+            <label class="block">
+              <span class="text-sm font-medium mb-1 block">Повторений</span>
+              <input
+                type="number"
+                name="meeting[repeat_count]"
+                value="1"
+                min="1"
+                max="52"
+                class="input input-bordered w-full"
+              />
+            </label>
+          </div>
 
           <fieldset class="border border-base-300 rounded p-3">
             <legend class="text-sm font-medium px-1">Ростер (ожидаемые участники)</legend>
