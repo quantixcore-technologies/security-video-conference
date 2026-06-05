@@ -13,6 +13,16 @@
     <link rel="stylesheet" href={~p"/assets/css/app.css"} />
   </head>
   <body class="app-bg h-screen flex flex-col overflow-hidden">
+    <%!-- E5: трассируемый per-user watermark (детеррент + идентификация при утечке, D-013) --%>
+    <svg class="fixed inset-0 w-full h-full pointer-events-none z-50 select-none" style="opacity:0.07">
+      <defs>
+        <pattern id="wm" width="360" height="190" patternUnits="userSpaceOnUse" patternTransform="rotate(-28)">
+          <text id="wm-text" x="0" y="44" fill="white" font-size="15" style="font-family:'IBM Plex Mono',monospace"></text>
+        </pattern>
+      </defs>
+      <rect width="100%" height="100%" fill="url(#wm)" />
+    </svg>
+
     <header class="flex items-center justify-between px-5 h-14 border-b border-base-300 bg-base-100 shrink-0">
       <div class="flex items-center gap-2.5 min-w-0">
         <.icon name="hero-shield-check" class="size-5 text-primary shrink-0" />
@@ -85,7 +95,10 @@
       </aside>
     </div>
 
-    <footer class="flex items-center justify-center gap-2.5 h-20 border-t border-base-300 bg-base-100 shrink-0 px-4">
+    <footer class="relative flex items-center justify-center gap-2.5 h-20 border-t border-base-300 bg-base-100 shrink-0 px-4">
+      <span class="hidden md:inline-flex absolute left-4 items-center gap-1.5 text-xs text-base-content/40">
+        <.icon name="hero-lock-closed" class="size-3.5" /> Запись запрещена · контент watermarked
+      </span>
       <button id="btn-mic" onclick="toggleMic()" title="Микрофон"
         class="grid place-items-center size-12 rounded-full bg-base-200 hover:bg-base-300 transition">
         <.icon name="hero-microphone" class="size-5" />
@@ -131,6 +144,15 @@
       const url = "<%= @livekit_url %>";
       const token = "<%= @token %>";
       const watermark = "<%= @current_user.full_name %>";
+
+      // E5: трассируемый watermark (ФИО + ID пользователя + время сессии)
+      function updateWatermark() {
+        const now = new Date().toISOString().slice(0, 16).replace("T", " ");
+        const el = document.getElementById("wm-text");
+        if (el) el.textContent = watermark + " · #<%= @current_user.id %> · " + now + " UTC";
+      }
+      updateWatermark();
+      setInterval(updateWatermark, 30000);
       const grid = document.getElementById("grid");
       const statusText = document.getElementById("status-text");
       const statusDot = document.getElementById("status-dot");
