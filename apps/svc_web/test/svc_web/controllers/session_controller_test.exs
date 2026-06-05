@@ -19,7 +19,7 @@ defmodule SvcWeb.SessionControllerTest do
   end
 
   test "GET /login рендерит форму входа", %{conn: conn} do
-    assert get(conn, ~p"/login") |> html_response(200) =~ "Вход в систему"
+    assert get(conn, ~p"/login") |> html_response(200) =~ "Security Video Conference"
   end
 
   test "POST /login с верным паролем (без 2FA) → /admin + сессия", %{conn: conn} do
