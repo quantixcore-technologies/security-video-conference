@@ -299,8 +299,9 @@ defmodule SvcWeb.UserLive.Index do
                 <span :if={!u.totp_enabled} class="text-xs text-base-content/30">—</span>
               </td>
               <td class="px-5 py-3">
-                <span class={["text-xs", u.status == :active && "text-success", u.status != :active && "text-base-content/40"]}>
-                  {u.status}
+                <span class={["inline-flex items-center gap-1.5 text-xs", u.status == :active && "text-success", u.status != :active && "text-base-content/45"]}>
+                  <span class="size-1.5 rounded-full bg-current"></span>
+                  {status_label(u.status)}
                 </span>
               </td>
             </tr>
@@ -344,7 +345,7 @@ defmodule SvcWeb.UserLive.Index do
   defp avatar(assigns) do
     ~H"""
     <span class="grid place-items-center size-8 rounded-full bg-primary/15 text-primary text-xs font-medium ring-1 ring-primary/15 overflow-hidden shrink-0">
-      <img :if={@user.photo_path} src={@user.photo_path} class="w-full h-full object-cover" alt="" />
+      <img :if={@user.photo_path} src={@user.photo_path} class="w-full h-full object-cover" alt={@user.full_name} />
       <span :if={!@user.photo_path}>{initials(@user.full_name)}</span>
     </span>
     """
@@ -353,4 +354,7 @@ defmodule SvcWeb.UserLive.Index do
   defp initials(name) do
     name |> String.split() |> Enum.take(2) |> Enum.map_join(&String.first/1)
   end
+
+  defp status_label(:active), do: "Активен"
+  defp status_label(:disabled), do: "Отключён"
 end

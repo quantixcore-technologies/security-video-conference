@@ -53,7 +53,7 @@ defmodule SvcWeb.DashboardLive do
           >
             <span class="flex items-center gap-2.5 min-w-0">
               <span class="size-1.5 rounded-full bg-primary/60 shrink-0"></span>
-              <span class="tabular text-base-content/80 truncate">{log.action}</span>
+              <span class="text-base-content/80 truncate">{action_label(log.action)}</span>
             </span>
             <span class="tabular text-xs text-base-content/40 shrink-0 ml-3">
               {Calendar.strftime(log.inserted_at, "%d.%m %H:%M")}
@@ -90,4 +90,24 @@ defmodule SvcWeb.DashboardLive do
       _ -> full_name
     end
   end
+
+  defp action_label("login_success"), do: "Вход в систему"
+  defp action_label("login_failed"), do: "Неудачный вход"
+  defp action_label("logout"), do: "Выход из системы"
+  defp action_label("user_create"), do: "Создан сотрудник"
+  defp action_label("user_update"), do: "Изменён сотрудник"
+  defp action_label("user_set_status"), do: "Смена статуса сотрудника"
+  defp action_label("user_reset_password"), do: "Сброс пароля сотрудника"
+  defp action_label("password_changed"), do: "Смена пароля"
+  defp action_label("totp_enabled"), do: "Включена 2FA"
+  defp action_label("totp_disabled"), do: "Отключена 2FA"
+  defp action_label("journal_view"), do: "Просмотр журнала"
+  defp action_label("meeting_join"), do: "Вход во встречу"
+  defp action_label("meeting_update"), do: "Изменена встреча"
+  defp action_label("meeting_end"), do: "Завершена встреча"
+  defp action_label("livekit.room_started"), do: "Звонок начат"
+  defp action_label("livekit.room_finished"), do: "Звонок завершён"
+  defp action_label("livekit.participant_joined"), do: "Участник вошёл в звонок"
+  defp action_label("livekit.participant_left"), do: "Участник вышел из звонка"
+  defp action_label(other), do: other
 end
