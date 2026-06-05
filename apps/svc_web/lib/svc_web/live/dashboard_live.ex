@@ -2,19 +2,18 @@ defmodule SvcWeb.DashboardLive do
   @moduledoc "Панель управления админки (E0)."
   use SvcWeb, :live_view
 
-  alias Svc.{Authz, Audit}
+  alias Svc.{Authz, Audit, Meetings}
 
   @impl true
   def mount(_params, _session, socket) do
     user = socket.assigns.current_user
-
-    recent_audit =
-      if Authz.org_wide?(user), do: Audit.list_logs(user.org_id, limit: 10), else: []
+    recent_audit = if Authz.org_wide?(user), do: Audit.list_logs(user.org_id, limit: 8), else: []
 
     {:ok,
      assign(socket,
        page_title: "Панель управления",
        visible_users: length(Authz.visible_user_ids(user)),
+       meetings_count: length(Meetings.list_meetings(user.org_id)),
        recent_audit: recent_audit
      )}
   end
@@ -22,45 +21,75 @@ defmodule SvcWeb.DashboardLive do
   @impl true
   def render(assigns) do
     ~H"""
-    <Layouts.app flash={@flash}>
-      <.header>
-        Панель управления
-        <:subtitle>
-          {@current_user.full_name} · {role_label(@current_user.role)}
-        </:subtitle>
-        <:actions>
-          <.link href={~p"/logout"} method="delete" class="btn btn-ghost btn-sm">Выйти</.link>
-        </:actions>
-      </.header>
-
-      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-6">
-        <div class="card bg-base-200 p-5">
-          <div class="text-sm opacity-60">Видимых сотрудников</div>
-          <div class="text-3xl font-bold">{@visible_users}</div>
+    <Layouts.app flash={@flash} active="dashboard">
+      <div class="flex items-start justify-between gap-4 mb-8">
+        <div>
+          <h1 class="text-2xl font-semibold tracking-tight">Панель управления</h1>
+          <p class="text-sm text-base-content/55 mt-1">Обзор организации и активности</p>
         </div>
-        <div class="card bg-base-200 p-5 flex flex-col items-center justify-center gap-2">
-          <.link navigate={~p"/admin/users"} class="btn btn-primary btn-sm w-full">
-            Сотрудники <span aria-hidden="true">&rarr;</span>
-          </.link>
-          <.link navigate={~p"/admin/meetings"} class="btn btn-primary btn-sm w-full">
-            Встречи <span aria-hidden="true">&rarr;</span>
-          </.link>
+        <div class="flex items-center gap-2 rounded-full border border-base-300 bg-base-100/50 pl-3.5 pr-1.5 py-1.5">
+          <span class="text-sm">{@current_user.full_name}</span>
+          <span class="text-[11px] px-2 py-0.5 rounded-full bg-primary/10 text-primary font-medium">
+            {role_label(@current_user.role)}
+          </span>
         </div>
       </div>
 
-      <div :if={@recent_audit != []} class="mt-8">
-        <h3 class="font-semibold mb-2">Последние события (аудит)</h3>
-        <ul class="text-sm space-y-1">
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <.metric icon="hero-users" label="Сотрудники" value={@visible_users} hint="видимых по вашей роли" />
+        <.metric icon="hero-video-camera" label="Встречи" value={@meetings_count} hint="всего в организации" />
+        <.link
+          navigate={~p"/admin/meetings"}
+          class="group rounded-xl border border-primary/20 bg-primary/[0.07] p-5 flex flex-col justify-between hover:bg-primary/10 transition"
+        >
+          <.icon name="hero-plus-circle" class="size-5 text-primary" />
+          <span class="mt-3 text-sm font-medium text-primary flex items-center gap-1">
+            К встречам
+            <.icon name="hero-arrow-right" class="size-4 group-hover:translate-x-0.5 transition" />
+          </span>
+        </.link>
+      </div>
+
+      <div :if={@recent_audit != []} class="mt-8 rounded-xl border border-base-300 bg-base-100/50 overflow-hidden">
+        <div class="px-5 py-3 border-b border-base-300 flex items-center gap-2">
+          <.icon name="hero-clock" class="size-4 text-base-content/45" />
+          <span class="text-sm font-medium">Журнал аудита</span>
+          <span class="text-xs text-base-content/40">· последние события</span>
+        </div>
+        <ul class="divide-y divide-base-300/50">
           <li
             :for={log <- @recent_audit}
-            class="flex justify-between border-b border-base-300 py-1"
+            class="px-5 py-2.5 flex items-center justify-between text-sm hover:bg-base-200/40 transition"
           >
-            <span class="font-mono">{log.action}</span>
-            <span class="opacity-50">{Calendar.strftime(log.inserted_at, "%d.%m %H:%M")}</span>
+            <span class="flex items-center gap-2.5 min-w-0">
+              <span class="size-1.5 rounded-full bg-primary/60 shrink-0"></span>
+              <span class="tabular text-base-content/80 truncate">{log.action}</span>
+            </span>
+            <span class="tabular text-xs text-base-content/40 shrink-0 ml-3">
+              {Calendar.strftime(log.inserted_at, "%d.%m %H:%M")}
+            </span>
           </li>
         </ul>
       </div>
     </Layouts.app>
+    """
+  end
+
+  attr :icon, :string, required: true
+  attr :label, :string, required: true
+  attr :value, :integer, required: true
+  attr :hint, :string, required: true
+
+  defp metric(assigns) do
+    ~H"""
+    <div class="rounded-xl border border-base-300 bg-base-100/50 p-5">
+      <div class="flex items-center justify-between">
+        <span class="text-xs uppercase tracking-wider text-base-content/45">{@label}</span>
+        <.icon name={@icon} class="size-4 text-base-content/35" />
+      </div>
+      <div class="mt-2 text-3xl font-semibold tabular">{@value}</div>
+      <div class="text-xs text-base-content/45 mt-1">{@hint}</div>
+    </div>
     """
   end
 

@@ -112,7 +112,7 @@ defmodule SvcWeb.UserLive.Index do
   @impl true
   def render(assigns) do
     ~H"""
-    <Layouts.app flash={@flash}>
+    <Layouts.app flash={@flash} active="users">
       <.header>
         Сотрудники
         <:subtitle>Список ограничен вашей ролью (department-scoping, D-007)</:subtitle>

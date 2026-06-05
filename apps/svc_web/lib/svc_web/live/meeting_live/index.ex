@@ -109,7 +109,7 @@ defmodule SvcWeb.MeetingLive.Index do
   @impl true
   def render(assigns) do
     ~H"""
-    <Layouts.app flash={@flash}>
+    <Layouts.app flash={@flash} active="meetings">
       <.header>
         Встречи
         <:actions>

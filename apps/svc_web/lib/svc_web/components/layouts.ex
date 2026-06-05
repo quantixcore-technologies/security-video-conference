@@ -33,35 +33,84 @@ defmodule SvcWeb.Layouts do
 
   slot :inner_block, required: true
 
+  attr :active, :string, default: nil, doc: "активный раздел: dashboard|users|meetings"
+
   def app(assigns) do
     ~H"""
-    <header class="navbar bg-base-200 border-b border-base-300 px-4 sm:px-6 lg:px-8">
-      <div class="flex-1">
-        <.link navigate={~p"/admin"} class="flex items-center gap-2">
-          <span class="text-lg font-bold text-primary">🛡️ SVC</span>
-          <span class="hidden sm:inline text-xs opacity-50">Security Video Conference</span>
+    <div class="flex min-h-screen">
+      <aside class="hidden lg:flex w-64 flex-col border-r border-base-300 bg-base-100">
+        <.link navigate={~p"/admin"} class="px-5 py-5 flex items-center gap-3 border-b border-base-300">
+          <span class="grid place-items-center size-9 rounded-xl bg-primary/15 text-primary ring-1 ring-primary/20">
+            <.icon name="hero-shield-check" class="size-5" />
+          </span>
+          <span class="leading-tight">
+            <span class="block font-semibold text-sm tracking-tight">SVC</span>
+            <span class="block text-[11px] text-base-content/50">Security Conference</span>
+          </span>
         </.link>
-      </div>
-      <div class="flex-none">
-        <ul class="flex items-center gap-1">
-          <li><.link navigate={~p"/admin"} class="btn btn-ghost btn-sm">Панель</.link></li>
-          <li><.link navigate={~p"/admin/users"} class="btn btn-ghost btn-sm">Сотрудники</.link></li>
-          <li><.link navigate={~p"/admin/meetings"} class="btn btn-ghost btn-sm">Встречи</.link></li>
-          <li><.theme_toggle /></li>
-          <li>
-            <.link href={~p"/logout"} method="delete" class="btn btn-ghost btn-sm">Выйти</.link>
-          </li>
-        </ul>
-      </div>
-    </header>
 
-    <main class="px-4 py-20 sm:px-6 lg:px-8">
-      <div class="mx-auto max-w-2xl space-y-4">
-        {render_slot(@inner_block)}
+        <nav class="flex-1 p-3 space-y-0.5">
+          <.nav_item navigate={~p"/admin"} icon="hero-squares-2x2" label="Панель" on={@active == "dashboard"} />
+          <.nav_item navigate={~p"/admin/users"} icon="hero-users" label="Сотрудники" on={@active == "users"} />
+          <.nav_item navigate={~p"/admin/meetings"} icon="hero-video-camera" label="Встречи" on={@active == "meetings"} />
+        </nav>
+
+        <div class="p-3 border-t border-base-300 flex items-center justify-between">
+          <.theme_toggle />
+          <.link
+            href={~p"/logout"}
+            method="delete"
+            class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm text-base-content/60 hover:text-error hover:bg-error/10 transition"
+          >
+            <.icon name="hero-arrow-right-start-on-rectangle" class="size-4" /> Выйти
+          </.link>
+        </div>
+      </aside>
+
+      <div class="flex-1 flex flex-col min-w-0">
+        <header class="lg:hidden flex items-center justify-between px-4 h-14 border-b border-base-300 bg-base-100">
+          <.link navigate={~p"/admin"} class="flex items-center gap-2">
+            <.icon name="hero-shield-check" class="size-5 text-primary" />
+            <span class="font-semibold text-sm">SVC</span>
+          </.link>
+          <nav class="flex items-center gap-1">
+            <.link navigate={~p"/admin"} class="btn btn-ghost btn-sm btn-square"><.icon name="hero-squares-2x2" class="size-4" /></.link>
+            <.link navigate={~p"/admin/users"} class="btn btn-ghost btn-sm btn-square"><.icon name="hero-users" class="size-4" /></.link>
+            <.link navigate={~p"/admin/meetings"} class="btn btn-ghost btn-sm btn-square"><.icon name="hero-video-camera" class="size-4" /></.link>
+            <.link href={~p"/logout"} method="delete" class="btn btn-ghost btn-sm btn-square"><.icon name="hero-arrow-right-start-on-rectangle" class="size-4" /></.link>
+          </nav>
+        </header>
+
+        <main class="flex-1 px-5 sm:px-8 py-8">
+          <div class="mx-auto max-w-5xl">
+            {render_slot(@inner_block)}
+          </div>
+        </main>
       </div>
-    </main>
+    </div>
 
     <.flash_group flash={@flash} />
+    """
+  end
+
+  attr :navigate, :string, required: true
+  attr :icon, :string, required: true
+  attr :label, :string, required: true
+  attr :on, :boolean, default: false
+
+  defp nav_item(assigns) do
+    ~H"""
+    <.link
+      navigate={@navigate}
+      class={[
+        "group flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition",
+        @on && "bg-primary/10 text-primary font-medium ring-1 ring-primary/15",
+        !@on && "text-base-content/65 hover:text-base-content hover:bg-base-200"
+      ]}
+    >
+      <.icon name={@icon} class={["size-5", @on && "text-primary", !@on && "text-base-content/50 group-hover:text-base-content/80"]} />
+      {@label}
+    </.link>
     """
   end
 
