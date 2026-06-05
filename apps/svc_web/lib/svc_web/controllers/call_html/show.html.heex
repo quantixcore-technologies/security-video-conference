@@ -20,6 +20,7 @@
   <body>
     <h1>{@meeting.title}</h1>
     <div id="status">Подключение к LiveKit…</div>
+    <div id="participants-info" style="font-size:15px;color:#38bdf8;margin-bottom:12px;font-weight:700"></div>
     <div id="grid"></div>
     <div class="bar"><button onclick="leave()">Выйти из звонка</button></div>
 
@@ -58,16 +59,44 @@
 
       window.leave = () => { room.disconnect(); statusEl.textContent = "Вы вышли из звонка."; };
 
+      // локальный видео-трек публикуется → показываем
+      room.on(LivekitClient.RoomEvent.LocalTrackPublished, (pub) => {
+        if (pub.track && pub.track.kind === "video") {
+          attach(pub.track, room.localParticipant.identity, true);
+        }
+      });
+
+      function updateParticipants() {
+        const all = [room.localParticipant, ...room.remoteParticipants.values()];
+        const names = all.map(p => p.name || p.identity).join(" · ");
+        document.getElementById("participants-info").textContent =
+          "👥 Участников: " + all.length + " — " + names;
+      }
+      room.on(LivekitClient.RoomEvent.ParticipantConnected, updateParticipants);
+      room.on(LivekitClient.RoomEvent.ParticipantDisconnected, updateParticipants);
+
+      window._room = room; // для отладки из DevTools
+
       (async () => {
         try {
           await room.connect(url, token);
-          statusEl.textContent = "Подключено · комната: " + room.name + " · участников: " + (room.numParticipants + 1);
-          await room.localParticipant.enableCameraAndMicrophone();
-          room.localParticipant.videoTrackPublications.forEach(pub => {
-            if (pub.track) attach(pub.track, room.localParticipant.identity, true);
-          });
+          statusEl.textContent = "Подключено · комната: " + room.name;
+          updateParticipants();
         } catch (e) {
           statusEl.textContent = "Ошибка подключения: " + e.message;
+          console.error("LiveKit connect error:", e);
+          return;
+        }
+        // камера/микрофон — отдельно, чтобы видеть именно camera-ошибку
+        try {
+          console.log("Запрашиваю микрофон…");
+          await room.localParticipant.setMicrophoneEnabled(true);
+          console.log("Запрашиваю камеру…");
+          await room.localParticipant.setCameraEnabled(true);
+          statusEl.textContent += " · 🎥 камера и микрофон включены";
+        } catch (camErr) {
+          statusEl.textContent += " · ⚠️ камера недоступна: " + camErr.name + " — " + camErr.message;
+          console.error("getUserMedia/camera error:", camErr);
         }
       })();
     </script>
