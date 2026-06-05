@@ -1,0 +1,52 @@
+# Elixir / Phoenix
+/_build/
+/cover/
+/deps/
+/doc/
+/.fetch
+erl_crash.dump
+*.ez
+*.beam
+/config/*.secret.exs
+.elixir_ls/
+/priv/static/assets/
+/priv/static/cache_manifest.json
+
+# Secrets & env (НИКОГДА не коммитить — CRED-CHECK)
+.env
+.env.*
+*.pem
+*.key
+*.pfx
+/secrets/
+
+# Rust / Tauri (desktop/)
+/desktop/src-tauri/target/
+/desktop/target/
+**/*.rs.bk
+
+# Node (desktop frontend)
+node_modules/
+/desktop/dist/
+npm-debug.log*
+yarn-error.log*
+
+# Python (ml_service/ — E6)
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.onnx
+*.pt
+/ml_service/models/
+
+# OS / editor
+.DS_Store
+*.swp
+.idea/
+.vscode/
+
+# Data / uploads
+/uploads/
+/priv/uploads/
+*.mmdb
