@@ -24,6 +24,13 @@ config :svc_web, SvcWeb.Endpoint,
 # Print only warnings and errors during test
 config :logger, level: :warning
 
+# LiveKit (E1) — тестовые ключи для генерации JWT (devkey/secret как в local dev)
+config :svc, Svc.LiveKit,
+  url: "ws://127.0.0.1:7880",
+  api_key: "devkey",
+  api_secret: "devsecret_devsecret_devsecret_32x",
+  webhook_key: "devsecret_devsecret_devsecret_32x"
+
 # In test we don't send emails
 config :svc, Svc.Mailer, adapter: Swoosh.Adapters.Test
 
