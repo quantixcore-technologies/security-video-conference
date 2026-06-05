@@ -12,15 +12,19 @@
 - ✅ **31 коммит · 104 теста 0 failures**, запушено git.n3xt.uz/legion-cyber-arena (private).
 - ✅ Доказано вживую: login→dashboard→встречи→журнал; реальный звонок 2 участника→webhook→авто-посещаемость.
 
-## ✅ Сделано после редизайна (38 коммитов)
-- Расширенные контролы звонка (screen-share, участники+говорящий, чат, mute-индикаторы, fullscreen, выбор устройств).
-- Профиль-рефактор: top-right avatar dropdown + страница `/admin/profile` (убрано дублирование).
-- **ВСЕ 4 P0 из UX-аудита закрыты** (Слайсы A/B/C): управление сотрудниками (edit/deactivate/reset + карточка `users/:id`) · управление встречами (edit/end) · 2FA enrollment (QR через eqrcode).
+## ✅ Сделано после редизайна (51 коммит, 150 тестов 0 failures)
+- Расширенные контролы звонка (screen-share, участники+говорящий, чат, mute, fullscreen, устройства).
+- Профиль-рефактор: top-right avatar dropdown + `/admin/profile` (дублирование убрано).
+- **UX-аудит P0+P1+P2 закрыт** (`docs/UX-AUDIT.md`): управление сотрудниками/встречами + карточка `users/:id`, 2FA enrollment (QR/eqrcode), mobile-бургер, emerald loading-bar, повтор пароля, поиск/фильтр/пагинация таблиц, локализация статусов/действий, a11y (alt).
+- **Эпик E3 (A–F)** — планирование: уведомления+колокольчик · напоминания (Oban T-24ч/1ч) · календарь (месяц) · RSVP · recurring-встречи · `.ics`-экспорт. _(внешние каналы email/SMS/Telegram — blocked заказчиком)._
+- **E5 анти-захват (A+B):** per-user watermark на звонке · юр-баннер · `capture_events` журнал + API `/api/capture-events` · `SecurityLive` (`/admin/security`) · матрица. _(ENFORCE setContentProtected/FLAG_SECURE — Tauri/mobile-фаза)._
+- **E7 сеть/гео (A):** pre-join gate в CallController · `Svc.Geo` (classify_ip RFC1918) · `network_geo_checks` журнал · UI на `/admin/security`. _(реальный VPN/country = MaxMind MMDB, открытый вопрос лицензии)._
 
-## ⏭️ СЛЕДУЮЩИЙ КВЕСТ: P1/P2 из `docs/UX-AUDIT.md`
-P1: mobile-меню (бургер вместо иконок) · loading-состояния (skeleton) · повтор нового пароля.
-P2: поиск/фильтр/пагинация таблиц (сотни сотрудников) · audit-фильтр · i18n RU/UZ/EN · a11y.
-> `data-confirm` для опасных действий уже добавлен (deactivate/reset/end).
+## ⏭️ СЛЕДУЮЩИЙ КВЕСТ (на выбор Otabek)
+- **E7-B:** geo-политика per-org (allowed_countries, enforce/flag mode) + `locus`/MaxMind интеграция.
+- **E5-C:** anti-capture политика per-meeting (watermark on/off, реакция warn/eject).
+- **E6** ML-liveness/deepfake · **Tauri** desktop-клиент (prod-видео+enforce) · **i18n** RU/UZ/EN.
+> Открытые вопросы заказчику (E5/E7): MaxMind-лицензия · каналы уведомлений · парк Windows · kiosk/TPM.
 
 ## ⚠️ Локальный запуск (КРИТИЧНО)
 ```bash
