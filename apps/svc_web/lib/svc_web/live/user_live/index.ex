@@ -2,7 +2,10 @@ defmodule SvcWeb.UserLive.Index do
   @moduledoc "Список сотрудников (RBAC-scoped) + создание (E0)."
   use SvcWeb, :live_view
 
+  import Ecto.Query
   alias Svc.{Accounts, Authz, Audit, Orgs}
+
+  @per_page 10
 
   @impl true
   def mount(_params, _session, socket) do
@@ -15,8 +18,27 @@ defmodule SvcWeb.UserLive.Index do
   end
 
   @impl true
-  def handle_params(_params, _uri, socket) do
-    {:noreply, apply_action(socket, socket.assigns.live_action)}
+  def handle_params(params, _uri, socket) do
+    {:noreply,
+     socket
+     |> assign(:filters, parse_filters(params))
+     |> apply_action(socket.assigns.live_action)}
+  end
+
+  defp parse_filters(params) do
+    %{
+      q: params["q"] || "",
+      role: params["role"] || "",
+      status: params["status"] || "",
+      page: parse_page(params["page"])
+    }
+  end
+
+  defp parse_page(p) do
+    case Integer.parse(to_string(p)) do
+      {n, _} when n > 0 -> n
+      _ -> 1
+    end
   end
 
   defp apply_action(socket, :index) do
@@ -81,10 +103,56 @@ defmodule SvcWeb.UserLive.Index do
     end
   end
 
-  defp load_users(socket) do
-    users = socket.assigns.current_user |> Authz.scope_users() |> Svc.Repo.all()
-    assign(socket, :users, users)
+  def handle_event("filter", %{"q" => q, "role" => role, "status" => status}, socket) do
+    {:noreply, push_patch(socket, to: ~p"/admin/users?#{filter_params(q, role, status)}")}
   end
+
+  defp filter_params(q, role, status) do
+    %{page: 1}
+    |> put_if(:q, q)
+    |> put_if(:role, role)
+    |> put_if(:status, status)
+  end
+
+  defp put_if(map, _key, ""), do: map
+  defp put_if(map, key, val), do: Map.put(map, key, val)
+
+  defp load_users(socket) do
+    f = socket.assigns.filters
+    base = socket.assigns.current_user |> Authz.scope_users() |> apply_filters(f)
+    total = Svc.Repo.aggregate(base, :count)
+    pages = max(1, ceil(total / @per_page))
+    page = min(f.page, pages)
+
+    users =
+      base
+      |> order_by(:full_name)
+      |> limit(^@per_page)
+      |> offset(^((page - 1) * @per_page))
+      |> Svc.Repo.all()
+
+    assign(socket, users: users, total: total, pages: pages, page: page)
+  end
+
+  defp apply_filters(query, f) do
+    query
+    |> filter_search(f.q)
+    |> filter_role(f.role)
+    |> filter_status(f.status)
+  end
+
+  defp filter_search(query, ""), do: query
+
+  defp filter_search(query, term) do
+    like = "%#{term}%"
+    where(query, [u], ilike(u.full_name, ^like) or ilike(u.username, ^like))
+  end
+
+  defp filter_role(query, ""), do: query
+  defp filter_role(query, role), do: where(query, [u], u.role == ^String.to_existing_atom(role))
+
+  defp filter_status(query, ""), do: query
+  defp filter_status(query, status), do: where(query, [u], u.status == ^String.to_existing_atom(status))
 
   # Сохраняет загруженное фото в priv/static/uploads/photos, возвращает публичный путь.
   defp consume_photo(socket, org_id) do
@@ -169,8 +237,38 @@ defmodule SvcWeb.UserLive.Index do
         </.form>
       </div>
 
+      <div :if={@live_action == :index} class="flex flex-wrap items-center gap-2 mb-4">
+        <form phx-change="filter" phx-submit="filter" class="flex flex-wrap items-center gap-2 flex-1">
+          <div class="relative flex-1 min-w-52">
+            <.icon name="hero-magnifying-glass" class="size-4 absolute left-3 top-1/2 -translate-y-1/2 text-base-content/40" />
+            <input
+              type="text"
+              name="q"
+              value={@filters.q}
+              placeholder="Поиск по ФИО или логину"
+              phx-debounce="300"
+              class="input input-sm input-bordered w-full pl-9 bg-base-100"
+            />
+          </div>
+          <select name="role" class="select select-sm select-bordered bg-base-100">
+            <option value="">Все роли</option>
+            <option :for={{label, val} <- role_options()} value={val} selected={to_string(val) == @filters.role}>
+              {label}
+            </option>
+          </select>
+          <select name="status" class="select select-sm select-bordered bg-base-100">
+            <option value="">Любой статус</option>
+            <option value="active" selected={@filters.status == "active"}>Активен</option>
+            <option value="disabled" selected={@filters.status == "disabled"}>Отключён</option>
+          </select>
+        </form>
+      </div>
+
       <div class="rounded-xl border border-base-300 bg-base-100/50 overflow-hidden">
-        <table class="w-full text-sm">
+        <div :if={@users == []} class="px-5 py-10 text-center text-sm text-base-content/40">
+          <.icon name="hero-magnifying-glass" class="size-8 mx-auto mb-2 opacity-40" /> Ничего не найдено
+        </div>
+        <table :if={@users != []} class="w-full text-sm">
           <thead>
             <tr class="text-left text-xs uppercase tracking-wider text-base-content/40 border-b border-base-300">
               <th class="font-medium px-5 py-2.5">Сотрудник</th>
@@ -209,8 +307,36 @@ defmodule SvcWeb.UserLive.Index do
           </tbody>
         </table>
       </div>
+
+      <div :if={@live_action == :index and @pages > 1} class="flex items-center justify-between mt-4 text-sm">
+        <span class="text-base-content/55 tabular">{@total} сотрудников · стр. {@page} из {@pages}</span>
+        <div class="flex items-center gap-1">
+          <.link
+            patch={page_path(@filters, @page - 1)}
+            class={["btn btn-sm btn-ghost btn-square", @page <= 1 && "pointer-events-none opacity-30"]}
+          >
+            <.icon name="hero-chevron-left" class="size-4" />
+          </.link>
+          <.link
+            patch={page_path(@filters, @page + 1)}
+            class={["btn btn-sm btn-ghost btn-square", @page >= @pages && "pointer-events-none opacity-30"]}
+          >
+            <.icon name="hero-chevron-right" class="size-4" />
+          </.link>
+        </div>
+      </div>
     </Layouts.app>
     """
+  end
+
+  defp page_path(f, page) do
+    params =
+      %{page: page}
+      |> put_if(:q, f.q)
+      |> put_if(:role, f.role)
+      |> put_if(:status, f.status)
+
+    ~p"/admin/users?#{params}"
   end
 
   attr :user, :map, required: true

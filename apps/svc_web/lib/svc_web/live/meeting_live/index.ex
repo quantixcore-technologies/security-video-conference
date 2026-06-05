@@ -2,14 +2,32 @@ defmodule SvcWeb.MeetingLive.Index do
   @moduledoc "Список встреч + создание с ростером (E1/E2 UI)."
   use SvcWeb, :live_view
 
-  alias Svc.{Meetings, Accounts, Attendance}
+  import Ecto.Query
+  alias Svc.{Meetings, Accounts, Attendance, Repo}
+  alias Svc.Meetings.Meeting
+
+  @per_page 10
 
   @impl true
   def mount(_params, _session, socket), do: {:ok, socket}
 
   @impl true
-  def handle_params(_params, _uri, socket) do
-    {:noreply, apply_action(socket, socket.assigns.live_action)}
+  def handle_params(params, _uri, socket) do
+    {:noreply,
+     socket
+     |> assign(:filters, parse_filters(params))
+     |> apply_action(socket.assigns.live_action)}
+  end
+
+  defp parse_filters(params) do
+    %{q: params["q"] || "", status: params["status"] || "", page: parse_page(params["page"])}
+  end
+
+  defp parse_page(p) do
+    case Integer.parse(to_string(p)) do
+      {n, _} when n > 0 -> n
+      _ -> 1
+    end
   end
 
   defp apply_action(socket, :index) do
@@ -82,9 +100,50 @@ defmodule SvcWeb.MeetingLive.Index do
 
   defp add_roster(_, _), do: :ok
 
-  defp load_meetings(socket) do
-    assign(socket, :meetings, Meetings.list_meetings(socket.assigns.current_user.org_id))
+  def handle_event("filter", %{"q" => q, "status" => status}, socket) do
+    {:noreply, push_patch(socket, to: ~p"/admin/meetings?#{filter_params(q, status)}")}
   end
+
+  defp filter_params(q, status) do
+    %{page: 1} |> put_if(:q, q) |> put_if(:status, status)
+  end
+
+  defp put_if(map, _key, ""), do: map
+  defp put_if(map, key, val), do: Map.put(map, key, val)
+
+  defp page_path(f, page) do
+    params = %{page: page} |> put_if(:q, f.q) |> put_if(:status, f.status)
+    ~p"/admin/meetings?#{params}"
+  end
+
+  defp load_meetings(socket) do
+    f = socket.assigns.filters
+    org_id = socket.assigns.current_user.org_id
+
+    base =
+      from(m in Meeting, where: m.org_id == ^org_id)
+      |> filter_search(f.q)
+      |> filter_status(f.status)
+
+    total = Repo.aggregate(base, :count)
+    pages = max(1, ceil(total / @per_page))
+    page = min(f.page, pages)
+
+    meetings =
+      base
+      |> order_by([m], desc: m.inserted_at)
+      |> limit(^@per_page)
+      |> offset(^((page - 1) * @per_page))
+      |> Repo.all()
+
+    assign(socket, meetings: meetings, total: total, pages: pages, page: page)
+  end
+
+  defp filter_search(query, ""), do: query
+  defp filter_search(query, term), do: where(query, [m], ilike(m.title, ^"%#{term}%"))
+
+  defp filter_status(query, ""), do: query
+  defp filter_status(query, status), do: where(query, [m], m.status == ^String.to_existing_atom(status))
 
   defp parse_dt(nil), do: nil
   defp parse_dt(""), do: nil
@@ -154,9 +213,31 @@ defmodule SvcWeb.MeetingLive.Index do
         </.form>
       </div>
 
+      <div :if={@live_action == :index} class="flex flex-wrap items-center gap-2 mb-4">
+        <form phx-change="filter" phx-submit="filter" class="flex flex-wrap items-center gap-2 flex-1">
+          <div class="relative flex-1 min-w-52">
+            <.icon name="hero-magnifying-glass" class="size-4 absolute left-3 top-1/2 -translate-y-1/2 text-base-content/40" />
+            <input
+              type="text"
+              name="q"
+              value={@filters.q}
+              placeholder="Поиск по названию"
+              phx-debounce="300"
+              class="input input-sm input-bordered w-full pl-9 bg-base-100"
+            />
+          </div>
+          <select name="status" class="select select-sm select-bordered bg-base-100">
+            <option value="">Любой статус</option>
+            <option value="planned" selected={@filters.status == "planned"}>Запланирована</option>
+            <option value="live" selected={@filters.status == "live"}>Идёт</option>
+            <option value="ended" selected={@filters.status == "ended"}>Завершена</option>
+          </select>
+        </form>
+      </div>
+
       <div class="rounded-xl border border-base-300 bg-base-100/50 overflow-hidden">
         <div :if={@meetings == []} class="px-5 py-10 text-center text-sm text-base-content/40">
-          <.icon name="hero-video-camera-slash" class="size-8 mx-auto mb-2 opacity-40" /> Встреч пока нет
+          <.icon name="hero-video-camera-slash" class="size-8 mx-auto mb-2 opacity-40" /> Ничего не найдено
         </div>
         <table :if={@meetings != []} class="w-full text-sm">
           <thead>
@@ -189,6 +270,24 @@ defmodule SvcWeb.MeetingLive.Index do
             </tr>
           </tbody>
         </table>
+      </div>
+
+      <div :if={@live_action == :index and @pages > 1} class="flex items-center justify-between mt-4 text-sm">
+        <span class="text-base-content/55 tabular">{@total} встреч · стр. {@page} из {@pages}</span>
+        <div class="flex items-center gap-1">
+          <.link
+            patch={page_path(@filters, @page - 1)}
+            class={["btn btn-sm btn-ghost btn-square", @page <= 1 && "pointer-events-none opacity-30"]}
+          >
+            <.icon name="hero-chevron-left" class="size-4" />
+          </.link>
+          <.link
+            patch={page_path(@filters, @page + 1)}
+            class={["btn btn-sm btn-ghost btn-square", @page >= @pages && "pointer-events-none opacity-30"]}
+          >
+            <.icon name="hero-chevron-right" class="size-4" />
+          </.link>
+        </div>
       </div>
     </Layouts.app>
     """
