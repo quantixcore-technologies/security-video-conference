@@ -35,6 +35,14 @@ defmodule Svc.Meetings do
   def start_meeting(%Meeting{} = m), do: update_status(m, :live)
   def end_meeting(%Meeting{} = m), do: update_status(m, :ended)
 
+  @doc "Редактирование встречи (название/время/политика записи)."
+  def update_meeting(%Meeting{} = m, attrs) do
+    m |> Meeting.update_changeset(attrs) |> Repo.update()
+  end
+
+  @doc "Changeset для формы редактирования встречи (LiveView)."
+  def change_meeting(%Meeting{} = m, attrs \\ %{}), do: Meeting.update_changeset(m, attrs)
+
   defp update_status(meeting, status) do
     meeting |> Ecto.Changeset.change(status: status) |> Repo.update()
   end

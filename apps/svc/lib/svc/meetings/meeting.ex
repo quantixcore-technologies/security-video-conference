@@ -43,6 +43,19 @@ defmodule Svc.Meetings.Meeting do
     |> foreign_key_constraint(:organizer_id)
   end
 
+  @doc "Редактирование встречи (без org/organizer/room — их менять нельзя)."
+  def update_changeset(meeting, attrs) do
+    meeting
+    |> cast(attrs, [
+      :title, :type, :scheduled_start, :scheduled_end,
+      :recording_policy, :late_threshold_seconds
+    ])
+    |> validate_required([:title])
+    |> validate_length(:title, min: 2, max: 300)
+    |> validate_number(:late_threshold_seconds, greater_than_or_equal_to: 0)
+    |> validate_schedule()
+  end
+
   defp validate_schedule(changeset) do
     start = get_field(changeset, :scheduled_start)
     finish = get_field(changeset, :scheduled_end)

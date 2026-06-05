@@ -25,8 +25,10 @@ defmodule SvcWeb.MeetingLive.Show do
      socket
      |> assign(:page_title, meeting.title)
      |> assign(:meeting, meeting)
+     |> assign(:can_organize, Meetings.can_organize?(actor))
      |> assign(:records, records)
-     |> assign(:summary, Enum.frequencies_by(records, & &1.status))}
+     |> assign(:summary, Enum.frequencies_by(records, & &1.status))
+     |> assign_form(socket.assigns.live_action, meeting)}
   rescue
     Ecto.NoResultsError ->
       {:noreply,
@@ -34,6 +36,39 @@ defmodule SvcWeb.MeetingLive.Show do
        |> put_flash(:error, "Встреча не найдена.")
        |> push_navigate(to: ~p"/admin/meetings")}
   end
+
+  defp assign_form(socket, :edit, meeting),
+    do: assign(socket, :form, to_form(Meetings.change_meeting(meeting)))
+
+  defp assign_form(socket, _action, _meeting), do: assign(socket, :form, nil)
+
+  @impl true
+  def handle_event("save", %{"meeting" => params}, socket) do
+    actor = socket.assigns.current_user
+
+    case Meetings.update_meeting(socket.assigns.meeting, params) do
+      {:ok, updated} ->
+        Audit.log_action(actor, :meeting_update, resource_type: :meeting, resource_id: updated.id)
+
+        {:noreply,
+         socket
+         |> put_flash(:info, "Встреча обновлена.")
+         |> push_navigate(to: ~p"/admin/meetings/#{updated.id}")}
+
+      {:error, changeset} ->
+        {:noreply, assign(socket, :form, to_form(changeset))}
+    end
+  end
+
+  def handle_event("end_meeting", _params, socket) do
+    actor = socket.assigns.current_user
+    {:ok, updated} = Meetings.end_meeting(socket.assigns.meeting)
+    Audit.log_action(actor, :meeting_end, resource_type: :meeting, resource_id: updated.id)
+    {:noreply, socket |> assign(:meeting, updated) |> put_flash(:info, "Встреча завершена.")}
+  end
+
+  defp policy_options,
+    do: [{"Нет", :off}, {"Опционально", :optional}, {"Обязательно", :required}]
 
   @impl true
   def render(assigns) do
@@ -48,7 +83,13 @@ defmodule SvcWeb.MeetingLive.Show do
 
       <div class="flex items-start justify-between gap-4 flex-wrap">
         <div>
-          <h1 class="text-2xl font-semibold tracking-tight">{@meeting.title}</h1>
+          <div class="flex items-center gap-3 flex-wrap">
+            <h1 class="text-2xl font-semibold tracking-tight">{@meeting.title}</h1>
+            <span class={"inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium #{mst_class(@meeting.status)}"}>
+              <span class={"size-1.5 rounded-full #{mst_dot(@meeting.status)}"}></span>
+              {mst_label(@meeting.status)}
+            </span>
+          </div>
           <div class="flex items-center gap-3 mt-2 text-sm text-base-content/55">
             <span class="inline-flex items-center gap-1.5">
               <.icon name="hero-calendar" class="size-4" />
@@ -62,22 +103,55 @@ defmodule SvcWeb.MeetingLive.Show do
             </span>
           </div>
         </div>
-        <.link
-          href={~p"/admin/meetings/#{@meeting.id}/call"}
-          class="btn btn-primary gap-2"
-        >
-          <.icon name="hero-video-camera" class="size-4" /> Войти в звонок
-        </.link>
+        <div :if={@live_action == :show} class="flex items-center gap-2 shrink-0">
+          <.link
+            :if={@can_organize}
+            navigate={~p"/admin/meetings/#{@meeting.id}/edit"}
+            class="btn btn-ghost btn-sm gap-1.5"
+          >
+            <.icon name="hero-pencil-square" class="size-4" /> Изменить
+          </.link>
+          <button
+            :if={@can_organize and @meeting.status != :ended}
+            phx-click="end_meeting"
+            data-confirm="Завершить встречу? Будет рассчитана посещаемость."
+            class="btn btn-ghost btn-sm gap-1.5 text-error"
+          >
+            <.icon name="hero-stop-circle" class="size-4" /> Завершить
+          </button>
+          <.link href={~p"/admin/meetings/#{@meeting.id}/call"} class="btn btn-primary btn-sm gap-2">
+            <.icon name="hero-video-camera" class="size-4" /> Войти в звонок
+          </.link>
+        </div>
       </div>
 
-      <div class="flex flex-wrap gap-2 mt-6">
+      <div :if={@live_action == :edit} class="rounded-xl border border-base-300 bg-base-100/50 p-5 mt-6">
+        <h3 class="font-medium mb-4 flex items-center gap-2">
+          <.icon name="hero-pencil-square" class="size-4 text-primary" /> Редактирование встречи
+        </h3>
+        <.form for={@form} phx-submit="save" class="space-y-3">
+          <.input field={@form[:title]} type="text" label="Название" required />
+          <div class="grid grid-cols-2 gap-3">
+            <.input field={@form[:scheduled_start]} type="datetime-local" label="Начало" />
+            <.input field={@form[:scheduled_end]} type="datetime-local" label="Конец" />
+          </div>
+          <.input field={@form[:recording_policy]} type="select" label="Запись" options={policy_options()} />
+          <.input field={@form[:late_threshold_seconds]} type="number" label="Порог опоздания (сек)" />
+          <div class="flex gap-2 pt-2">
+            <.button type="submit" phx-disable-with="Сохраняем...">Сохранить</.button>
+            <.link navigate={~p"/admin/meetings/#{@meeting.id}"} class="btn btn-ghost">Отмена</.link>
+          </div>
+        </.form>
+      </div>
+
+      <div :if={@live_action == :show} class="flex flex-wrap gap-2 mt-6">
         <.stat label="Присутствовали" value={@summary[:present] || 0} tone="success" />
         <.stat label="Опоздали" value={@summary[:late] || 0} tone="warning" />
         <.stat label="Ушли раньше" value={@summary[:left_early] || 0} tone="info" />
         <.stat label="Отсутствовали" value={@summary[:absent] || 0} tone="error" />
       </div>
 
-      <div class="mt-6 rounded-xl border border-base-300 bg-base-100/50 overflow-hidden">
+      <div :if={@live_action == :show} class="mt-6 rounded-xl border border-base-300 bg-base-100/50 overflow-hidden">
         <div class="px-5 py-3 border-b border-base-300 flex items-center gap-2">
           <.icon name="hero-clipboard-document-check" class="size-4 text-base-content/45" />
           <span class="text-sm font-medium">Журнал посещаемости</span>
@@ -167,4 +241,16 @@ defmodule SvcWeb.MeetingLive.Show do
 
   defp dur(0), do: "—"
   defp dur(s), do: "#{div(s, 60)} мин"
+
+  defp mst_label(:planned), do: "Запланирована"
+  defp mst_label(:live), do: "Идёт"
+  defp mst_label(:ended), do: "Завершена"
+
+  defp mst_class(:planned), do: "bg-base-200 text-base-content/70"
+  defp mst_class(:live), do: "bg-success/10 text-success"
+  defp mst_class(:ended), do: "bg-base-200 text-base-content/50"
+
+  defp mst_dot(:planned), do: "bg-base-content/40"
+  defp mst_dot(:live), do: "bg-success animate-pulse"
+  defp mst_dot(:ended), do: "bg-base-content/30"
 end

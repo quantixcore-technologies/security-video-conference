@@ -77,6 +77,41 @@ defmodule Svc.MeetingsTest do
       assert m2.status == :ended
     end
 
+    test "update_meeting меняет название и политику записи", %{meeting: meeting} do
+      assert {:ok, m} =
+               Meetings.update_meeting(meeting, %{
+                 "title" => "Новое название",
+                 "recording_policy" => "required"
+               })
+
+      assert m.title == "Новое название"
+      assert m.recording_policy == :required
+    end
+
+    test "update_meeting не трогает room_name и org", %{meeting: meeting} do
+      room = meeting.livekit_room_name
+
+      {:ok, m} =
+        Meetings.update_meeting(meeting, %{
+          "title" => "Другое",
+          "livekit_room_name" => "hacked",
+          "org_id" => 999_999
+        })
+
+      assert m.livekit_room_name == room
+      assert m.org_id == meeting.org_id
+    end
+
+    test "update_meeting валидирует расписание (конец позже начала)", %{meeting: meeting} do
+      assert {:error, cs} =
+               Meetings.update_meeting(meeting, %{
+                 "scheduled_start" => ~U[2026-06-10 10:00:00Z],
+                 "scheduled_end" => ~U[2026-06-10 09:00:00Z]
+               })
+
+      assert errors_on(cs)[:scheduled_end]
+    end
+
     test "get_meeting_by_room находит встречу", %{meeting: meeting} do
       found = Meetings.get_meeting_by_room(meeting.livekit_room_name)
       assert found.id == meeting.id
