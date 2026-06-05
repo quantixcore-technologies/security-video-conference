@@ -13,6 +13,11 @@ import Config
 config :svc,
   ecto_repos: [Svc.Repo]
 
+# Oban — фоновые задачи (E2: finalize absent; E3: уведомления)
+config :svc, Oban,
+  repo: Svc.Repo,
+  queues: [default: 10, attendance: 5, notifications: 5]
+
 # Configure the mailer
 #
 # By default it uses the "Local" adapter which stores the emails

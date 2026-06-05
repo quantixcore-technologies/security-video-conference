@@ -48,7 +48,10 @@ defmodule SvcWeb.WebhookController do
   defp handle_event(%{event: "room_finished" = type} = event) do
     with %Meeting{} = meeting <- meeting_from(event) do
       Meetings.end_meeting(meeting)
-      Attendance.finalize_absent(meeting)
+
+      %{meeting_id: meeting.id, org_id: meeting.org_id}
+      |> Svc.Attendance.FinalizeWorker.new()
+      |> Oban.insert()
     end
 
     audit(type, event)

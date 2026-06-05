@@ -10,9 +10,8 @@ defmodule Svc.Application do
     children = [
       Svc.Repo,
       {DNSCluster, query: Application.get_env(:svc, :dns_cluster_query) || :ignore},
-      {Phoenix.PubSub, name: Svc.PubSub}
-      # Start a worker by calling: Svc.Worker.start_link(arg)
-      # {Svc.Worker, arg}
+      {Phoenix.PubSub, name: Svc.PubSub},
+      {Oban, Application.fetch_env!(:svc, Oban)}
     ]
 
     Supervisor.start_link(children, strategy: :one_for_one, name: Svc.Supervisor)

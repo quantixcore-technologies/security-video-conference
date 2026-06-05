@@ -31,6 +31,9 @@ config :svc, Svc.LiveKit,
   api_secret: "devsecret_devsecret_devsecret_32x",
   webhook_key: "devsecret_devsecret_devsecret_32x"
 
+# Oban в ручном режиме для тестов (jobs не выполняются автоматически)
+config :svc, Oban, testing: :manual
+
 # In test we don't send emails
 config :svc, Svc.Mailer, adapter: Swoosh.Adapters.Test
 

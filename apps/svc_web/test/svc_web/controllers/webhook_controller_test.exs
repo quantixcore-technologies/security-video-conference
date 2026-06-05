@@ -1,7 +1,9 @@
 defmodule SvcWeb.WebhookControllerTest do
   use SvcWeb.ConnCase, async: true
+  use Oban.Testing, repo: Svc.Repo
 
   alias Svc.{Meetings, Accounts, Orgs, Audit, Attendance}
+  alias Svc.Attendance.FinalizeWorker
 
   @secret "devsecret_devsecret_devsecret_32x"
 
@@ -88,5 +90,21 @@ defmodule SvcWeb.WebhookControllerTest do
     assert [record] = Attendance.list_attendance(meeting.id)
     assert record.user_id == user.id
     assert record.status in [:present, :late]
+  end
+
+  test "room_finished ставит FinalizeWorker в очередь (E2)", %{conn: conn, meeting: meeting} do
+    body =
+      Jason.encode!(%{
+        "event" => "room_finished",
+        "room" => %{"name" => meeting.livekit_room_name}
+      })
+
+    conn = post_webhook(conn, body, "Bearer #{webhook_jwt()}")
+    assert response(conn, 200)
+
+    assert_enqueued(
+      worker: FinalizeWorker,
+      args: %{"meeting_id" => meeting.id, "org_id" => meeting.org_id}
+    )
   end
 end
