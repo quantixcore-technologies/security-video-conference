@@ -30,6 +30,30 @@ defmodule Svc.Attendance do
     Repo.all(from i in Invitee, where: i.meeting_id == ^meeting_id)
   end
 
+  @doc "Ростер с предзагруженными пользователями (для RSVP-UI), по имени."
+  def list_invitees_with_users(meeting_id) do
+    Repo.all(
+      from i in Invitee,
+        where: i.meeting_id == ^meeting_id,
+        join: u in assoc(i, :user),
+        preload: [user: u],
+        order_by: u.full_name
+    )
+  end
+
+  @doc "Приглашение конкретного пользователя на встречу (или nil)."
+  def get_invitee(meeting_id, user_id) do
+    Repo.get_by(Invitee, meeting_id: meeting_id, user_id: user_id)
+  end
+
+  @doc "Фиксирует RSVP-ответ (accepted|declined|tentative). {:error, :not_invited} если не в ростере."
+  def set_rsvp(meeting_id, user_id, status) do
+    case get_invitee(meeting_id, user_id) do
+      nil -> {:error, :not_invited}
+      invitee -> invitee |> Invitee.rsvp_changeset(status) |> Repo.update()
+    end
+  end
+
   ## Записи из вебхуков
 
   @doc "Вход участника (webhook participant_joined). Идемпотентно по (meeting,user)."

@@ -41,6 +41,38 @@ defmodule Svc.AttendanceTest do
     end
   end
 
+  describe "RSVP (E3)" do
+    setup %{meeting: m, alice: a} do
+      {:ok, _} = Attendance.add_invitee(m, a)
+      :ok
+    end
+
+    test "приглашённый по умолчанию pending", %{meeting: m, alice: a} do
+      assert Attendance.get_invitee(m.id, a.id).rsvp_status == :pending
+    end
+
+    test "set_rsvp фиксирует ответ и время", %{meeting: m, alice: a} do
+      assert {:ok, inv} = Attendance.set_rsvp(m.id, a.id, :accepted)
+      assert inv.rsvp_status == :accepted
+      assert inv.rsvp_at
+    end
+
+    test "set_rsvp можно изменить ответ", %{meeting: m, alice: a} do
+      {:ok, _} = Attendance.set_rsvp(m.id, a.id, :accepted)
+      assert {:ok, inv} = Attendance.set_rsvp(m.id, a.id, :declined)
+      assert inv.rsvp_status == :declined
+    end
+
+    test "set_rsvp для не-приглашённого → not_invited", %{meeting: m, bob: b} do
+      assert {:error, :not_invited} = Attendance.set_rsvp(m.id, b.id, :accepted)
+    end
+
+    test "list_invitees_with_users preload-ит пользователя", %{meeting: m} do
+      assert [inv] = Attendance.list_invitees_with_users(m.id)
+      assert inv.user.full_name == "User alice"
+    end
+  end
+
   describe "record_join — статус по времени" do
     test "вовремя → present", %{meeting: m, alice: a} do
       {:ok, rec} = Attendance.record_join(m, a.id, @start)

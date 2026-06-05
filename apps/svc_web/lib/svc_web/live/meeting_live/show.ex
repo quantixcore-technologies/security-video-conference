@@ -28,6 +28,8 @@ defmodule SvcWeb.MeetingLive.Show do
      |> assign(:can_organize, Meetings.can_organize?(actor))
      |> assign(:records, records)
      |> assign(:summary, Enum.frequencies_by(records, & &1.status))
+     |> assign(:roster, Attendance.list_invitees_with_users(meeting.id))
+     |> assign(:my_invitee, Attendance.get_invitee(meeting.id, actor.id))
      |> assign_form(socket.assigns.live_action, meeting)}
   rescue
     Ecto.NoResultsError ->
@@ -65,6 +67,48 @@ defmodule SvcWeb.MeetingLive.Show do
     {:ok, updated} = Meetings.end_meeting(socket.assigns.meeting)
     Audit.log_action(actor, :meeting_end, resource_type: :meeting, resource_id: updated.id)
     {:noreply, socket |> assign(:meeting, updated) |> put_flash(:info, "Встреча завершена.")}
+  end
+
+  def handle_event("rsvp", %{"status" => status}, socket) do
+    actor = socket.assigns.current_user
+    meeting = socket.assigns.meeting
+    status_atom = String.to_existing_atom(status)
+
+    case Attendance.set_rsvp(meeting.id, actor.id, status_atom) do
+      {:ok, _} ->
+        Audit.log_action(actor, :rsvp,
+          resource_type: :meeting,
+          resource_id: meeting.id,
+          metadata: %{status: status}
+        )
+
+        notify_organizer_rsvp(meeting, actor, status_atom)
+
+        {:noreply,
+         socket
+         |> put_flash(:info, "Ваш ответ записан.")
+         |> assign(:my_invitee, Attendance.get_invitee(meeting.id, actor.id))
+         |> assign(:roster, Attendance.list_invitees_with_users(meeting.id))}
+
+      {:error, :not_invited} ->
+        {:noreply, put_flash(socket, :error, "Вы не в списке приглашённых.")}
+    end
+  end
+
+  defp notify_organizer_rsvp(meeting, actor, status) do
+    organizer = Svc.Accounts.get_user!(meeting.org_id, meeting.organizer_id)
+
+    if organizer.id != actor.id do
+      Svc.Notifications.notify(
+        organizer,
+        :update,
+        "#{actor.full_name}: #{rsvp_label(status)}",
+        body: "Встреча: #{meeting.title}",
+        meeting_id: meeting.id
+      )
+    end
+  rescue
+    _ -> :ok
   end
 
   defp policy_options,
@@ -144,6 +188,41 @@ defmodule SvcWeb.MeetingLive.Show do
         </.form>
       </div>
 
+      <div
+        :if={@my_invitee && @live_action == :show}
+        class="mt-6 rounded-xl border border-base-300 bg-base-100/50 p-4 flex items-center justify-between gap-4 flex-wrap"
+      >
+        <div class="flex items-center gap-2 text-sm">
+          <.icon name="hero-envelope" class="size-4 text-base-content/50" /> Вы приглашены · ваш ответ:
+          <span class={"px-2 py-0.5 rounded-full text-xs font-medium #{rsvp_class(@my_invitee.rsvp_status)}"}>
+            {rsvp_label(@my_invitee.rsvp_status)}
+          </span>
+        </div>
+        <div class="flex items-center gap-1.5">
+          <button
+            phx-click="rsvp"
+            phx-value-status="accepted"
+            class={["btn btn-sm gap-1.5", @my_invitee.rsvp_status == :accepted && "btn-success", @my_invitee.rsvp_status != :accepted && "btn-ghost"]}
+          >
+            <.icon name="hero-check" class="size-4" /> Приду
+          </button>
+          <button
+            phx-click="rsvp"
+            phx-value-status="tentative"
+            class={["btn btn-sm gap-1.5", @my_invitee.rsvp_status == :tentative && "btn-warning", @my_invitee.rsvp_status != :tentative && "btn-ghost"]}
+          >
+            <.icon name="hero-question-mark-circle" class="size-4" /> Возможно
+          </button>
+          <button
+            phx-click="rsvp"
+            phx-value-status="declined"
+            class={["btn btn-sm gap-1.5", @my_invitee.rsvp_status == :declined && "btn-error", @my_invitee.rsvp_status != :declined && "btn-ghost"]}
+          >
+            <.icon name="hero-x-mark" class="size-4" /> Не приду
+          </button>
+        </div>
+      </div>
+
       <div :if={@live_action == :show} class="flex flex-wrap gap-2 mt-6">
         <.stat label="Присутствовали" value={@summary[:present] || 0} tone="success" />
         <.stat label="Опоздали" value={@summary[:late] || 0} tone="warning" />
@@ -181,6 +260,27 @@ defmodule SvcWeb.MeetingLive.Show do
             </tr>
           </tbody>
         </table>
+      </div>
+
+      <div
+        :if={@live_action == :show and @can_organize and @roster != []}
+        class="mt-6 rounded-xl border border-base-300 bg-base-100/50 overflow-hidden"
+      >
+        <div class="px-5 py-3 border-b border-base-300 flex items-center gap-2">
+          <.icon name="hero-user-group" class="size-4 text-base-content/45" />
+          <span class="text-sm font-medium">Приглашённые · ответы (RSVP)</span>
+        </div>
+        <ul class="divide-y divide-base-300/50 text-sm">
+          <li
+            :for={inv <- @roster}
+            class="px-5 py-2.5 flex items-center justify-between hover:bg-base-200/40 transition"
+          >
+            <span class="font-medium">{inv.user.full_name}</span>
+            <span class={"px-2.5 py-0.5 rounded-full text-xs font-medium #{rsvp_class(inv.rsvp_status)}"}>
+              {rsvp_label(inv.rsvp_status)}
+            </span>
+          </li>
+        </ul>
       </div>
     </Layouts.app>
     """
@@ -253,4 +353,14 @@ defmodule SvcWeb.MeetingLive.Show do
   defp mst_dot(:planned), do: "bg-base-content/40"
   defp mst_dot(:live), do: "bg-success animate-pulse"
   defp mst_dot(:ended), do: "bg-base-content/30"
+
+  defp rsvp_label(:accepted), do: "Приду"
+  defp rsvp_label(:declined), do: "Не приду"
+  defp rsvp_label(:tentative), do: "Возможно"
+  defp rsvp_label(:pending), do: "Без ответа"
+
+  defp rsvp_class(:accepted), do: "bg-success/10 text-success"
+  defp rsvp_class(:declined), do: "bg-error/10 text-error"
+  defp rsvp_class(:tentative), do: "bg-warning/10 text-warning"
+  defp rsvp_class(:pending), do: "bg-base-200 text-base-content/50"
 end

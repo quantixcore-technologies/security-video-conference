@@ -5,14 +5,25 @@ defmodule Svc.Attendance.Invitee do
 
   @type t :: %__MODULE__{}
 
+  @rsvp_statuses ~w(pending accepted declined tentative)a
+
   schema "meeting_invitees" do
     field :expected, :boolean, default: true
+    field :rsvp_status, Ecto.Enum, values: @rsvp_statuses, default: :pending
+    field :rsvp_at, :utc_datetime_usec
 
     belongs_to :organization, Svc.Orgs.Organization, foreign_key: :org_id
     belongs_to :meeting, Svc.Meetings.Meeting, foreign_key: :meeting_id
     belongs_to :user, Svc.Accounts.User, foreign_key: :user_id
 
     timestamps(type: :utc_datetime_usec)
+  end
+
+  def rsvp_statuses, do: @rsvp_statuses
+
+  @doc "Фиксирует RSVP-ответ приглашённого."
+  def rsvp_changeset(invitee, status) when status in @rsvp_statuses do
+    change(invitee, rsvp_status: status, rsvp_at: DateTime.utc_now())
   end
 
   def changeset(invitee, attrs) do
