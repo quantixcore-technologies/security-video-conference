@@ -183,10 +183,10 @@ defmodule SvcWeb.UserLive.Index do
           <tbody class="divide-y divide-base-300/50">
             <tr :for={u <- @users} class="hover:bg-base-200/40 transition">
               <td class="px-5 py-3">
-                <div class="flex items-center gap-3">
+                <.link navigate={~p"/admin/users/#{u.id}"} class="flex items-center gap-3 group">
                   <.avatar user={u} />
-                  <span class="font-medium">{u.full_name}</span>
-                </div>
+                  <span class="font-medium group-hover:text-primary transition">{u.full_name}</span>
+                </.link>
               </td>
               <td class="px-5 py-3 tabular text-base-content/65">{u.username}</td>
               <td class="px-5 py-3">

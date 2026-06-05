@@ -34,6 +34,24 @@ defmodule Svc.Accounts do
   @doc "Changeset для формы смены пароля (LiveView)."
   def change_password(attrs \\ %{}), do: User.password_changeset(%User{}, attrs)
 
+  @doc "Changeset для формы редактирования сотрудника (LiveView)."
+  def change_user(%User{} = user, attrs \\ %{}), do: User.update_changeset(user, attrs)
+
+  @doc "Редактирование сотрудника админом (роль/отдел/телефон/фото/статус)."
+  def update_user(%User{} = user, attrs) do
+    user |> User.update_changeset(attrs) |> Repo.update()
+  end
+
+  @doc "Деактивация/активация сотрудника (status)."
+  def set_status(%User{} = user, status) when status in [:active, :disabled] do
+    user |> Ecto.Changeset.change(status: status) |> Repo.update()
+  end
+
+  @doc "Сброс пароля сотрудника админом (без проверки старого)."
+  def admin_reset_password(%User{} = user, new_password) do
+    user |> User.password_changeset(%{password: new_password}) |> Repo.update()
+  end
+
   @doc """
   Смена пароля в профиле: проверяет текущий пароль, обновляет на новый.
   Возвращает {:ok, user} | {:error, :invalid_current_password | changeset}.

@@ -132,4 +132,62 @@ defmodule Svc.AccountsTest do
       assert Accounts.totp_required?(%User{role: :security_officer})
     end
   end
+
+  describe "управление сотрудником (P0)" do
+    setup %{org: org} do
+      {:ok, user} = Accounts.create_user(user_attrs(org))
+      %{user: user}
+    end
+
+    test "update_user меняет роль/телефон", %{user: user} do
+      assert {:ok, u} =
+               Accounts.update_user(user, %{
+                 "role" => "manager",
+                 "phone" => "+998901112233",
+                 "status" => "active"
+               })
+
+      assert u.role == :manager
+      assert u.phone == "+998901112233"
+    end
+
+    test "update_user не трогает пароль и username", %{user: user} do
+      hash = user.hashed_password
+
+      {:ok, u} =
+        Accounts.update_user(user, %{"full_name" => "Новое Имя", "role" => "employee", "status" => "active"})
+
+      assert u.hashed_password == hash
+      assert u.username == "ivanov"
+    end
+
+    test "set_status деактивирует и активирует", %{user: user} do
+      assert {:ok, u} = Accounts.set_status(user, :disabled)
+      assert u.status == :disabled
+      assert {:ok, u} = Accounts.set_status(u, :active)
+      assert u.status == :active
+    end
+
+    test "admin_reset_password меняет пароль (хеш и вход)", %{org: org, user: user} do
+      old_hash = user.hashed_password
+      assert {:ok, u} = Accounts.admin_reset_password(user, "BrandNewPass123")
+      assert u.hashed_password != old_hash
+      assert {:ok, _} = Accounts.authenticate(org.id, "ivanov", "BrandNewPass123")
+    end
+
+    test "admin_reset_password требует мин. 12 символов", %{user: user} do
+      assert {:error, cs} = Accounts.admin_reset_password(user, "short")
+      assert errors_on(cs)[:password]
+    end
+
+    test "update_password меняет при верном текущем", %{org: org, user: user} do
+      assert {:ok, _} = Accounts.update_password(user, "SecurePass123!", "AnotherPass456")
+      assert {:ok, _} = Accounts.authenticate(org.id, "ivanov", "AnotherPass456")
+    end
+
+    test "update_password отвергает неверный текущий пароль", %{user: user} do
+      assert {:error, :invalid_current_password} =
+               Accounts.update_password(user, "WrongCurrent1", "AnotherPass456")
+    end
+  end
 end
