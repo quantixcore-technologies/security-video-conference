@@ -52,6 +52,14 @@ defmodule Svc.Accounts.User do
     |> foreign_key_constraint(:department_id)
   end
 
+  @doc "Смена пароля (профиль). Хеширует новый пароль Argon2id."
+  def password_changeset(user, attrs) do
+    user
+    |> cast(attrs, [:password])
+    |> validate_required([:password])
+    |> validate_password()
+  end
+
   # Политика пароля (foundation overkill, D-014). Точные требования — у заказчика (комплаенс).
   defp validate_password(changeset) do
     changeset

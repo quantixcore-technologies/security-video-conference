@@ -31,6 +31,21 @@ defmodule Svc.Accounts do
     Repo.all(from u in User, where: u.org_id == ^org_id, order_by: u.full_name)
   end
 
+  @doc "Changeset для формы смены пароля (LiveView)."
+  def change_password(attrs \\ %{}), do: User.password_changeset(%User{}, attrs)
+
+  @doc """
+  Смена пароля в профиле: проверяет текущий пароль, обновляет на новый.
+  Возвращает {:ok, user} | {:error, :invalid_current_password | changeset}.
+  """
+  def update_password(%User{} = user, current_password, new_password) do
+    if Argon2.verify_pass(current_password, user.hashed_password) do
+      user |> User.password_changeset(%{password: new_password}) |> Repo.update()
+    else
+      {:error, :invalid_current_password}
+    end
+  end
+
   ## Аутентификация (D-006)
 
   @doc """

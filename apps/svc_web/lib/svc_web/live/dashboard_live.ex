@@ -2,7 +2,7 @@ defmodule SvcWeb.DashboardLive do
   @moduledoc "Панель управления админки (E0)."
   use SvcWeb, :live_view
 
-  alias Svc.{Authz, Audit, Meetings, Orgs}
+  alias Svc.{Authz, Audit, Meetings}
 
   @impl true
   def mount(_params, _session, socket) do
@@ -14,53 +14,16 @@ defmodule SvcWeb.DashboardLive do
        page_title: "Панель управления",
        visible_users: length(Authz.visible_user_ids(user)),
        meetings_count: length(Meetings.list_meetings(user.org_id)),
-       department: department_name(user),
        recent_audit: recent_audit
      )}
-  end
-
-  defp department_name(%{department_id: nil}), do: nil
-
-  defp department_name(user) do
-    Orgs.get_department!(user.org_id, user.department_id).name
-  rescue
-    _ -> nil
   end
 
   @impl true
   def render(assigns) do
     ~H"""
     <Layouts.app flash={@flash} active="dashboard" current_user={@current_user}>
-      <h1 class="text-2xl font-semibold tracking-tight">Панель управления</h1>
+      <h1 class="text-2xl font-semibold tracking-tight">Здравствуйте, {first_name(@current_user.full_name)}</h1>
       <p class="text-sm text-base-content/55 mt-1 mb-6">Обзор организации и активности</p>
-
-      <div class="rounded-xl border border-base-300 bg-base-100/50 p-5 mb-6 flex items-center gap-4">
-        <span class="grid place-items-center size-14 rounded-full bg-primary/15 text-primary text-lg font-semibold ring-1 ring-primary/15 overflow-hidden shrink-0">
-          <img :if={@current_user.photo_path} src={@current_user.photo_path} class="w-full h-full object-cover" alt="" />
-          <span :if={!@current_user.photo_path}>{initials(@current_user.full_name)}</span>
-        </span>
-        <div class="flex-1 min-w-0">
-          <div class="font-semibold">{@current_user.full_name}</div>
-          <div class="text-sm text-base-content/55 flex items-center gap-3 flex-wrap mt-1">
-            <span class="px-2 py-0.5 rounded-full bg-primary/10 text-primary text-xs font-medium">
-              {role_label(@current_user.role)}
-            </span>
-            <span :if={@department} class="inline-flex items-center gap-1">
-              <.icon name="hero-building-office-2" class="size-3.5" /> {@department}
-            </span>
-            <span class="inline-flex items-center gap-1">
-              <.icon
-                name={if @current_user.totp_enabled, do: "hero-shield-check", else: "hero-shield-exclamation"}
-                class={["size-3.5", @current_user.totp_enabled && "text-success", !@current_user.totp_enabled && "text-warning"]}
-              /> 2FA {if @current_user.totp_enabled, do: "включена", else: "выключена"}
-            </span>
-            <span :if={@current_user.last_login_at} class="inline-flex items-center gap-1 tabular text-xs text-base-content/40">
-              <.icon name="hero-clock" class="size-3.5" />
-              {Calendar.strftime(@current_user.last_login_at, "%d.%m %H:%M")}
-            </span>
-          </div>
-        </div>
-      </div>
 
       <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <.metric icon="hero-users" label="Сотрудники" value={@visible_users} hint="видимых по вашей роли" />
@@ -120,11 +83,11 @@ defmodule SvcWeb.DashboardLive do
     """
   end
 
-  defp role_label(:super_admin), do: "Суперадмин"
-  defp role_label(:admin_hr), do: "Админ/HR"
-  defp role_label(:manager), do: "Руководитель"
-  defp role_label(:employee), do: "Сотрудник"
-  defp role_label(:security_officer), do: "Офицер безопасности"
-
-  defp initials(name), do: name |> String.split() |> Enum.take(2) |> Enum.map_join(&String.first/1)
+  defp first_name(full_name) do
+    case String.split(full_name) do
+      [_last, first | _] -> first
+      [single] -> single
+      _ -> full_name
+    end
+  end
 end

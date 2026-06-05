@@ -56,41 +56,55 @@ defmodule SvcWeb.Layouts do
           <.nav_item navigate={~p"/admin/meetings"} icon="hero-video-camera" label="Встречи" on={@active == "meetings"} />
         </nav>
 
-        <div :if={@current_user} class="px-4 py-3 border-t border-base-300 flex items-center gap-2.5">
-          <span class="grid place-items-center size-9 rounded-full bg-primary/15 text-primary text-xs font-semibold ring-1 ring-primary/15 overflow-hidden shrink-0">
-            <img :if={@current_user.photo_path} src={@current_user.photo_path} class="w-full h-full object-cover" alt="" />
-            <span :if={!@current_user.photo_path}>{user_initials(@current_user.full_name)}</span>
-          </span>
-          <div class="min-w-0">
-            <div class="text-sm font-medium truncate leading-tight">{@current_user.full_name}</div>
-            <div class="text-[11px] text-base-content/50 truncate">{role_short(@current_user.role)}</div>
-          </div>
-        </div>
-
-        <div class="p-3 border-t border-base-300 flex items-center justify-between">
+        <div class="p-3 border-t border-base-300">
           <.theme_toggle />
-          <.link
-            href={~p"/logout"}
-            method="delete"
-            class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm text-base-content/60 hover:text-error hover:bg-error/10 transition"
-          >
-            <.icon name="hero-arrow-right-start-on-rectangle" class="size-4" /> Выйти
-          </.link>
         </div>
       </aside>
 
       <div class="flex-1 flex flex-col min-w-0">
-        <header class="lg:hidden flex items-center justify-between px-4 h-14 border-b border-base-300 bg-base-100">
-          <.link navigate={~p"/admin"} class="flex items-center gap-2">
-            <.icon name="hero-shield-check" class="size-5 text-primary" />
-            <span class="font-semibold text-sm">SVC</span>
-          </.link>
-          <nav class="flex items-center gap-1">
+        <header class="sticky top-0 z-20 flex items-center justify-between gap-3 px-4 sm:px-8 h-14 border-b border-base-300 bg-base-100/85 backdrop-blur">
+          <nav class="flex items-center gap-1 lg:hidden">
             <.link navigate={~p"/admin"} class="btn btn-ghost btn-sm btn-square"><.icon name="hero-squares-2x2" class="size-4" /></.link>
             <.link navigate={~p"/admin/users"} class="btn btn-ghost btn-sm btn-square"><.icon name="hero-users" class="size-4" /></.link>
             <.link navigate={~p"/admin/meetings"} class="btn btn-ghost btn-sm btn-square"><.icon name="hero-video-camera" class="size-4" /></.link>
-            <.link href={~p"/logout"} method="delete" class="btn btn-ghost btn-sm btn-square"><.icon name="hero-arrow-right-start-on-rectangle" class="size-4" /></.link>
           </nav>
+          <span class="hidden lg:block"></span>
+
+          <div :if={@current_user} class="dropdown dropdown-end">
+            <div
+              tabindex="0"
+              role="button"
+              class="flex items-center gap-2.5 pl-1.5 pr-2.5 py-1.5 rounded-xl hover:bg-base-200 transition cursor-pointer"
+            >
+              <span class="grid place-items-center size-8 rounded-full bg-primary/15 text-primary text-xs font-semibold ring-1 ring-primary/15 overflow-hidden shrink-0">
+                <img :if={@current_user.photo_path} src={@current_user.photo_path} class="w-full h-full object-cover" alt="" />
+                <span :if={!@current_user.photo_path}>{user_initials(@current_user.full_name)}</span>
+              </span>
+              <span class="hidden sm:block text-left leading-tight">
+                <span class="block text-sm font-medium">{@current_user.full_name}</span>
+                <span class="block text-[11px] text-base-content/50">{role_short(@current_user.role)}</span>
+              </span>
+              <.icon name="hero-chevron-down" class="size-4 text-base-content/40" />
+            </div>
+            <ul
+              tabindex="0"
+              class="dropdown-content menu mt-2 w-56 rounded-xl border border-base-300 bg-base-100 shadow-xl z-30 p-1.5 gap-0.5"
+            >
+              <li class="menu-title px-3 py-1.5 text-[11px] text-base-content/40 sm:hidden">
+                {@current_user.full_name}
+              </li>
+              <li>
+                <.link navigate={~p"/admin/profile"} class="gap-2.5 rounded-lg">
+                  <.icon name="hero-user-circle" class="size-4" /> Профиль
+                </.link>
+              </li>
+              <li>
+                <.link href={~p"/logout"} method="delete" class="gap-2.5 rounded-lg text-error hover:bg-error/10">
+                  <.icon name="hero-arrow-right-start-on-rectangle" class="size-4" /> Выйти
+                </.link>
+              </li>
+            </ul>
+          </div>
         </header>
 
         <main class="flex-1 px-5 sm:px-8 py-8">
