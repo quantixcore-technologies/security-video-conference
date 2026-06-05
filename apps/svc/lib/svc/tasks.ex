@@ -11,14 +11,36 @@ defmodule Svc.Tasks do
   @doc "Кто вправе ставить поручения и двигать карточки (руководство). D-015."
   def can_manage?(%User{role: role}), do: role in [:super_admin, :admin_hr, :manager]
 
-  @doc "Создаёт поручение/задачу от имени автора (creator)."
+  @doc """
+  Создаёт поручение/задачу от имени автора (creator). При назначении
+  исполнителя (≠ автор) шлёт ему in-app уведомление (E4-C).
+  """
   def create_task(%User{} = creator, attrs) do
     attrs
     |> normalize()
     |> Map.merge(%{"org_id" => creator.org_id, "creator_id" => creator.id})
     |> then(&Task.changeset(%Task{}, &1))
     |> Repo.insert()
+    |> notify_assignee(creator)
   end
+
+  # Уведомляем исполнителя о новом поручении (кроме случая «поставил сам себе»).
+  defp notify_assignee({:ok, %Task{assignee_id: aid} = task}, %User{id: cid} = creator)
+       when not is_nil(aid) and aid != cid do
+    with %User{} = assignee <- Repo.get(User, aid) do
+      Svc.Notifications.notify(
+        assignee,
+        :task,
+        "Новое поручение: #{task.title}",
+        body: "Поручил: #{creator.full_name}",
+        meeting_id: task.meeting_id
+      )
+    end
+
+    {:ok, task}
+  end
+
+  defp notify_assignee(result, _creator), do: result
 
   def get_task!(org_id, id) do
     Task
@@ -41,7 +63,7 @@ defmodule Svc.Tasks do
     |> where([t], t.org_id == ^org_id)
     |> maybe_assignee(opts[:assignee_id])
     |> order_by([t], desc: t.inserted_at)
-    |> preload([:creator, :assignee])
+    |> preload([:creator, :assignee, :meeting])
     |> Repo.all()
   end
 

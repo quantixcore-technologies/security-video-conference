@@ -3,7 +3,7 @@ defmodule SvcWeb.MeetingLiveTest do
 
   import Phoenix.LiveViewTest
 
-  alias Svc.{Meetings, Accounts, Orgs, Attendance}
+  alias Svc.{Meetings, Accounts, Orgs, Attendance, Tasks, Notifications}
 
   setup do
     {:ok, org} = Orgs.create_organization(%{name: "Орг", slug: "org"})
@@ -72,5 +72,31 @@ defmodule SvcWeb.MeetingLiveTest do
     {:ok, _lv, html} = conn |> login(mgr) |> live(~p"/admin/meetings/#{meeting.id}")
     assert html =~ "Журнал посещаемости"
     assert html =~ emp.full_name
+  end
+
+  test "manager ставит поручение по итогам встречи (E4-C)", %{conn: conn, mgr: mgr, emp: emp} do
+    {:ok, meeting} = Meetings.create_meeting(mgr, %{title: "Совещание"})
+
+    {:ok, lv, html} = conn |> login(mgr) |> live(~p"/admin/meetings/#{meeting.id}/assign-task")
+    assert html =~ "Поручение по итогам"
+
+    lv
+    |> form("form", task: %{title: "Подготовить смету", assignee_id: to_string(emp.id), priority: "high"})
+    |> render_submit()
+
+    task = Tasks.list_tasks(mgr.org_id) |> Enum.find(&(&1.title == "Подготовить смету"))
+    assert task
+    assert task.meeting_id == meeting.id
+    assert task.assignee_id == emp.id
+    assert Notifications.unread_count(emp.id) == 1
+  end
+
+  test "employee не может открыть форму поручения из встречи", %{conn: conn, mgr: mgr, emp: emp} do
+    {:ok, meeting} = Meetings.create_meeting(mgr, %{title: "Совещание"})
+
+    assert {:error, {:live_redirect, %{to: path}}} =
+             conn |> login(emp) |> live(~p"/admin/meetings/#{meeting.id}/assign-task")
+
+    assert path =~ "/admin/meetings/#{meeting.id}"
   end
 end

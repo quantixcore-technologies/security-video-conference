@@ -1,7 +1,7 @@
 defmodule Svc.TasksTest do
   use Svc.DataCase, async: true
 
-  alias Svc.{Tasks, Accounts, Orgs}
+  alias Svc.{Tasks, Accounts, Orgs, Meetings, Notifications}
 
   setup do
     {:ok, org} = Orgs.create_organization(%{name: "Орг", slug: "org"})
@@ -70,5 +70,30 @@ defmodule Svc.TasksTest do
     {:ok, t2} = Tasks.create_task(boss, %{"title" => "T2", "assignee_id" => emp.id})
     Tasks.set_status(t2, :done)
     assert Tasks.open_count_for(emp.id) == 1
+  end
+
+  test "create_task с исполнителем шлёт ему уведомление (E4-C)", %{boss: boss, emp: emp} do
+    assert Notifications.unread_count(emp.id) == 0
+    {:ok, _t} = Tasks.create_task(boss, %{"title" => "Срочное поручение", "assignee_id" => emp.id})
+    assert Notifications.unread_count(emp.id) == 1
+    assert [n] = Notifications.list_for_user(emp.id)
+    assert n.kind == :task
+    assert n.title =~ "Срочное поручение"
+  end
+
+  test "поручение самому себе не шлёт уведомление", %{boss: boss} do
+    {:ok, _t} = Tasks.create_task(boss, %{"title" => "Сам себе", "assignee_id" => boss.id})
+    assert Notifications.unread_count(boss.id) == 0
+  end
+
+  test "поручение без исполнителя не шлёт уведомлений", %{boss: boss, emp: emp} do
+    {:ok, _t} = Tasks.create_task(boss, %{"title" => "Ничей"})
+    assert Notifications.unread_count(emp.id) == 0
+  end
+
+  test "create_task с meeting_id связывает поручение со встречей (E4-C)", %{boss: boss} do
+    {:ok, meeting} = Meetings.create_meeting(boss, %{title: "Планёрка"})
+    {:ok, t} = Tasks.create_task(boss, %{"title" => "По итогам", "meeting_id" => meeting.id})
+    assert t.meeting_id == meeting.id
   end
 end

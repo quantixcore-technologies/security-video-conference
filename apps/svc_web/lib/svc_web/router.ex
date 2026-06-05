@@ -87,6 +87,7 @@ defmodule SvcWeb.Router do
       live "/meetings/new", MeetingLive.Index, :new
       live "/meetings/:id", MeetingLive.Show, :show
       live "/meetings/:id/edit", MeetingLive.Show, :edit
+      live "/meetings/:id/assign-task", MeetingLive.Show, :assign_task
       live "/tasks", TaskLive.Index, :index
       live "/tasks/new", TaskLive.Index, :new
     end

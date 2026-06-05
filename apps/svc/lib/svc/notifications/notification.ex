@@ -3,7 +3,7 @@ defmodule Svc.Notifications.Notification do
   use Ecto.Schema
   import Ecto.Changeset
 
-  @kinds ~w(invite reminder update cancel)a
+  @kinds ~w(invite reminder update cancel task)a
 
   @type t :: %__MODULE__{}
 

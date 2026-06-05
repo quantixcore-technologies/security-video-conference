@@ -42,6 +42,20 @@ defmodule SvcWeb.MeetingLive.Show do
   defp assign_form(socket, :edit, meeting),
     do: assign(socket, :form, to_form(Meetings.change_meeting(meeting)))
 
+  defp assign_form(socket, :assign_task, meeting) do
+    actor = socket.assigns.current_user
+
+    if Meetings.can_organize?(actor) do
+      socket
+      |> assign(:assignees, Svc.Accounts.list_users(actor.org_id))
+      |> assign(:form, to_form(%{"title" => "", "priority" => "normal", "assignee_id" => ""}, as: :task))
+    else
+      socket
+      |> put_flash(:error, "Недостаточно прав для постановки поручений.")
+      |> push_navigate(to: ~p"/admin/meetings/#{meeting.id}")
+    end
+  end
+
   defp assign_form(socket, _action, _meeting), do: assign(socket, :form, nil)
 
   @impl true
@@ -94,6 +108,30 @@ defmodule SvcWeb.MeetingLive.Show do
         {:noreply, put_flash(socket, :error, "Вы не в списке приглашённых.")}
     end
   end
+
+  def handle_event("create_task", %{"task" => params}, socket) do
+    actor = socket.assigns.current_user
+    meeting = socket.assigns.meeting
+
+    attrs =
+      params
+      |> Map.put("meeting_id", meeting.id)
+      |> drop_blank_assignee()
+
+    case Svc.Tasks.create_task(actor, attrs) do
+      {:ok, task} ->
+        {:noreply,
+         socket
+         |> put_flash(:info, "Поручение «#{task.title}» создано по итогам встречи.")
+         |> push_navigate(to: ~p"/admin/tasks")}
+
+      {:error, %Ecto.Changeset{}} ->
+        {:noreply, put_flash(socket, :error, "Не удалось создать поручение — проверьте название.")}
+    end
+  end
+
+  defp drop_blank_assignee(%{"assignee_id" => ""} = params), do: Map.delete(params, "assignee_id")
+  defp drop_blank_assignee(params), do: params
 
   defp notify_organizer_rsvp(meeting, actor, status) do
     organizer = Svc.Accounts.get_user!(meeting.org_id, meeting.organizer_id)
@@ -157,6 +195,14 @@ defmodule SvcWeb.MeetingLive.Show do
           </.link>
           <.link
             :if={@can_organize}
+            navigate={~p"/admin/meetings/#{@meeting.id}/assign-task"}
+            class="btn btn-ghost btn-sm gap-1.5"
+            title="Поставить поручение по итогам встречи"
+          >
+            <.icon name="hero-clipboard-document-list" class="size-4" /> Поручение
+          </.link>
+          <.link
+            :if={@can_organize}
             navigate={~p"/admin/meetings/#{@meeting.id}/edit"}
             class="btn btn-ghost btn-sm gap-1.5"
           >
@@ -190,6 +236,37 @@ defmodule SvcWeb.MeetingLive.Show do
           <.input field={@form[:late_threshold_seconds]} type="number" label="Порог опоздания (сек)" />
           <div class="flex gap-2 pt-2">
             <.button type="submit" phx-disable-with="Сохраняем...">Сохранить</.button>
+            <.link navigate={~p"/admin/meetings/#{@meeting.id}"} class="btn btn-ghost">Отмена</.link>
+          </div>
+        </.form>
+      </div>
+
+      <div :if={@live_action == :assign_task} class="rounded-xl border border-base-300 bg-base-100/50 p-5 mt-6">
+        <h3 class="font-medium mb-1 flex items-center gap-2">
+          <.icon name="hero-clipboard-document-list" class="size-4 text-primary" /> Поручение по итогам встречи
+        </h3>
+        <p class="text-sm text-base-content/55 mb-4">Будет привязано к «{@meeting.title}» и появится на Kanban-доске.</p>
+        <.form for={@form} phx-submit="create_task" class="space-y-3">
+          <.input field={@form[:title]} type="text" label="Что нужно сделать" required />
+          <.input field={@form[:description]} type="textarea" label="Описание (необязательно)" rows="2" />
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <.input
+              field={@form[:assignee_id]}
+              type="select"
+              label="Исполнитель"
+              prompt="Не назначено"
+              options={Enum.map(@assignees, &{&1.full_name, &1.id})}
+            />
+            <.input
+              field={@form[:priority]}
+              type="select"
+              label="Приоритет"
+              options={[{"Низкий", "low"}, {"Обычный", "normal"}, {"Высокий", "high"}, {"Срочный", "urgent"}]}
+            />
+            <.input field={@form[:due_at]} type="datetime-local" label="Срок" />
+          </div>
+          <div class="flex gap-2 pt-2">
+            <.button type="submit" phx-disable-with="Создаём...">Создать поручение</.button>
             <.link navigate={~p"/admin/meetings/#{@meeting.id}"} class="btn btn-ghost">Отмена</.link>
           </div>
         </.form>

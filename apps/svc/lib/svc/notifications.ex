@@ -11,7 +11,7 @@ defmodule Svc.Notifications do
 
   @doc """
   Создаёт уведомление пользователю.
-  `kind` ∈ invite|reminder|update|cancel. opts: :body, :meeting_id.
+  `kind` ∈ invite|reminder|update|cancel|task. opts: :body, :meeting_id.
   """
   def notify(%User{} = user, kind, title, opts \\ []) do
     %Notification{}

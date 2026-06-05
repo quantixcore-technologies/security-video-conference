@@ -189,6 +189,15 @@ defmodule SvcWeb.TaskLive.Index do
                 {t.description}
               </p>
 
+              <.link
+                :if={t.meeting}
+                navigate={~p"/admin/meetings/#{t.meeting_id}"}
+                class="mt-2 inline-flex items-center gap-1 text-[11px] text-base-content/45 hover:text-primary transition"
+                title="Поручение по итогам встречи"
+              >
+                <.icon name="hero-video-camera" class="size-3" /> {t.meeting.title}
+              </.link>
+
               <div class="mt-2.5 flex items-center justify-between gap-2">
                 <span :if={t.assignee} class="flex items-center gap-1.5 text-xs text-base-content/60">
                   <span class="grid place-items-center size-5 rounded-full bg-primary/15 text-primary text-[9px] font-semibold ring-1 ring-primary/15">
