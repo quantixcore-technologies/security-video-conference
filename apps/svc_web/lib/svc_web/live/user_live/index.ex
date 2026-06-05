@@ -5,7 +5,14 @@ defmodule SvcWeb.UserLive.Index do
   alias Svc.{Accounts, Authz, Audit, Orgs}
 
   @impl true
-  def mount(_params, _session, socket), do: {:ok, socket}
+  def mount(_params, _session, socket) do
+    {:ok,
+     allow_upload(socket, :photo,
+       accept: ~w(.jpg .jpeg .png),
+       max_entries: 1,
+       max_file_size: 5_000_000
+     )}
+  end
 
   @impl true
   def handle_params(_params, _uri, socket) do
@@ -53,7 +60,12 @@ defmodule SvcWeb.UserLive.Index do
 
   def handle_event("save", %{"user" => params}, socket) do
     actor = socket.assigns.current_user
-    params = Map.put(params, "org_id", actor.org_id)
+    photo_path = consume_photo(socket, actor.org_id)
+
+    params =
+      params
+      |> Map.put("org_id", actor.org_id)
+      |> then(&if(photo_path, do: Map.put(&1, "photo_path", photo_path), else: &1))
 
     case Accounts.create_user(params) do
       {:ok, user} ->
@@ -72,6 +84,18 @@ defmodule SvcWeb.UserLive.Index do
   defp load_users(socket) do
     users = socket.assigns.current_user |> Authz.scope_users() |> Svc.Repo.all()
     assign(socket, :users, users)
+  end
+
+  # Сохраняет загруженное фото в priv/static/uploads/photos, возвращает публичный путь.
+  defp consume_photo(socket, org_id) do
+    consume_uploaded_entries(socket, :photo, fn %{path: tmp}, entry ->
+      dir = Path.join([:code.priv_dir(:svc_web), "static", "uploads", "photos"])
+      File.mkdir_p!(dir)
+      name = "#{org_id}_#{System.unique_integer([:positive])}#{Path.extname(entry.client_name)}"
+      File.cp!(tmp, Path.join(dir, name))
+      {:ok, "/uploads/photos/#{name}"}
+    end)
+    |> List.first()
   end
 
   defp can_manage?(%{role: role}), do: role in [:super_admin, :admin_hr]
@@ -110,6 +134,19 @@ defmodule SvcWeb.UserLive.Index do
           <.input field={@form[:full_name]} type="text" label="ФИО" required />
           <.input field={@form[:username]} type="text" label="Логин" required />
           <.input field={@form[:phone]} type="text" label="Телефон (Номер)" />
+          <div>
+            <label class="block text-sm font-medium mb-1">Фото (jpg/png, до 5 МБ)</label>
+            <.live_file_input
+              upload={@uploads.photo}
+              class="file-input file-input-sm file-input-bordered w-full"
+            />
+            <div :for={entry <- @uploads.photo.entries} class="text-xs opacity-60 mt-1">
+              {entry.client_name} · {entry.progress}%
+            </div>
+            <div :for={err <- upload_errors(@uploads.photo)} class="text-xs text-error mt-1">
+              {inspect(err)}
+            </div>
+          </div>
           <.input
             field={@form[:password]}
             type="password"

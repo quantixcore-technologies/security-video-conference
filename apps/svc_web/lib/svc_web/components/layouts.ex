@@ -35,28 +35,21 @@ defmodule SvcWeb.Layouts do
 
   def app(assigns) do
     ~H"""
-    <header class="navbar px-4 sm:px-6 lg:px-8">
+    <header class="navbar bg-base-200 border-b border-base-300 px-4 sm:px-6 lg:px-8">
       <div class="flex-1">
-        <a href="/" class="flex-1 flex w-fit items-center gap-2">
-          <img src={~p"/images/logo.svg"} width="36" />
-          <span class="text-sm font-semibold">v{Application.spec(:phoenix, :vsn)}</span>
-        </a>
+        <.link navigate={~p"/admin"} class="flex items-center gap-2">
+          <span class="text-lg font-bold text-primary">🛡️ SVC</span>
+          <span class="hidden sm:inline text-xs opacity-50">Security Video Conference</span>
+        </.link>
       </div>
       <div class="flex-none">
-        <ul class="flex flex-column px-1 space-x-4 items-center">
+        <ul class="flex items-center gap-1">
+          <li><.link navigate={~p"/admin"} class="btn btn-ghost btn-sm">Панель</.link></li>
+          <li><.link navigate={~p"/admin/users"} class="btn btn-ghost btn-sm">Сотрудники</.link></li>
+          <li><.link navigate={~p"/admin/meetings"} class="btn btn-ghost btn-sm">Встречи</.link></li>
+          <li><.theme_toggle /></li>
           <li>
-            <a href="https://phoenixframework.org/" class="btn btn-ghost">Website</a>
-          </li>
-          <li>
-            <a href="https://github.com/phoenixframework/phoenix" class="btn btn-ghost">GitHub</a>
-          </li>
-          <li>
-            <.theme_toggle />
-          </li>
-          <li>
-            <a href="https://hexdocs.pm/phoenix/overview.html" class="btn btn-primary">
-              Get Started <span aria-hidden="true">&rarr;</span>
-            </a>
+            <.link href={~p"/logout"} method="delete" class="btn btn-ghost btn-sm">Выйти</.link>
           </li>
         </ul>
       </div>
