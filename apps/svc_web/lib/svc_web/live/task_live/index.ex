@@ -96,6 +96,18 @@ defmodule SvcWeb.TaskLive.Index do
     |> assign(:board, Tasks.board(actor.org_id, opts))
     |> assign(:can_manage, manage?)
     |> assign(:columns, @columns)
+    |> assign_report(manage?, actor.org_id)
+  end
+
+  # Сводка и отчёт по исполнителям — только для руководства (E4-D).
+  defp assign_report(socket, true, org_id) do
+    socket
+    |> assign(:stats, Tasks.stats(org_id))
+    |> assign(:assignee_summary, Tasks.summary_by_assignee(org_id))
+  end
+
+  defp assign_report(socket, false, _org_id) do
+    assign(socket, stats: nil, assignee_summary: [])
   end
 
   defp tasks_for(board, status), do: Map.get(board, status, [])
@@ -148,6 +160,29 @@ defmodule SvcWeb.TaskLive.Index do
             <.link navigate={~p"/admin/tasks"} class="btn btn-ghost">Отмена</.link>
           </div>
         </.form>
+      </div>
+
+      <div :if={@can_manage and @stats} class="flex flex-wrap items-center gap-2 mb-5 text-sm">
+        <span class="inline-flex items-center gap-1.5 rounded-lg border border-base-300 px-3 py-1.5">
+          <span class="text-base-content/55">Всего</span>
+          <span class="tabular font-semibold">{@stats.total}</span>
+        </span>
+        <span class="inline-flex items-center gap-1.5 rounded-lg border border-info/25 px-3 py-1.5">
+          <span class="text-base-content/55">В работе</span>
+          <span class="tabular font-semibold text-info">{@stats.in_progress}</span>
+        </span>
+        <span class="inline-flex items-center gap-1.5 rounded-lg border border-success/25 px-3 py-1.5">
+          <span class="text-base-content/55">Выполнено</span>
+          <span class="tabular font-semibold text-success">{@stats.done}</span>
+        </span>
+        <span
+          :if={@stats.overdue > 0}
+          class="inline-flex items-center gap-1.5 rounded-lg border border-error/25 bg-error/5 px-3 py-1.5"
+        >
+          <.icon name="hero-exclamation-triangle" class="size-3.5 text-error" />
+          <span class="text-base-content/55">Просрочено</span>
+          <span class="tabular font-semibold text-error">{@stats.overdue}</span>
+        </span>
       </div>
 
       <div
@@ -225,6 +260,44 @@ defmodule SvcWeb.TaskLive.Index do
             </div>
           </div>
         </div>
+      </div>
+
+      <div
+        :if={@can_manage and @assignee_summary != []}
+        class="mt-8 rounded-xl border border-base-300 bg-base-100/50 overflow-hidden"
+      >
+        <div class="px-5 py-3 border-b border-base-300 flex items-center gap-2">
+          <.icon name="hero-chart-bar" class="size-4 text-base-content/45" />
+          <span class="text-sm font-medium">Отчёт по исполнителям</span>
+        </div>
+        <table class="w-full text-sm">
+          <thead>
+            <tr class="text-left text-xs uppercase tracking-wider text-base-content/40 border-b border-base-300">
+              <th class="font-medium px-5 py-2.5">Исполнитель</th>
+              <th class="font-medium px-5 py-2.5 text-center">Открыто</th>
+              <th class="font-medium px-5 py-2.5 text-center">Выполнено</th>
+              <th class="font-medium px-5 py-2.5 text-center">Просрочено</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-base-300/50">
+            <tr :for={row <- @assignee_summary} class="hover:bg-base-200/40 transition">
+              <td class="px-5 py-3">
+                <span class="flex items-center gap-2 font-medium">
+                  <span class="grid place-items-center size-6 rounded-full bg-primary/15 text-primary text-[10px] font-semibold">
+                    {initials(row.assignee.full_name)}
+                  </span>
+                  {row.assignee.full_name}
+                </span>
+              </td>
+              <td class="px-5 py-3 text-center tabular font-semibold">{row.open}</td>
+              <td class="px-5 py-3 text-center tabular text-success">{row.done}</td>
+              <td class="px-5 py-3 text-center tabular">
+                <span :if={row.overdue > 0} class="text-error font-semibold">{row.overdue}</span>
+                <span :if={row.overdue == 0} class="text-base-content/30">—</span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
       </div>
     </Layouts.app>
     """

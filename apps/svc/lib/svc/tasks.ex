@@ -80,6 +80,70 @@ defmodule Svc.Tasks do
     )
   end
 
+  @doc """
+  Сводка по поручениям org (E4-D отчётность): счётчики по статусам,
+  всего и просроченных. opts: :assignee_id — сузить до исполнителя.
+  """
+  def stats(org_id, opts \\ []) do
+    by_status =
+      from(t in Task, where: t.org_id == ^org_id)
+      |> maybe_assignee(opts[:assignee_id])
+      |> group_by([t], t.status)
+      |> select([t], {t.status, count(t.id)})
+      |> Repo.all()
+      |> Map.new()
+
+    %{
+      total: by_status |> Map.values() |> Enum.sum(),
+      todo: Map.get(by_status, :todo, 0),
+      in_progress: Map.get(by_status, :in_progress, 0),
+      review: Map.get(by_status, :review, 0),
+      done: Map.get(by_status, :done, 0),
+      cancelled: Map.get(by_status, :cancelled, 0),
+      overdue: overdue_count(org_id, opts)
+    }
+  end
+
+  @doc "Число просроченных (срок прошёл, не завершено и не отменено). opts: :assignee_id."
+  def overdue_count(org_id, opts \\ []) do
+    now = DateTime.utc_now()
+
+    from(t in Task,
+      where:
+        t.org_id == ^org_id and not is_nil(t.due_at) and t.due_at < ^now and
+          t.status not in [:done, :cancelled]
+    )
+    |> maybe_assignee(opts[:assignee_id])
+    |> Repo.aggregate(:count)
+  end
+
+  @doc """
+  Отчёт по исполнителям (E4-D): для каждого — открыто/выполнено/просрочено.
+  Сортировка по числу открытых (desc). Только задачи с назначенным исполнителем.
+  """
+  def summary_by_assignee(org_id) do
+    now = DateTime.utc_now()
+
+    org_id
+    |> list_tasks()
+    |> Enum.filter(& &1.assignee)
+    |> Enum.group_by(& &1.assignee)
+    |> Enum.map(fn {assignee, ts} ->
+      %{
+        assignee: assignee,
+        open: Enum.count(ts, &(&1.status not in [:done, :cancelled])),
+        done: Enum.count(ts, &(&1.status == :done)),
+        overdue: Enum.count(ts, &overdue?(&1, now))
+      }
+    end)
+    |> Enum.sort_by(& &1.open, :desc)
+  end
+
+  defp overdue?(task, now) do
+    task.due_at && task.status not in [:done, :cancelled] &&
+      DateTime.compare(task.due_at, now) == :lt
+  end
+
   defp maybe_assignee(query, nil), do: query
   defp maybe_assignee(query, id), do: where(query, [t], t.assignee_id == ^id)
 

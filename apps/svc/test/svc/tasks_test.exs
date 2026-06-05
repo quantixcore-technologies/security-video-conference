@@ -96,4 +96,43 @@ defmodule Svc.TasksTest do
     {:ok, t} = Tasks.create_task(boss, %{"title" => "По итогам", "meeting_id" => meeting.id})
     assert t.meeting_id == meeting.id
   end
+
+  test "stats: счётчики по статусам + total (E4-D)", %{boss: boss, emp: emp} do
+    Tasks.create_task(boss, %{"title" => "T1", "assignee_id" => emp.id})
+    {:ok, t2} = Tasks.create_task(boss, %{"title" => "T2"})
+    Tasks.set_status(t2, :in_progress)
+    {:ok, t3} = Tasks.create_task(boss, %{"title" => "T3"})
+    Tasks.set_status(t3, :done)
+
+    s = Tasks.stats(boss.org_id)
+    assert s.total == 3
+    assert s.todo == 1
+    assert s.in_progress == 1
+    assert s.done == 1
+  end
+
+  test "overdue_count: только просроченные незавершённые (E4-D)", %{boss: boss, emp: emp} do
+    past = DateTime.add(DateTime.utc_now(), -3600, :second)
+    future = DateTime.add(DateTime.utc_now(), 3600, :second)
+    Tasks.create_task(boss, %{"title" => "Просрочена", "assignee_id" => emp.id, "due_at" => past})
+    Tasks.create_task(boss, %{"title" => "В срок", "assignee_id" => emp.id, "due_at" => future})
+    {:ok, done_late} = Tasks.create_task(boss, %{"title" => "Просрочена но done", "due_at" => past})
+    Tasks.set_status(done_late, :done)
+
+    assert Tasks.overdue_count(boss.org_id) == 1
+  end
+
+  test "summary_by_assignee: open/done/overdue по исполнителю (E4-D)", %{boss: boss, emp: emp} do
+    past = DateTime.add(DateTime.utc_now(), -3600, :second)
+    Tasks.create_task(boss, %{"title" => "Открыта", "assignee_id" => emp.id})
+    Tasks.create_task(boss, %{"title" => "Просрочена", "assignee_id" => emp.id, "due_at" => past})
+    {:ok, d} = Tasks.create_task(boss, %{"title" => "Выполнена", "assignee_id" => emp.id})
+    Tasks.set_status(d, :done)
+
+    assert [row] = Tasks.summary_by_assignee(boss.org_id)
+    assert row.assignee.id == emp.id
+    assert row.open == 2
+    assert row.done == 1
+    assert row.overdue == 1
+  end
 end

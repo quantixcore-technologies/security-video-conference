@@ -2,7 +2,7 @@ defmodule SvcWeb.DashboardLive do
   @moduledoc "Панель управления админки (E0)."
   use SvcWeb, :live_view
 
-  alias Svc.{Authz, Audit, Meetings}
+  alias Svc.{Authz, Audit, Meetings, Tasks}
 
   @impl true
   def mount(_params, _session, socket) do
@@ -14,6 +14,8 @@ defmodule SvcWeb.DashboardLive do
        page_title: "Панель управления",
        visible_users: length(Authz.visible_user_ids(user)),
        meetings_count: length(Meetings.list_meetings(user.org_id)),
+       my_open_tasks: Tasks.open_count_for(user.id),
+       my_overdue_tasks: Tasks.overdue_count(user.org_id, assignee_id: user.id),
        recent_audit: recent_audit
      )}
   end
@@ -25,9 +27,23 @@ defmodule SvcWeb.DashboardLive do
       <h1 class="text-2xl font-semibold tracking-tight">Здравствуйте, {first_name(@current_user.full_name)}</h1>
       <p class="text-sm text-base-content/55 mt-1 mb-6">Обзор организации и активности</p>
 
-      <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
         <.metric icon="hero-users" label="Сотрудники" value={@visible_users} hint="видимых по вашей роли" />
         <.metric icon="hero-video-camera" label="Встречи" value={@meetings_count} hint="всего в организации" />
+        <.link
+          navigate={~p"/admin/tasks"}
+          class="group rounded-xl border border-base-300 bg-base-100/50 p-5 hover:border-primary/30 transition"
+        >
+          <div class="flex items-center justify-between">
+            <span class="text-xs uppercase tracking-wider text-base-content/45">Мои поручения</span>
+            <.icon name="hero-clipboard-document-list" class="size-4 text-base-content/35 group-hover:text-primary transition" />
+          </div>
+          <div class="mt-2 text-3xl font-semibold tabular">{@my_open_tasks}</div>
+          <div class="text-xs mt-1">
+            <span :if={@my_overdue_tasks > 0} class="text-error font-medium">{@my_overdue_tasks} просрочено</span>
+            <span :if={@my_overdue_tasks == 0} class="text-base-content/45">открытых · всё в срок</span>
+          </div>
+        </.link>
         <.link
           navigate={~p"/admin/meetings"}
           class="group rounded-xl border border-primary/20 bg-primary/[0.07] p-5 flex flex-col justify-between hover:bg-primary/10 transition"

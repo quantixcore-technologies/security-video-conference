@@ -111,4 +111,27 @@ defmodule SvcWeb.TaskLiveTest do
     # статус не изменился — у employee нет прав двигать
     assert Tasks.get_task!(mgr.org_id, t.id).status == :todo
   end
+
+  test "руководитель видит сводку + отчёт по исполнителям (E4-D)", %{conn: conn, mgr: mgr, emp: emp} do
+    Tasks.create_task(mgr, %{"title" => "Задача", "assignee_id" => emp.id})
+
+    {:ok, _lv, html} = conn |> login(mgr) |> live(~p"/admin/tasks")
+    assert html =~ "Всего"
+    assert html =~ "Отчёт по исполнителям"
+    assert html =~ "Открыто"
+  end
+
+  test "employee не видит отчёт по исполнителям", %{conn: conn, mgr: mgr, emp: emp} do
+    Tasks.create_task(mgr, %{"title" => "Задача", "assignee_id" => emp.id})
+
+    {:ok, _lv, html} = conn |> login(emp) |> live(~p"/admin/tasks")
+    refute html =~ "Отчёт по исполнителям"
+  end
+
+  test "дашборд показывает виджет «Мои поручения» (E4-D)", %{conn: conn, mgr: mgr, emp: emp} do
+    Tasks.create_task(mgr, %{"title" => "Моя задача", "assignee_id" => emp.id})
+
+    {:ok, _lv, html} = conn |> login(emp) |> live(~p"/admin")
+    assert html =~ "Мои поручения"
+  end
 end
