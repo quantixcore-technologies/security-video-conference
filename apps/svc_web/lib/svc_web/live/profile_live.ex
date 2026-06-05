@@ -12,8 +12,51 @@ defmodule SvcWeb.ProfileLive do
      assign(socket,
        page_title: "Профиль",
        department: department_name(user),
+       totp_setup: nil,
        form: to_form(Accounts.change_password(), as: :password)
      )}
+  end
+
+  @impl true
+  def handle_event("setup_2fa", _params, socket) do
+    {user, secret, uri} = Accounts.setup_totp(socket.assigns.current_user)
+    qr = uri |> EQRCode.encode() |> EQRCode.svg(width: 200)
+
+    {:noreply,
+     socket
+     |> assign(:current_user, user)
+     |> assign(:totp_setup, %{secret: Base.encode32(secret, padding: false), uri: uri, qr: qr})}
+  end
+
+  def handle_event("confirm_2fa", %{"totp" => %{"code" => code}}, socket) do
+    user = socket.assigns.current_user
+
+    case Accounts.confirm_totp(user, String.trim(code)) do
+      {:ok, updated} ->
+        Audit.log_action(user, :totp_enabled, resource_type: :user, resource_id: user.id)
+
+        {:noreply,
+         socket
+         |> assign(:current_user, updated)
+         |> assign(:totp_setup, nil)
+         |> put_flash(:info, "Двухфакторная аутентификация включена.")}
+
+      {:error, :invalid_code} ->
+        {:noreply, put_flash(socket, :error, "Неверный код. Попробуйте ещё раз.")}
+    end
+  end
+
+  def handle_event("cancel_2fa", _params, socket), do: {:noreply, assign(socket, :totp_setup, nil)}
+
+  def handle_event("disable_2fa", _params, socket) do
+    user = socket.assigns.current_user
+    {:ok, updated} = Accounts.disable_totp(user)
+    Audit.log_action(user, :totp_disabled, resource_type: :user, resource_id: user.id)
+
+    {:noreply,
+     socket
+     |> assign(:current_user, updated)
+     |> put_flash(:info, "Двухфакторная аутентификация отключена.")}
   end
 
   @impl true
@@ -91,21 +134,66 @@ defmodule SvcWeb.ProfileLive do
             <span class="text-sm font-medium">Безопасность</span>
           </div>
           <div class="p-5 space-y-5">
-            <div class="flex items-center justify-between">
-              <div class="flex items-center gap-2 text-sm">
-                <.icon
-                  name={if @current_user.totp_enabled, do: "hero-shield-check", else: "hero-shield-exclamation"}
-                  class={["size-5", @current_user.totp_enabled && "text-success", !@current_user.totp_enabled && "text-warning"]}
-                />
-                Двухфакторная аутентификация
+            <div>
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2 text-sm">
+                  <.icon
+                    name={if @current_user.totp_enabled, do: "hero-shield-check", else: "hero-shield-exclamation"}
+                    class={["size-5", @current_user.totp_enabled && "text-success", !@current_user.totp_enabled && "text-warning"]}
+                  />
+                  Двухфакторная аутентификация
+                </div>
+                <span class={[
+                  "px-2.5 py-0.5 rounded-full text-xs font-medium",
+                  @current_user.totp_enabled && "bg-success/10 text-success",
+                  !@current_user.totp_enabled && "bg-warning/10 text-warning"
+                ]}>
+                  {if @current_user.totp_enabled, do: "Включена", else: "Выключена"}
+                </span>
               </div>
-              <span class={[
-                "px-2.5 py-0.5 rounded-full text-xs font-medium",
-                @current_user.totp_enabled && "bg-success/10 text-success",
-                !@current_user.totp_enabled && "bg-warning/10 text-warning"
-              ]}>
-                {if @current_user.totp_enabled, do: "Включена", else: "Выключена"}
-              </span>
+
+              <div :if={@current_user.totp_enabled and is_nil(@totp_setup)} class="mt-3">
+                <button phx-click="disable_2fa" data-confirm="Отключить двухфакторную аутентификацию?" class="btn btn-ghost btn-sm text-error gap-1.5">
+                  <.icon name="hero-shield-exclamation" class="size-4" /> Отключить
+                </button>
+              </div>
+
+              <div :if={!@current_user.totp_enabled and is_nil(@totp_setup)} class="mt-3">
+                <button phx-click="setup_2fa" class="btn btn-primary btn-sm gap-1.5">
+                  <.icon name="hero-qr-code" class="size-4" /> Включить 2FA
+                </button>
+              </div>
+
+              <div :if={@totp_setup} class="mt-4 rounded-lg border border-base-300 bg-base-200/30 p-4 space-y-3">
+                <p class="text-xs text-base-content/60">
+                  Отсканируйте QR в приложении-аутентификаторе или введите ключ вручную, затем подтвердите кодом:
+                </p>
+                <div class="flex gap-4 items-start flex-wrap">
+                  <div class="bg-white rounded-lg p-2 shrink-0 [&_svg]:size-44">{Phoenix.HTML.raw(@totp_setup.qr)}</div>
+                  <div class="min-w-0 flex-1 space-y-2.5">
+                    <div>
+                      <div class="text-[11px] text-base-content/50 mb-1">Ключ для ручного ввода:</div>
+                      <code class="text-xs tabular break-all bg-base-300/40 px-2 py-1.5 rounded block">{@totp_setup.secret}</code>
+                    </div>
+                    <.form for={to_form(%{}, as: :totp)} phx-submit="confirm_2fa" class="flex gap-2">
+                      <input
+                        type="text"
+                        name="totp[code]"
+                        inputmode="numeric"
+                        maxlength="6"
+                        placeholder="000000"
+                        required
+                        autocomplete="one-time-code"
+                        class="input input-sm input-bordered flex-1 bg-base-100 text-center tabular tracking-[0.3em]"
+                      />
+                      <button type="submit" class="btn btn-sm btn-primary">Подтвердить</button>
+                    </.form>
+                    <button phx-click="cancel_2fa" class="text-xs text-base-content/50 hover:text-base-content transition">
+                      Отмена
+                    </button>
+                  </div>
+                </div>
+              </div>
             </div>
 
             <div class="border-t border-base-300/60 pt-4">

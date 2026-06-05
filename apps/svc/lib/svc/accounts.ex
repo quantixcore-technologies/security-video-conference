@@ -144,6 +144,11 @@ defmodule Svc.Accounts do
     end
   end
 
+  @doc "Отключение 2FA (сброс секрета и флага)."
+  def disable_totp(%User{} = user) do
+    user |> Ecto.Changeset.change(totp_enabled: false, totp_secret: nil) |> Repo.update()
+  end
+
   @doc "Проверяет TOTP-код при входе."
   def verify_totp(%User{totp_secret: secret, totp_enabled: true}, code)
       when is_binary(secret) and is_binary(code) do

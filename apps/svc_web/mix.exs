@@ -59,7 +59,8 @@ defmodule SvcWeb.MixProject do
       {:gettext, "~> 1.0"},
       {:svc, in_umbrella: true},
       {:jason, "~> 1.2"},
-      {:bandit, "~> 1.5"}
+      {:bandit, "~> 1.5"},
+      {:eqrcode, "~> 0.2.1"}
     ]
   end
 
