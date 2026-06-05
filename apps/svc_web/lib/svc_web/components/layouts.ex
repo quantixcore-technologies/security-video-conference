@@ -34,6 +34,7 @@ defmodule SvcWeb.Layouts do
   slot :inner_block, required: true
 
   attr :active, :string, default: nil, doc: "активный раздел: dashboard|users|meetings"
+  attr :current_user, :map, default: nil
 
   def app(assigns) do
     ~H"""
@@ -54,6 +55,17 @@ defmodule SvcWeb.Layouts do
           <.nav_item navigate={~p"/admin/users"} icon="hero-users" label="Сотрудники" on={@active == "users"} />
           <.nav_item navigate={~p"/admin/meetings"} icon="hero-video-camera" label="Встречи" on={@active == "meetings"} />
         </nav>
+
+        <div :if={@current_user} class="px-4 py-3 border-t border-base-300 flex items-center gap-2.5">
+          <span class="grid place-items-center size-9 rounded-full bg-primary/15 text-primary text-xs font-semibold ring-1 ring-primary/15 overflow-hidden shrink-0">
+            <img :if={@current_user.photo_path} src={@current_user.photo_path} class="w-full h-full object-cover" alt="" />
+            <span :if={!@current_user.photo_path}>{user_initials(@current_user.full_name)}</span>
+          </span>
+          <div class="min-w-0">
+            <div class="text-sm font-medium truncate leading-tight">{@current_user.full_name}</div>
+            <div class="text-[11px] text-base-content/50 truncate">{role_short(@current_user.role)}</div>
+          </div>
+        </div>
 
         <div class="p-3 border-t border-base-300 flex items-center justify-between">
           <.theme_toggle />
@@ -113,6 +125,14 @@ defmodule SvcWeb.Layouts do
     </.link>
     """
   end
+
+  defp user_initials(name), do: name |> String.split() |> Enum.take(2) |> Enum.map_join(&String.first/1)
+
+  defp role_short(:super_admin), do: "Суперадмин"
+  defp role_short(:admin_hr), do: "Админ / HR"
+  defp role_short(:manager), do: "Руководитель"
+  defp role_short(:employee), do: "Сотрудник"
+  defp role_short(:security_officer), do: "Офицер безоп."
 
   @doc """
   Shows the flash group with standard titles and content.

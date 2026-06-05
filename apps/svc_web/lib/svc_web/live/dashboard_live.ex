@@ -30,7 +30,7 @@ defmodule SvcWeb.DashboardLive do
   @impl true
   def render(assigns) do
     ~H"""
-    <Layouts.app flash={@flash} active="dashboard">
+    <Layouts.app flash={@flash} active="dashboard" current_user={@current_user}>
       <h1 class="text-2xl font-semibold tracking-tight">Панель управления</h1>
       <p class="text-sm text-base-content/55 mt-1 mb-6">Обзор организации и активности</p>
 
