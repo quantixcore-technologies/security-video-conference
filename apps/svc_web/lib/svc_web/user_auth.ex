@@ -42,6 +42,37 @@ defmodule SvcWeb.UserAuth do
     end
   end
 
+  @salt "api_user"
+  # Срок жизни bearer-токена нативного клиента (mobile/Tauri): 7 суток.
+  @api_token_max_age 60 * 60 * 24 * 7
+
+  @doc "Подписывает stateless bearer-токен для нативного клиента (mobile/Tauri)."
+  def sign_api_token(user) do
+    Phoenix.Token.sign(SvcWeb.Endpoint, @salt, %{user_id: user.id, org_id: user.org_id})
+  end
+
+  @doc """
+  Plug для JSON API: если сессия не дала current_user, пробуем `Authorization: Bearer <token>`.
+  Нативный клиент (Kotlin/mobile) аутентифицируется bearer-токеном, а не cookie.
+  """
+  def fetch_api_user(conn, _opts) do
+    if conn.assigns[:current_user] do
+      conn
+    else
+      assign(conn, :current_user, user_from_bearer(conn))
+    end
+  end
+
+  defp user_from_bearer(conn) do
+    with ["Bearer " <> token] <- get_req_header(conn, "authorization"),
+         {:ok, %{user_id: uid, org_id: oid}} <-
+           Phoenix.Token.verify(SvcWeb.Endpoint, @salt, token, max_age: @api_token_max_age) do
+      current_user_from_session(uid, oid)
+    else
+      _ -> nil
+    end
+  end
+
   @doc "Plug для JSON API: 401 вместо редиректа, если не аутентифицирован."
   def require_authenticated_api(conn, _opts) do
     if conn.assigns[:current_user] do

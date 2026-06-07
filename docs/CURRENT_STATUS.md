@@ -22,6 +22,15 @@
 
 - **E4 поручения/задачи (A+B+C):** backend `tasks` (creator→assignee, meeting_id, priority, status todo/in_progress/review/done, due_at) · `Svc.Tasks` (create/set_status/board/open_count/can_manage?) · ADR **D-015** («CRM» для гос = поручения+задачи, НЕ sales-CRM) · **Kanban-доска** `/admin/tasks` (4 колонки, карточки приоритет/исполнитель/срок, HTML5 drag-drop, RBAC) · **E4-C** поручение из совещания (кнопка «Поручение» на встрече → `/meetings/:id/assign-task`, meeting-бейдж на карточке) + **in-app уведомление исполнителю** при назначении (kind `:task`, в контексте `create_task` — работает из доски И из встречи, кроме «сам себе») · **E4-D** отчётность (`Svc.Tasks.stats/overdue_count/summary_by_assignee` · виджет «Мои поручения» на дашборде с просрочкой · сводная панель + таблица «по исполнителям» для руководителя). **ЭПИК E4 ЗАКРЫТ (4/4).** _(обращения граждан 🔒 заказчик)._
 
+## 📱 Сессия 2026-06-07 — нативный Android-клиент (PoC) ✅ ДОКАЗАНО НА УСТРОЙСТВЕ
+- **Стек:** Kotlin + Jetpack Compose + LiveKit Android SDK 2.18.2 (нативный WebRTC, НЕ webview — D-001). Папка `mobile/`.
+- **Backend:** добавлен bearer-auth для нативных клиентов — `POST /api/login` → Phoenix.Token; plug `fetch_api_user` (API принимает session-cookie ИЛИ bearer). **48 тестов 0 failures** (+5 API-тестов).
+- **Экраны:** `MainActivity` (вход: сервер/логин/пароль/ID) → `SvcApi` (login+join, подмена loopback-хоста на хост сервера) → `CallActivity` (LiveKit-комната, локальное+удалённое видео, mic/cam).
+- **E5 enforce (Android):** `FLAG_SECURE` на `CallActivity` — анти-скриншот/запись работает (на эмуляторе screencap чёрный, window-флаг `SECURE` подтверждён).
+- **✅ Проверено вживую на РЕАЛЬНОМ устройстве** (Realme RMX3636, Android 14, arm64) через USB + `adb reverse tcp:4000/7880`: вход → bearer → join → LiveKit → видео с реальной камеры. (Ранее также на эмуляторе android-35.) APK `mobile/app/build/outputs/apk/debug/app-debug.apk` (59MB).
+- ⚠️ Локальный стек **нативный, без Docker:** PostgreSQL :5432, LiveKit binary :7880 (`/home/darkside/livekit.native.yaml`), Redis :6379. Эмулятор: хост = `10.0.2.2`; реальное устройство по USB: `adb reverse` → `127.0.0.1`.
+- **TODO Android:** 2FA(TOTP) через API · GPS-захват (E7) · чат/screen-share (паритет с web). **iOS** — позже на macOS (Swift).
+
 ## ⏭️ СЛЕДУЮЩИЙ КВЕСТ: выбор вектора (эпик E4 закрыт ✅)
 - 🔴 **Tauri-PoC** (рекомендация) — критический путь prod-видео (D-001): видео только в нативном клиенте, ещё не доказано. Блокирует E5-enforce, E7-GPS, детектор рекордеров. De-risk Фазы 0.5.
 - **E5-C** политика захвата per-meeting (watermark on/off, реакция warn/eject) — web-слой, без блокеров.

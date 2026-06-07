@@ -68,11 +68,13 @@
 | —   | **E6-C** Liveness (MiniFASNet + challenge) | ⬜ |
 | —   | E6-D Deepfake-флаг (~78%, risk-flag не автобан) | 🔒 R&D |
 
-## Клиенты (критический путь prod-видео) ⬜
-| —   | **Tauri-PoC** — scaffold + LiveKit JS в WebView2 + видео | ⬜ 🔴 критический риск (Фаза 0.5 de-risk) |
+## Клиенты (критический путь prod-видео)
+| —   | **Android-клиент PoC** — Kotlin+Compose+LiveKit (нативный WebRTC), bearer-auth API, видеозвонок + **FLAG_SECURE** | ✅ собран и проверен на эмуляторе (2026-06-07) |
+| —   | **Tauri-PoC** — scaffold + LiveKit JS в WebView2 + видео | ⏸️ нужен Windows (webkit2gtk на Linux вводит в заблуждение); web-call = промежуточное доказательство |
 | —   | Tauri — `setContentProtected` enforce (Windows-валидация) | ⬜ |
 | —   | Tauri — детектор рекордеров (Rust) → capture_events | ⬜ |
-| —   | Mobile-клиент (Android FLAG_SECURE, iOS detect, GPS) | ⬜ фаза 2 |
+| —   | Android — 2FA(TOTP) через API · GPS-захват (E7) · паритет с web (чат/screen-share) | ⬜ |
+| —   | iOS-клиент (Swift, isCaptured detect, GPS) | ⬜ требует macOS |
 
 ## Кросс-функциональные ⬜
 | —   | i18n RU/UZ/EN (Gettext + переключатель) | ⬜ |

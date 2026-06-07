@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  DEV: разрешаем cleartext (http) к локальному Phoenix-серверу и LAN.
+  Эмулятор видит хост-машину как 10.0.2.2. В prod — только https.
+-->
+<network-security-config>
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="true">10.0.2.2</domain>
+        <domain includeSubdomains="true">127.0.0.1</domain>
+        <domain includeSubdomains="true">localhost</domain>
+        <domain includeSubdomains="true">192.168.0.0</domain>
+        <domain includeSubdomains="true">10.10.0.0</domain>
+    </domain-config>
+</network-security-config>

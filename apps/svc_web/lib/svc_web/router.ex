@@ -21,6 +21,7 @@ defmodule SvcWeb.Router do
     plug :accepts, ["json"]
     plug :fetch_session
     plug :fetch_current_user
+    plug :fetch_api_user
     plug :require_authenticated_api
   end
 
@@ -34,7 +35,14 @@ defmodule SvcWeb.Router do
     get "/", PageController, :home
   end
 
-  ## API для Tauri-клиента (E1) — 401 JSON при отсутствии auth
+  ## API логина для нативного клиента (mobile/Tauri) — bearer-токен, без auth
+  scope "/api", SvcWeb.API do
+    pipe_through :api
+
+    post "/login", SessionController, :create
+  end
+
+  ## API для нативного клиента (E1) — session-cookie ИЛИ bearer; 401 JSON если нет auth
   scope "/api", SvcWeb.API do
     pipe_through :api_authenticated
 
