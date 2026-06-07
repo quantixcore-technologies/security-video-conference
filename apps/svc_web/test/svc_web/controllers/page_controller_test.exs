@@ -1,8 +1,8 @@
 defmodule SvcWeb.PageControllerTest do
   use SvcWeb.ConnCase
 
-  test "GET /", %{conn: conn} do
+  test "GET / редиректит в админку (оттуда — на логин, если не залогинен)", %{conn: conn} do
     conn = get(conn, ~p"/")
-    assert html_response(conn, 200) =~ "Peace of mind from prototype to production"
+    assert redirected_to(conn) == ~p"/admin"
   end
 end

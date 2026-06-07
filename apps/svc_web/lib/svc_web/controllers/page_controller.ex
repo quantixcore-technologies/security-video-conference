@@ -2,6 +2,6 @@ defmodule SvcWeb.PageController do
   use SvcWeb, :controller
 
   def home(conn, _params) do
-    render(conn, :home)
+    redirect(conn, to: ~p"/admin")
   end
 end
