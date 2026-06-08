@@ -4,7 +4,7 @@
 > Статус: ✅ done · 🔵 in progress · ⬜ planned · 🔒 blocked (заказчик/лицензия/R&D).
 > Обновлять при закрытии каждого слайса. Источник истины по прогрессу проекта.
 
-## 📊 Прогресс: 22 ✅ · 13 ⬜ · 5 🔒 — **22 из ~40** (web/backend-контур)
+## 📊 Прогресс: 25 ✅ · 12 ⬜ · 5 🔒 — **25 из ~40** (+ Android: PoC, 2FA, GPS, чат/screen-share)
 
 ---
 
@@ -73,7 +73,9 @@
 | —   | **Tauri-PoC** — scaffold + LiveKit JS в WebView2 + видео | ⏸️ нужен Windows (webkit2gtk на Linux вводит в заблуждение); web-call = промежуточное доказательство |
 | —   | Tauri — `setContentProtected` enforce (Windows-валидация) | ⬜ |
 | —   | Tauri — детектор рекордеров (Rust) → capture_events | ⬜ |
-| —   | Android — 2FA(TOTP) через API · GPS-захват (E7) · паритет с web (чат/screen-share) | ⬜ |
+| S23 | Android — **2FA(TOTP) через API** (login→totp_required→/api/login/totp→bearer) + экран ввода кода | ✅ собран, проверен на реальном устройстве (2026-06-08) |
+| S24 | Android — **GPS-захват (E7) при join** — LocationManager → lat/lon/accuracy в join; backend gate пишет в network_geo_checks (+миграция gps_*) | ✅ собран, проверен на реальном устройстве (2026-06-08) |
+| S25 | Android — **чат (LiveKit data, topic "chat") + screen-share (MediaProjection → LiveKit screencast)** | ✅ собран, установлен на устройство (2026-06-08) |
 | —   | iOS-клиент (Swift, isCaptured detect, GPS) | ⬜ требует macOS |
 
 ## Кросс-функциональные ⬜

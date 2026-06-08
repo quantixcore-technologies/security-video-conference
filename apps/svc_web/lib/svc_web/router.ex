@@ -40,6 +40,7 @@ defmodule SvcWeb.Router do
     pipe_through :api
 
     post "/login", SessionController, :create
+    post "/login/totp", SessionController, :verify_totp
   end
 
   ## API для нативного клиента (E1) — session-cookie ИЛИ bearer; 401 JSON если нет auth

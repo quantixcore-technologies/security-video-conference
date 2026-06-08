@@ -46,4 +46,42 @@ defmodule SvcWeb.API.MeetingControllerTest do
     conn = conn |> login(other_user) |> post(~p"/api/meetings/#{meeting.id}/join")
     assert json_response(conn, 404)
   end
+
+  ## E7 — GPS/гео pre-join gate (нативный клиент)
+
+  test "join с GPS → записывает гео-проверку с координатами", %{
+    conn: conn,
+    user: user,
+    meeting: meeting
+  } do
+    conn =
+      conn
+      |> login(user)
+      |> post(~p"/api/meetings/#{meeting.id}/join", %{lat: 41.31, lon: 69.28, accuracy: 12.5})
+
+    assert json_response(conn, 200)["room"] == meeting.livekit_room_name
+
+    [check | _] = Svc.Geo.list_checks(user.org_id)
+    assert check.meeting_id == meeting.id
+    assert check.user_id == user.id
+    assert check.gps_lat == 41.31
+    assert check.gps_lon == 69.28
+    assert check.gps_accuracy == 12.5
+    # 127.0.0.1 в тестах → локальная сеть → allow
+    assert check.decision == :allow
+    assert check.ip_country == "LOCAL"
+  end
+
+  test "join без GPS → гео-проверка с nil-координатами, join проходит", %{
+    conn: conn,
+    user: user,
+    meeting: meeting
+  } do
+    conn = conn |> login(user) |> post(~p"/api/meetings/#{meeting.id}/join")
+    assert json_response(conn, 200)
+
+    [check | _] = Svc.Geo.list_checks(user.org_id)
+    assert is_nil(check.gps_lat)
+    assert is_nil(check.gps_lon)
+  end
 end

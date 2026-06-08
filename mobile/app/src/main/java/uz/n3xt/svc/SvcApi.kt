@@ -29,7 +29,13 @@ class SvcApi(private val baseUrl: String) {
 
     data class RoomInfo(val url: String, val token: String, val room: String)
 
-    suspend fun login(username: String, password: String): Session =
+    /** Результат первого шага логина: либо готовая сессия, либо требование 2FA. */
+    sealed class LoginResult {
+        data class Success(val session: Session) : LoginResult()
+        data class TotpRequired(val totpToken: String) : LoginResult()
+    }
+
+    suspend fun login(username: String, password: String): LoginResult =
         withContext(Dispatchers.IO) {
             val body = JSONObject()
                 .put("username", username)
@@ -49,21 +55,62 @@ class SvcApi(private val baseUrl: String) {
                     error("Вход не удался (${resp.code}): ${err ?: text}")
                 }
                 val o = JSONObject(text)
-                val user = o.getJSONObject("user")
-                Session(
-                    token = o.getString("token"),
-                    fullName = user.optString("full_name"),
-                    role = user.optString("role")
-                )
+                if (o.optBoolean("totp_required")) {
+                    LoginResult.TotpRequired(o.getString("totp_token"))
+                } else {
+                    LoginResult.Success(parseSession(o))
+                }
             }
         }
 
-    suspend fun join(token: String, meetingId: String): RoomInfo =
+    /** Второй шаг 2FA: обмен промежуточного токена + TOTP-кода на bearer-сессию. */
+    suspend fun verifyTotp(totpToken: String, code: String): Session =
         withContext(Dispatchers.IO) {
+            val body = JSONObject()
+                .put("totp_token", totpToken)
+                .put("code", code)
+                .toString()
+                .toRequestBody(json)
+
+            val req = Request.Builder()
+                .url("$baseUrl/api/login/totp")
+                .post(body)
+                .build()
+
+            http.newCall(req).execute().use { resp ->
+                val text = resp.body?.string().orEmpty()
+                if (!resp.isSuccessful) {
+                    val err = runCatching { JSONObject(text).optString("error") }.getOrNull()
+                    error("Код 2FA не принят (${resp.code}): ${err ?: text}")
+                }
+                parseSession(JSONObject(text))
+            }
+        }
+
+    private fun parseSession(o: JSONObject): Session {
+        val user = o.getJSONObject("user")
+        return Session(
+            token = o.getString("token"),
+            fullName = user.optString("full_name"),
+            role = user.optString("role")
+        )
+    }
+
+    /** GPS-координаты клиента на момент join (E7). Все поля опциональны. */
+    data class GeoPoint(val lat: Double, val lon: Double, val accuracy: Double?)
+
+    suspend fun join(token: String, meetingId: String, geo: GeoPoint? = null): RoomInfo =
+        withContext(Dispatchers.IO) {
+            val payload = JSONObject()
+            geo?.let {
+                payload.put("lat", it.lat).put("lon", it.lon)
+                it.accuracy?.let { acc -> payload.put("accuracy", acc) }
+            }
+
             val req = Request.Builder()
                 .url("$baseUrl/api/meetings/$meetingId/join")
                 .addHeader("Authorization", "Bearer $token")
-                .post(ByteArray(0).toRequestBody(json))
+                .post(payload.toString().toRequestBody(json))
                 .build()
 
             http.newCall(req).execute().use { resp ->

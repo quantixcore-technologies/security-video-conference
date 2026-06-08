@@ -51,3 +51,4 @@ venv/
 /priv/uploads/
 /apps/*/priv/static/uploads/
 *.mmdb
+dump.rdb

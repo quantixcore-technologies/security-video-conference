@@ -41,7 +41,8 @@ defmodule Svc.Geo do
 
   @doc """
   Pre-join проверка IP с учётом гео-политики org: классифицирует + журналирует.
-  Возвращает {:allow | :block | :flag, reason}. opts: :meeting_id, :user_id.
+  Возвращает {:allow | :block | :flag, reason}.
+  opts: :meeting_id, :user_id, :gps_lat, :gps_lon, :gps_accuracy (от нативного клиента).
   """
   def gate(org_id, ip, opts \\ []) when is_binary(ip) do
     {decision, reason, attrs} = decide(ip, get_policy(org_id))
@@ -53,7 +54,10 @@ defmodule Svc.Geo do
         user_id: opts[:user_id],
         ip: ip,
         decision: to_string(decision),
-        reason: reason
+        reason: reason,
+        gps_lat: opts[:gps_lat],
+        gps_lon: opts[:gps_lon],
+        gps_accuracy: opts[:gps_accuracy]
       })
     )
 

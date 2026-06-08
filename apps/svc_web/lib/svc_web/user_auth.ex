@@ -51,6 +51,23 @@ defmodule SvcWeb.UserAuth do
     Phoenix.Token.sign(SvcWeb.Endpoint, @salt, %{user_id: user.id, org_id: user.org_id})
   end
 
+  @totp_salt "api_totp_pending"
+  # Промежуточный токен 2FA для нативного клиента живёт 5 минут (только шаг ввода кода).
+  @totp_token_max_age 60 * 5
+
+  @doc """
+  Подписывает короткоживущий промежуточный токен 2FA (mobile/Tauri).
+  Выдаётся после верного пароля, обменивается на bearer-токен после верного TOTP-кода.
+  """
+  def sign_totp_token(user) do
+    Phoenix.Token.sign(SvcWeb.Endpoint, @totp_salt, %{user_id: user.id, org_id: user.org_id})
+  end
+
+  @doc "Проверяет промежуточный токен 2FA. {:ok, %{user_id, org_id}} | {:error, reason}."
+  def verify_totp_token(token) do
+    Phoenix.Token.verify(SvcWeb.Endpoint, @totp_salt, token, max_age: @totp_token_max_age)
+  end
+
   @doc """
   Plug для JSON API: если сессия не дала current_user, пробуем `Authorization: Bearer <token>`.
   Нативный клиент (Kotlin/mobile) аутентифицируется bearer-токеном, а не cookie.

@@ -18,6 +18,11 @@ defmodule Svc.Geo.NetworkGeoCheck do
     field :mmdb_version, :string
     field :checked_at, :utc_datetime_usec
 
+    # GPS от нативного клиента (E7): координаты на момент join (могут отсутствовать).
+    field :gps_lat, :float
+    field :gps_lon, :float
+    field :gps_accuracy, :float
+
     belongs_to :organization, Svc.Orgs.Organization, foreign_key: :org_id
     belongs_to :meeting, Svc.Meetings.Meeting
     belongs_to :user, Svc.Accounts.User
@@ -31,7 +36,8 @@ defmodule Svc.Geo.NetworkGeoCheck do
     check
     |> cast(attrs, [
       :org_id, :meeting_id, :user_id, :ip, :ip_country, :is_vpn, :is_proxy,
-      :is_hosting, :decision, :reason, :mmdb_version, :checked_at
+      :is_hosting, :decision, :reason, :mmdb_version, :checked_at,
+      :gps_lat, :gps_lon, :gps_accuracy
     ])
     |> validate_required([:org_id, :ip, :decision, :checked_at])
     |> foreign_key_constraint(:org_id)

@@ -9,6 +9,9 @@
     <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
     <!-- E7: гео-проверка (GPS кросс-чек с IP-страной) -->
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <!-- Демонстрация экрана (screen-share, паритет с web): MediaProjection через foreground-сервис -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PROJECTION" />
 
     <uses-feature android:name="android.hardware.camera" android:required="false" />
 
@@ -36,5 +39,11 @@
             android:exported="false"
             android:configChanges="orientation|screenSize|keyboardHidden|smallestScreenSize"
             android:screenOrientation="fullSensor" />
+
+        <!-- Foreground-сервис захвата экрана предоставляет LiveKit SDK (screen-share) -->
+        <service
+            android:name="io.livekit.android.room.track.screencapture.ScreenCaptureService"
+            android:foregroundServiceType="mediaProjection"
+            android:exported="false" />
     </application>
 </manifest>
