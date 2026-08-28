@@ -9,7 +9,7 @@
 - ✅ **E1** Ядро: LiveKit self-host(docker), Svc.LiveKit(JWT), Meetings, webhook(HMAC), join-API, **живой видеозвонок** (dev: `/admin/meetings/:id/call`).
 - ✅ **E2** Посещаемость: ростер, attendance(статусы), Oban FinalizeWorker, Recordings(Egress-сущность), журнал-UI.
 - ✅ **Редизайн «Secure Operations»**: тёмная slate+emerald, IBM Plex, sidebar+heroicons, все 8 страниц переделаны (login/totp/dashboard/users/meetings/show/call), фото-upload, totp Cloak-шифрование, **профиль в sidebar везде** + профиль-карточка на dashboard, карточки участников звонка (аватары).
-- ✅ **31 коммит · 104 теста 0 failures**, запушено git.n3xt.uz/legion-cyber-arena (private).
+- ✅ **31 коммит · 104 теста 0 failures**, запушено в приватный репозиторий.
 - ✅ Доказано вживую: login→dashboard→встречи→журнал; реальный звонок 2 участника→webhook→авто-посещаемость.
 
 ## ✅ Сделано после редизайна (62 коммита, 181 тест 0 failures)

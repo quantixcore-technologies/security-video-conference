@@ -1,4 +1,4 @@
-package uz.n3xt.svc
+package uz.svc
 
 import android.Manifest
 import android.content.Context

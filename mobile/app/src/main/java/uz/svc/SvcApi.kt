@@ -1,4 +1,4 @@
-package uz.n3xt.svc
+package uz.svc
 
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext

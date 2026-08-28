@@ -1,7 +1,7 @@
 # Разведка: ML-стек для E6 (анти-DeepFake / liveness / face-match)
 
 > Источник: research-отряд №1 (web-разведка). Контекст: B2G, self-host, GPU RTX 4060 Ti 16GB.
-> Вопрос Otabek: язык ML-слоя — Rust vs Python?
+> Вопрос: язык ML-слоя — Rust vs Python?
 
 ## Итоговая рекомендация: Python + Rust ГИБРИД
 

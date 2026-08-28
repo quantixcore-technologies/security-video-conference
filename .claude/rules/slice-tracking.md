@@ -1,6 +1,6 @@
 # SLICE-TRACKING — обязательное обновление трекера (ЗАКОН проекта)
 
-> Создано 2026-06-05 (Otabek). Закрыл слайс → обновил трекер. Без исключений.
+> Создано 2026-06-05. Закрыл слайс → обновил трекер. Без исключений.
 > Причина: до S55 слайсы жили только в коммитах/CURRENT_STATUS — единого реестра не было, картина прогресса терялась.
 
 ## 🔴 Правило (autopilot, НЕ ждать напоминания)
@@ -27,7 +27,7 @@
 | `docs/ROADMAP.md` | Фазы эпиков E0–E7 (стратегия) |
 | `docs/superpowers/specs/E0..E7-*.md` | Детальные спеки эпиков |
 | `docs/ARCHITECTURE_DECISIONS.md` | ADR (D-numbered) — все решения |
-| `docs/BACKLOG.md` | Идеи/доработки + feedback Otabek |
+| `docs/BACKLOG.md` | Идеи/доработки + feedback команды |
 | `docs/UX-AUDIT.md` | UX/UI-долг (P0/P1/P2) |
 | `docs/security/*` | Threat model, anti-capture-matrix, compliance |
 

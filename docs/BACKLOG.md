@@ -1,6 +1,6 @@
 # Backlog — Security Video Conference
 
-> Идеи и доработки на будущие слайсы. Feedback Otabek фиксируется здесь (L211).
+> Идеи и доработки на будущие слайсы. Feedback команды фиксируется здесь (L211).
 
 ## 🔴 P0 — Функциональные дыры (из `docs/UX-AUDIT.md`, 2026-06-05)
 
@@ -32,7 +32,7 @@
 - [ ] Tauri desktop-клиент (prod-видео + anti-capture setContentProtected).
 - [ ] E3 планирование/уведомления · E4 CRM/Kanban · E5 анти-захват · E6 ML-liveness · E7 сеть/гео.
 
-> ❌ **Не планируется:** OneID/E-IMZO интеграция (гос-SSO) — исключено (решение Otabek 2026-06-05). Внутренние учётки (Argon2id) + TOTP 2FA достаточно.
+> ❌ **Не планируется:** OneID/E-IMZO интеграция (гос-SSO) — исключено (решение 2026-06-05). Внутренние учётки (Argon2id) + TOTP 2FA достаточно.
 
 ## 🔒 Security / hardening (из TODO E0)
 

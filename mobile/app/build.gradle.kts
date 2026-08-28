@@ -5,11 +5,11 @@ plugins {
 }
 
 android {
-    namespace = "uz.n3xt.svc"
+    namespace = "uz.svc"
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "uz.n3xt.svc"
+        applicationId = "uz.svc"
         minSdk = 24
         targetSdk = 35
         versionCode = 1

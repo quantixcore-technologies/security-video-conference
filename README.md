@@ -1,7 +1,7 @@
 # Security Video Conference (SVC)
 
 > Защищённая видеоконференц-платформа для контроля сотрудников и посещаемости. **B2G (Узбекистан).**
-> Команда: Furqat / Shuxrat / Otabek. Закон проекта: **«На Foundation не бывает Overkill».**
+> Команда: Furqat / Shuxrat. Закон проекта: **«На Foundation не бывает Overkill».**
 
 ## Что это
 

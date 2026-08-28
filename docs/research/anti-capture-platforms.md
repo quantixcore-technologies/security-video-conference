@@ -18,7 +18,7 @@
 - **Electron mac:** `NSWindowSharingNone` **полностью неэффективен** против ScreenCaptureKit (macOS 15+) — Apple намеренно изменил compositing. Zoom/OBS обходят. Детект: оранжевый индикатор в menu bar (Sequoia 15+).
 - **Android:** `FLAG_SECURE` блокирует скриншоты, recent-apps, non-secure virtual displays (MediaProjection→чёрное). Flutter: `flutter_windowmanager`. Гэпы: rooted-устройства, физическая вторая камера, CVE-2025-32322. Детект: `addScreenRecordingCallback` + initial-state check.
 - **iOS:** скриншот **заблокировать нельзя**. Детект: `userDidTakeScreenshotNotification` (post-facto), `UIScreen.isCaptured` + `capturedDidChange` (запись/AirPlay/mirroring). Трюк: `UITextField(isSecureTextEntry:true)` рендерит чёрное в захвате (косметика).
-- **Web:** `getDisplayMedia`/скриншот **нельзя блокировать или надёжно детектить**. Митигации: `visibilitychange`→pause+blur (~20-30%, обходится расширением), canvas-watermark, EME/Widevine L1 (только Win Chrome ~70-80%, сложно, латентность). **Для конференции web исключён** (решение Otabek).
+- **Web:** `getDisplayMedia`/скриншот **нельзя блокировать или надёжно детектить**. Митигации: `visibilitychange`→pause+blur (~20-30%, обходится расширением), canvas-watermark, EME/Widevine L1 (только Win Chrome ~70-80%, сложно, латентность). **Для конференции web исключён** (решение проекта).
 
 ## Звукозапись = невозможно запретить нигде
 Loopback, физический микрофон, rooted. **Единственная митигация — forensic AUDIO WATERMARKING:** неслышимый per-user идентификатор (User/Session/Timestamp) через Spread Spectrum / echo modulation, переживает ре-кодирование. Утечку трассируют до пользователя. Библиотеки: ProveAudio, ScoreDetect, AWT2, Tencent Cloud, кастомный SSW. Эффект-детеррент ~40% снижение утечек.
