@@ -1,149 +1,247 @@
 import { invoke } from "@tauri-apps/api/core";
+import { Room, RoomEvent, Track, type RemoteTrack, type Participant } from "livekit-client";
+import { fetch as httpFetch } from "@tauri-apps/plugin-http";
 import "./styles.css";
-
-// Backend javob turlari (bearer-auth API: /api/login, /api/login/totp)
-interface LoginOk {
-  token: string;
-}
-interface TotpRequired {
-  totp_required: true;
-  totp_token: string;
-}
-type LoginResp = Partial<LoginOk & TotpRequired> & Record<string, unknown>;
 
 const app = document.querySelector<HTMLDivElement>("#app")!;
 
 const state = {
   server: "http://localhost:4000",
-  bearer: "" as string,
+  bearer: "",
+  username: "",
+  meetingId: "1",
+  room: null as Room | null,
 };
 
-function shell(inner: string): string {
-  return `
-    <div class="card">
-      <div class="brand">
-        <span class="logo">S</span>
-        <b>SVC</b>
-      </div>
-      ${inner}
-      <div class="secbadge" id="secbadge">
-        <span class="dot" id="secdot"></span>
-        <span id="sectext">Ekran himoyasi tekshirilmoqda…</span>
-      </div>
-    </div>`;
+// ---------- Ekran himoyasi (Tauri Rust IPC) ----------
+async function paintBadge(): Promise<void> {
+  const dot = document.querySelector<HTMLSpanElement>("#secdot");
+  const txt = document.querySelector<HTMLSpanElement>("#sectext");
+  try {
+    const info = await invoke<string>("security_status");
+    const on = info.includes("enforced");
+    if (dot) dot.className = "dot" + (on ? " on" : "");
+    if (txt) txt.textContent = on ? "Ekran himoyasi: yoqilgan" : `Ekran himoyasi: ${info}`;
+  } catch {
+    if (txt) txt.textContent = "Ekran himoyasi: noma'lum";
+  }
 }
 
-function renderLogin(): void {
-  app.innerHTML = shell(`
-    <h1>Tizimga kirish</h1>
-    <div class="sub">Xavfsiz video-konferensiya · desktop</div>
-    <label>Server</label>
-    <input id="server" type="text" value="${state.server}" spellcheck="false" />
-    <label>Email</label>
-    <input id="email" type="email" placeholder="admin" autocomplete="username" spellcheck="false" />
-    <label>Parol</label>
-    <input id="password" type="password" autocomplete="current-password" />
-    <button class="primary" id="loginBtn">Kirish →</button>
-    <div class="status" id="status"></div>
-  `);
-  refreshSecurityBadge();
-
-  const btn = document.querySelector<HTMLButtonElement>("#loginBtn")!;
-  btn.addEventListener("click", () => void doLogin());
-  app.querySelector("#password")!.addEventListener("keydown", (e) => {
-    if ((e as KeyboardEvent).key === "Enter") void doLogin();
-  });
+function authShell(inner: string): string {
+  return `<div class="center"><div class="card">
+    <div class="brand"><span class="logo">S</span><b>SVC</b></div>
+    ${inner}
+    <div class="secbadge"><span class="dot" id="secdot"></span><span id="sectext">…</span></div>
+  </div></div>`;
 }
 
-function setStatus(msg: string, kind: "" | "err" | "ok" = ""): void {
+function status(msg: string, kind = ""): void {
   const s = document.querySelector<HTMLDivElement>("#status");
   if (s) { s.textContent = msg; s.className = "status " + kind; }
 }
 
-async function doLogin(): Promise<void> {
-  const server = (document.querySelector<HTMLInputElement>("#server")!).value.trim().replace(/\/$/, "");
-  const email = (document.querySelector<HTMLInputElement>("#email")!).value.trim();
-  const password = (document.querySelector<HTMLInputElement>("#password")!).value;
-  state.server = server;
-  if (!email || !password) { setStatus("Email va parolni kiriting", "err"); return; }
+// ---------- Login ----------
+function renderLogin(): void {
+  app.innerHTML = authShell(`
+    <h1>Tizimga kirish</h1>
+    <div class="sub">Xavfsiz video-konferensiya · desktop</div>
+    <label>Server</label>
+    <input id="server" value="${state.server}" spellcheck="false" />
+    <label>Login</label>
+    <input id="username" value="admin" autocomplete="username" spellcheck="false" />
+    <label>Parol</label>
+    <input id="password" type="password" autocomplete="current-password" />
+    <label>Majlis ID</label>
+    <input id="meeting" value="${state.meetingId}" spellcheck="false" />
+    <button class="primary" id="loginBtn">Kirish va qo'shilish →</button>
+    <div class="status" id="status"></div>
+  `);
+  void paintBadge();
+  const go = () => void doLogin();
+  document.querySelector<HTMLButtonElement>("#loginBtn")!.addEventListener("click", go);
+  document.querySelector<HTMLInputElement>("#password")!.addEventListener("keydown", (e) => {
+    if ((e as KeyboardEvent).key === "Enter") go();
+  });
+}
 
-  setStatus("Ulanmoqda…");
+async function doLogin(): Promise<void> {
+  const server = document.querySelector<HTMLInputElement>("#server")!.value.trim().replace(/\/$/, "");
+  const username = document.querySelector<HTMLInputElement>("#username")!.value.trim();
+  const password = document.querySelector<HTMLInputElement>("#password")!.value;
+  state.server = server;
+  state.username = username;
+  state.meetingId = document.querySelector<HTMLInputElement>("#meeting")!.value.trim() || "1";
+  if (!username || !password) { status("Login va parolni kiriting", "err"); return; }
+
+  status("Ulanmoqda…");
   try {
-    const r = await fetch(`${server}/api/login`, {
+    const r = await httpFetch(`${server}/api/login`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password }),
+      body: JSON.stringify({ username, password }),
     });
-    if (!r.ok) { setStatus(`Kirish xatosi (${r.status})`, "err"); return; }
-    const data = (await r.json()) as LoginResp;
-
-    if (data.totp_required && typeof data.totp_token === "string") {
-      renderTotp(data.totp_token);
-      return;
-    }
-    if (typeof data.token === "string") {
-      state.bearer = data.token;
-      renderConnected(email);
-      return;
-    }
-    setStatus("Kutilmagan javob", "err");
-  } catch (err) {
-    setStatus("Serverga ulanib bo'lmadi. Ishlayaptimi?", "err");
-    console.error(err);
+    const data = await r.json();
+    if (!r.ok) { status(data.error ? `Xato: ${data.error}` : `Kirish xatosi (${r.status})`, "err"); return; }
+    if (data.totp_required) { renderTotp(data.totp_token as string); return; }
+    if (typeof data.token === "string") { state.bearer = data.token; await joinMeeting(); return; }
+    status("Kutilmagan javob", "err");
+  } catch (e) {
+    status("Serverga ulanib bo'lmadi. Backend ishlayaptimi?", "err");
+    console.error(e);
   }
 }
 
 function renderTotp(totpToken: string): void {
-  app.innerHTML = shell(`
+  app.innerHTML = authShell(`
     <h1>Ikki bosqichli tasdiqlash</h1>
-    <div class="sub">Ilovadagi 6 xonali kodni kiriting</div>
+    <div class="sub">6 xonali kodni kiriting</div>
     <label>TOTP kod</label>
-    <input id="code" type="text" inputmode="numeric" maxlength="6" placeholder="000000" />
+    <input id="code" inputmode="numeric" maxlength="6" placeholder="000000" />
     <button class="primary" id="verifyBtn">Tasdiqlash →</button>
     <div class="status" id="status"></div>
   `);
-  refreshSecurityBadge();
+  void paintBadge();
   document.querySelector<HTMLButtonElement>("#verifyBtn")!.addEventListener("click", async () => {
-    const code = (document.querySelector<HTMLInputElement>("#code")!).value.trim();
-    setStatus("Tekshirilmoqda…");
+    const code = document.querySelector<HTMLInputElement>("#code")!.value.trim();
+    status("Tekshirilmoqda…");
     try {
-      const r = await fetch(`${state.server}/api/login/totp`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+      const r = await httpFetch(`${state.server}/api/login/totp`, {
+        method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ totp_token: totpToken, code }),
       });
-      if (!r.ok) { setStatus("Kod noto'g'ri yoki muddati o'tgan", "err"); return; }
-      const data = (await r.json()) as LoginResp;
-      if (typeof data.token === "string") { state.bearer = data.token; renderConnected(""); }
-      else setStatus("Kutilmagan javob", "err");
-    } catch { setStatus("Serverga ulanib bo'lmadi", "err"); }
+      const data = await r.json();
+      if (!r.ok) { status("Kod noto'g'ri yoki muddati o'tgan", "err"); return; }
+      if (typeof data.token === "string") { state.bearer = data.token; await joinMeeting(); }
+    } catch { status("Serverga ulanib bo'lmadi", "err"); }
   });
 }
 
-function renderConnected(email: string): void {
-  app.innerHTML = shell(`
-    <h1>Ulandingiz ✓</h1>
-    <div class="sub">${email || "Foydalanuvchi"} · bearer olindi</div>
-    <div class="status ok">Keyingi qadam: majlisga qo'shilish (LiveKit) — tez orada.</div>
-  `);
-  refreshSecurityBadge();
+// ---------- Join → LiveKit ----------
+async function joinMeeting(): Promise<void> {
+  status("Majlisga ulanmoqda…");
+  try {
+    const r = await httpFetch(`${state.server}/api/meetings/${state.meetingId}/join`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${state.bearer}` },
+      body: JSON.stringify({}),
+    });
+    const data = await r.json();
+    if (!r.ok) { status(data.error ? `Xato: ${data.error}` : `Ulanish xatosi (${r.status})`, "err"); return; }
+    await connectLiveKit(data.url as string, data.token as string, data.room as string);
+  } catch {
+    status("Majlisga ulanib bo'lmadi", "err");
+  }
 }
 
-// Tauri Rust buyrug'i orqali ekran-himoya holati (E5, D-013)
-async function refreshSecurityBadge(): Promise<void> {
-  const dot = document.querySelector<HTMLSpanElement>("#secdot");
-  const txt = document.querySelector<HTMLSpanElement>("#sectext");
-  if (!dot || !txt) return;
+async function connectLiveKit(url: string, token: string, roomName: string): Promise<void> {
+  const room = new Room({ adaptiveStream: true, dynacast: true });
+  state.room = room;
+  renderCall(roomName);
+
+  room.on(RoomEvent.TrackSubscribed, (track, _pub, participant) => addRemoteTrack(track, participant));
+  room.on(RoomEvent.TrackUnsubscribed, (track) => track.detach().forEach((el) => el.remove()));
+  room.on(RoomEvent.ParticipantDisconnected, (p) => removeTile(p.identity));
+  room.on(RoomEvent.Disconnected, () => renderLogin());
+
   try {
-    const info = await invoke<string>("security_status");
-    const enforced = info.includes("enforced");
-    dot.className = "dot" + (enforced ? " on" : "");
-    txt.textContent = enforced
-      ? "Ekran himoyasi: yoqilgan"
-      : `Ekran himoyasi: ${info}`;
-  } catch {
-    txt.textContent = "Ekran himoyasi: noma'lum";
+    await room.connect(url, token);
+    await room.localParticipant.setMicrophoneEnabled(true);
+    await room.localParticipant.setCameraEnabled(true);
+    renderLocalTile(room);
+  } catch (e) {
+    console.error(e);
+    const grid = document.querySelector("#grid");
+    if (grid) grid.innerHTML = `<div class="tile"><div class="ph">Kamera yoki ulanish xatosi.<br>${String(e)}</div></div>`;
   }
+}
+
+function tileId(identity: string): string { return "tile-" + identity.replace(/[^a-zA-Z0-9_-]/g, ""); }
+
+function ensureTile(identity: string, label: string): HTMLElement {
+  const grid = document.querySelector<HTMLDivElement>("#grid")!;
+  let tile = document.getElementById(tileId(identity));
+  if (!tile) {
+    tile = document.createElement("div");
+    tile.className = "tile";
+    tile.id = tileId(identity);
+    tile.innerHTML = `<div class="ph">${label}</div><div class="wm"></div><div class="name">${label}</div>`;
+    fillWatermark(tile.querySelector<HTMLDivElement>(".wm")!);
+    grid.appendChild(tile);
+  }
+  return tile;
+}
+
+function addRemoteTrack(track: RemoteTrack, participant: Participant): void {
+  const tile = ensureTile(participant.identity, participant.name || participant.identity);
+  if (track.kind === Track.Kind.Video) {
+    const el = track.attach();
+    tile.querySelector(".ph")?.remove();
+    tile.insertBefore(el, tile.firstChild);
+  } else if (track.kind === Track.Kind.Audio) {
+    track.attach();
+  }
+}
+
+function renderLocalTile(room: Room): void {
+  const tile = ensureTile("local", (state.username || "Siz") + " (siz)");
+  const pub = Array.from(room.localParticipant.videoTrackPublications.values())[0];
+  if (pub?.track) {
+    const el = pub.track.attach();
+    el.muted = true;
+    tile.querySelector(".ph")?.remove();
+    tile.insertBefore(el, tile.firstChild);
+  }
+}
+
+function removeTile(identity: string): void {
+  document.getElementById(tileId(identity))?.remove();
+}
+
+// E5/D-013: har plitkada foydalanuvchi izi (forensik watermark)
+function fillWatermark(el: HTMLDivElement): void {
+  const label = `${state.username || "user"} · ${new Date().toISOString().slice(0, 16)}`;
+  let html = "";
+  for (let y = 0; y < 6; y++) {
+    for (let x = 0; x < 3; x++) {
+      html += `<span style="top:${y * 18}%;left:${x * 40}%">${label}</span>`;
+    }
+  }
+  el.innerHTML = html;
+}
+
+function renderCall(roomName: string): void {
+  app.innerHTML = `
+    <div class="call">
+      <div class="call-head">
+        <div class="rn">SVC — majlis<small>${roomName}</small></div>
+        <span class="pill">🔒 Himoyalangan kanal (DTLS-SRTP)</span>
+      </div>
+      <div class="grid" id="grid"></div>
+      <div class="controls">
+        <button class="ctrl" id="micBtn" title="Mikrofon">🎙️</button>
+        <button class="ctrl" id="camBtn" title="Kamera">🎥</button>
+        <button class="ctrl leave" id="leaveBtn">Chiqish</button>
+      </div>
+    </div>`;
+
+  document.querySelector<HTMLButtonElement>("#micBtn")!.addEventListener("click", async () => {
+    const lp = state.room?.localParticipant; if (!lp) return;
+    const on = !lp.isMicrophoneEnabled;
+    await lp.setMicrophoneEnabled(on);
+    document.querySelector("#micBtn")!.classList.toggle("off", !on);
+  });
+  document.querySelector<HTMLButtonElement>("#camBtn")!.addEventListener("click", async () => {
+    const lp = state.room?.localParticipant; if (!lp) return;
+    const on = !lp.isCameraEnabled;
+    await lp.setCameraEnabled(on);
+    document.querySelector("#camBtn")!.classList.toggle("off", !on);
+    if (on && state.room) renderLocalTile(state.room);
+  });
+  document.querySelector<HTMLButtonElement>("#leaveBtn")!.addEventListener("click", async () => {
+    await state.room?.disconnect();
+    state.room = null;
+    renderLogin();
+  });
 }
 
 renderLogin();

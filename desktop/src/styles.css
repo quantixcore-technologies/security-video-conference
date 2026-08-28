@@ -20,7 +20,8 @@ body {
   overflow: hidden;
 }
 
-#app {
+/* ===== Login / auth ===== */
+.center {
   min-height: 100vh;
   display: grid;
   place-items: center;
@@ -30,7 +31,6 @@ body {
     radial-gradient(600px 360px at -10% 110%, rgba(45, 212, 191, 0.13), transparent 60%),
     var(--bg);
 }
-
 .card {
   width: 100%;
   max-width: 380px;
@@ -39,63 +39,83 @@ body {
   border-radius: 18px;
   padding: 28px;
 }
-
-.brand {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  justify-content: center;
-  margin-bottom: 6px;
-}
+.brand { display: flex; align-items: center; gap: 10px; justify-content: center; }
 .brand .logo {
-  width: 34px; height: 34px;
-  display: grid; place-items: center;
-  border-radius: 9px;
-  font-weight: 800; color: #06121a;
+  width: 34px; height: 34px; display: grid; place-items: center;
+  border-radius: 9px; font-weight: 800; color: #06121a;
   background: linear-gradient(135deg, var(--teal), var(--sky));
 }
 .brand b { font-size: 1.05rem; letter-spacing: 0.02em; }
-
 h1 { font-size: 1.35rem; text-align: center; margin: 14px 0 2px; }
 .sub { text-align: center; color: var(--muted); font-size: 0.86rem; margin-bottom: 18px; }
-
 label { display: block; font-size: 0.78rem; color: var(--muted); margin: 12px 0 5px; }
 input {
-  width: 100%;
-  padding: 11px 13px;
-  border-radius: 11px;
-  border: 1px solid var(--line);
-  background: rgba(255, 255, 255, 0.02);
-  color: var(--ink);
-  font-size: 0.95rem;
-  outline: none;
+  width: 100%; padding: 11px 13px; border-radius: 11px;
+  border: 1px solid var(--line); background: rgba(255, 255, 255, 0.02);
+  color: var(--ink); font-size: 0.95rem; outline: none;
 }
 input:focus { border-color: var(--teal); }
-
 button.primary {
-  width: 100%;
-  margin-top: 18px;
-  padding: 12px;
-  border: none;
-  border-radius: 12px;
-  font-weight: 700;
-  font-size: 0.95rem;
-  color: #06121a;
-  cursor: pointer;
+  width: 100%; margin-top: 18px; padding: 12px; border: none; border-radius: 12px;
+  font-weight: 700; font-size: 0.95rem; color: #06121a; cursor: pointer;
   background: linear-gradient(90deg, var(--teal), var(--sky));
 }
 button.primary:hover { filter: brightness(1.08); }
 button.primary:disabled { opacity: 0.6; cursor: default; }
-
 .status { margin-top: 14px; font-size: 0.85rem; text-align: center; min-height: 20px; }
 .status.err { color: var(--danger); }
 .status.ok { color: var(--ok); }
-
 .secbadge {
-  margin-top: 18px;
-  display: flex; align-items: center; justify-content: center; gap: 8px;
-  font-size: 0.74rem; color: var(--muted);
-  border-top: 1px solid var(--line); padding-top: 14px;
+  margin-top: 18px; display: flex; align-items: center; justify-content: center; gap: 8px;
+  font-size: 0.74rem; color: var(--muted); border-top: 1px solid var(--line); padding-top: 14px;
 }
 .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); }
 .dot.on { background: var(--ok); box-shadow: 0 0 10px var(--ok); }
+
+/* ===== Call ===== */
+.call { position: fixed; inset: 0; display: flex; flex-direction: column; background: var(--bg); }
+.call-head {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 11px 18px; border-bottom: 1px solid var(--line);
+}
+.call-head .rn { font-weight: 700; font-size: 0.95rem; }
+.call-head .rn small { display: block; color: var(--muted); font-weight: 400; font-size: 0.72rem; }
+.pill {
+  font-size: 0.72rem; color: var(--teal); border: 1px solid rgba(45, 212, 191, 0.3);
+  background: rgba(45, 212, 191, 0.08); padding: 4px 10px; border-radius: 999px;
+}
+.grid {
+  flex: 1; display: grid; gap: 10px; padding: 14px; overflow: auto; align-content: center;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+}
+.tile {
+  position: relative; background: #0b1120; border: 1px solid var(--line);
+  border-radius: 14px; overflow: hidden; aspect-ratio: 16 / 9; display: grid; place-items: center;
+}
+.tile video { width: 100%; height: 100%; object-fit: cover; background: #0b1120; }
+.tile .ph { color: var(--muted); font-size: 0.9rem; text-align: center; padding: 10px; }
+.tile .name {
+  position: absolute; left: 8px; bottom: 8px; font-size: 0.76rem;
+  background: rgba(0, 0, 0, 0.55); padding: 3px 9px; border-radius: 7px;
+}
+/* per-user dynamic watermark (E5, D-013) */
+.wm {
+  position: absolute; inset: 0; pointer-events: none; overflow: hidden;
+  opacity: 0.14; font-size: 0.7rem; color: #fff; white-space: nowrap;
+}
+.wm span { position: absolute; transform: rotate(-24deg); }
+
+.controls {
+  display: flex; gap: 12px; justify-content: center; align-items: center;
+  padding: 14px; border-top: 1px solid var(--line);
+}
+.ctrl {
+  width: 46px; height: 46px; border-radius: 50%; border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.04); color: var(--ink); cursor: pointer; font-size: 1.05rem;
+}
+.ctrl:hover { border-color: var(--teal); }
+.ctrl.off { background: rgba(251, 113, 133, 0.15); border-color: rgba(251, 113, 133, 0.4); color: var(--danger); }
+.ctrl.leave {
+  width: auto; padding: 0 18px; border-radius: 23px; height: 46px;
+  background: var(--danger); border-color: var(--danger); color: #fff; font-weight: 700;
+}
