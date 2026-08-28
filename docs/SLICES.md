@@ -4,7 +4,7 @@
 > Статус: ✅ done · 🔵 in progress · ⬜ planned · 🔒 blocked (заказчик/лицензия/R&D).
 > Обновлять при закрытии каждого слайса. Источник истины по прогрессу проекта.
 
-## 📊 Прогресс: 25 ✅ · 12 ⬜ · 5 🔒 — **25 из ~40** (+ Android: PoC, 2FA, GPS, чат/screen-share)
+## 📊 Прогресс: 27 ✅ · 12 ⬜ · 5 🔒 — **27 из ~40** (+ Android: PoC, 2FA, GPS, чат/screen-share · + Tauri desktop)
 
 ---
 
@@ -41,7 +41,7 @@
 | S15 | **E5-A** Watermark + журнал capture_events + матрица | ✅ |
 | S16 | **E5-B** Журнал захвата UI (SecurityLive) + API endpoint | ✅ |
 | —   | **E5-C** Anti-capture политика per-meeting (watermark on/off, реакция warn/eject) | ⬜ |
-| —   | **E5-ENFORCE** setContentProtected (Win) / FLAG_SECURE (Android) | ⬜ требует Tauri/mobile |
+| —   | **E5-ENFORCE** setContentProtected (Win) / FLAG_SECURE (Android) | ⬜ Android FLAG_SECURE ✅ · Tauri `contentProtected:true` задан → нужна Windows-валидация |
 | —   | E5-forensic аудио-watermark | 🔒 R&D + библиотека |
 
 ## E7 — Сеть + Гео ✅ 2/5
@@ -70,7 +70,8 @@
 
 ## Клиенты (критический путь prod-видео)
 | —   | **Android-клиент PoC** — Kotlin+Compose+LiveKit (нативный WebRTC), bearer-auth API, видеозвонок + **FLAG_SECURE** | ✅ собран и проверен на эмуляторе (2026-06-07) |
-| —   | **Tauri-PoC** — scaffold + LiveKit JS в WebView2 + видео | ⏸️ нужен Windows (webkit2gtk на Linux вводит в заблуждение); web-call = промежуточное доказательство |
+| S26 | **Tauri-каркас** — scaffold (Vite+TS / src-tauri, `uz.svc.desktop`), экран входа SVC (username → 2FA), `contentProtected:true`, Rust-команда `security_status` | ✅ собран+запущен под xvfb (2026-08-28) |
+| S27 | **Tauri LiveKit-звонок** — login(username)→join→комната, локальное+удалённое видео, mic/cam, per-user watermark(E5), native HTTP (tauri-plugin-http, обход CORS) | ✅ login→join→issue_token подтверждён backend-логом; видео-медиа = Windows/WebRTC-webview (2026-08-28) |
 | —   | Tauri — `setContentProtected` enforce (Windows-валидация) | ⬜ |
 | —   | Tauri — детектор рекордеров (Rust) → capture_events | ⬜ |
 | S23 | Android — **2FA(TOTP) через API** (login→totp_required→/api/login/totp→bearer) + экран ввода кода | ✅ собран, проверен на реальном устройстве (2026-06-08) |

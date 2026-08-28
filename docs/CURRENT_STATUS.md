@@ -35,22 +35,32 @@
 - **✅ LIVE-проверка на устройстве (2026-06-08, RMX3636 Android 14, через adb + нативный стек):** логин→join→LiveKit: реальная камера (VP8 1280×720) + микрофон опубликованы (подтверждено логами LiveKit/webhook). **GPS** реальные координаты телефона записаны в `network_geo_checks` (41.56/60.61, ±16м). **FLAG_SECURE** подтверждён (screencap = чёрный/0 байт). **2FA**: экран TOTP появляется при `totp_required`, неверный код→401, верный код→bearer→вход в звонок (полный цикл пройден на устройстве). totp_token=5мин, code=30с — учитывать при ручном тесте.
 - **TODO Android:** live-тест чата/screen-share на 2 устройствах (нужен 2-й участник). **iOS** — позже на macOS (Swift).
 
-## ⏭️ СЛЕДУЮЩИЙ КВЕСТ: выбор вектора (эпик E4 закрыт ✅)
-- 🔴 **Tauri-PoC** (рекомендация) — критический путь prod-видео (D-001): видео только в нативном клиенте, ещё не доказано. Блокирует E5-enforce, E7-GPS, детектор рекордеров. De-risk Фазы 0.5.
-- **E5-C** политика захвата per-meeting (watermark on/off, реакция warn/eject) — web-слой, без блокеров.
-- **E6-A** ML-инфра (Python+Rust gRPC) — требует GPU + R&D-бюджет (🔒 заказчик).
-- **i18n** RU/UZ/EN (Gettext + переключатель) — кросс-функционально, давно в backlog.
-- Параллельные опции: E5-C политика захвата · **Tauri-PoC** (🔴 критический путь prod-видео) · E6 ML · i18n.
+## 🖥️ Сессия 2026-08-28 — Tauri desktop-клиент (E1) ✅
+
+- **Стек:** Tauri v2 (Rust 1.98 + webkit2gtk-4.1 + Vite/vanilla-TS), tauri-cli 2.11, bun 1.4. Папка `desktop/` (identifier `uz.svc.desktop`).
+- **S26 — каркас:** экран входа SVC (сервер/username/пароль/ID встречи → 2FA-поток), тёмная teal-тема (как web), `contentProtected:true` (Win/macOS enforce, Linux no-op — D-013), Rust-команда `security_status`. Окно рендерится (xvfb).
+- **S27 — LiveKit-звонок:** login(username)→`/api/login`→bearer→`/api/meetings/:id/join`→комната; локальное+удалённое видео, mic/cam toggle, «Chiqish», per-user watermark(E5). **native HTTP** (`tauri-plugin-http`) вместо webview-fetch — обход CORS.
+- **✅ Проверено (xvfb, admin/AdminPass12345, meeting 1):** login→join→**issue_token** (backend-лог: fetch_meeting + geo-gate `:allow` + audit `meeting_join` + LiveKit JWT). Экран звонка (комната, контролы, watermark) рендерится. Видео-медиа не поднялось в headless webkit (нет камеры/WebRTC) → работает на реальном десктопе / Windows (WebView2, D-002).
+- **Коммиты:** `feat(desktop): Tauri-каркас (E1)` + `feat(desktop): LiveKit видеозвонок + native HTTP (E1)`. Автор: QuantixCore.
+- **🧹 Очистка проекта:** из файлов, коммит-сообщений и авторства удалены упоминания прежнего участника + внешнего git-хоста/оргструктуры (история переписана, remote и токен убраны). В доках команда: Furqat / Shuxrat. Android-пакет → `uz.svc`.
+
+## ⏭️ СЛЕДУЮЩИЙ КВЕСТ (Tauri-каркас + звонок готовы ✅ S26/S27)
+- 🔴 **Tauri видео на Windows** — проверить реальное WebRTC-медиа в WebView2 + `setContentProtected` enforce (Linux webkit2gtk WebRTC ненадёжен; D-002 Windows-first).
+- **2-сторонний тест** — desktop ↔ web-call (`/admin/meetings/1/call`) / mobile: встречное видео.
+- **Tauri — детектор рекордеров (Rust)** → capture_events (E5).
+- **E5-C** политика захвата per-meeting · **E6-A** ML-инфра (🔒 GPU/R&D) · **i18n** RU/UZ/EN.
 > Открытые вопросы заказчику собраны в `docs/requirements-interview.md` (6 блоков) — разблокируют E4-обращения, E3-каналы, E5-enforce, E7-MMDB, E6-ML, комплаенс.
 > ❌ OneID/E-IMZO — НЕ планируется (D-006, 2026-06-05).
 
-## ⚠️ Локальный запуск (КРИТИЧНО)
+## ⚠️ Локальный запуск (КРИТИЧНО) — НАТИВНЫЙ стек (Docker daemon выключен → native, порт 5432)
 ```bash
-docker compose -f deploy/livekit/docker-compose.yml up -d   # LiveKit :7880
-# Postgres docker svc-postgres :5434 (brew-postgres@17 на 5432!) — префикс DB_PORT=5434
-DB_PORT=5434 mix phx.server                                  # :4000, admin/AdminPass12345
-DB_PORT=5434 mix test                                        # 181 тест 0 failures
-DB_PORT=5434 mix run apps/svc/priv/repo/seeds.exs            # демо-данные (6 юзеров)
+redis-server --daemonize yes --port 6379                    # Redis (нужен LiveKit)
+livekit-server --config ~/livekit.native.yaml               # LiveKit :7880 (ключи devkey/devsecret)
+mix phx.server                                              # :4000 (DB_PORT по умолч. 5432), admin/AdminPass12345
+mix test                                                    # тесты
+mix run apps/svc/priv/repo/seeds.exs                        # демо-данные (6 юзеров)
+cd desktop && bun run tauri dev                            # Tauri desktop-клиент
+# Docker-вариант (если поднять daemon): deploy/livekit/docker-compose.yml + DB_PORT=5434
 ```
 **Oban v14. Cloak dev-key в config.exs, prod из env CLOAK_KEY.**
 **Тесты после redesign проверяют href (`/admin/users/new`), не текст кнопок.**
