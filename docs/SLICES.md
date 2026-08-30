@@ -4,7 +4,7 @@
 > Статус: ✅ done · 🔵 in progress · ⬜ planned · 🔒 blocked (заказчик/лицензия/R&D).
 > Обновлять при закрытии каждого слайса. Источник истины по прогрессу проекта.
 
-## 📊 Прогресс: 27 ✅ · 12 ⬜ · 5 🔒 — **27 из ~40** (+ Android: PoC, 2FA, GPS, чат/screen-share · + Tauri desktop)
+## 📊 Прогресс: 28 ✅ · 12 ⬜ · 5 🔒 — **28 из ~40** (+ Android: PoC, 2FA, GPS, чат/screen-share · + Tauri desktop)
 
 ---
 
@@ -80,6 +80,8 @@
 | —   | iOS-клиент (Swift, isCaptured detect, GPS) | ⬜ требует macOS |
 
 ## Кросс-функциональные ⬜
+| S28 | **Kod-sifat + xavfsizlik qatlami** — Credo (0 issue) · Sobelow (0 High/Med, CSP qo'shildi) · CI (GitHub Actions) · 0 compile-warning · 193 test | ✅ 2026-08-30 |
+
 | —   | i18n RU/UZ/EN (Gettext + переключатель) | ⬜ |
 | —   | Реальный LiveKit Egress (серверная запись) | ⬜ сущность-заглушка есть |
 

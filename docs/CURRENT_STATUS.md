@@ -44,6 +44,11 @@
 - **Коммиты:** `feat(desktop): Tauri-каркас (E1)` + `feat(desktop): LiveKit видеозвонок + native HTTP (E1)`. Автор: QuantixCore.
 - **🧹 Очистка проекта:** из файлов, коммит-сообщений и авторства удалены упоминания прежнего участника + внешнего git-хоста/оргструктуры (история переписана, remote и токен убраны). В доках команда: Furqat / Shuxrat. Android-пакет → `uz.svc`.
 
+## 🛡 Сессия 2026-08-30 — качество + безопасность (S28) ✅
+- **Credo** (кастомный `.credo.exs`) → **0 issues** · **Sobelow** security-скан → **0 High/Medium** (CSP-заголовок в browser-pipeline; CSRF на bearer-API — задокументированный false-positive; photo upload — whitelist расширений).
+- **CI** (`.github/workflows/ci.yml`): compile(warnings-as-errors)/format/credo/sobelow/test. `mix precommit` расширен теми же гейтами.
+- Компиляция **без warnings**; **193 теста, 0 failures**. Коммит `3b3f891`.
+
 ## ⏭️ СЛЕДУЮЩИЙ КВЕСТ (Tauri-каркас + звонок готовы ✅ S26/S27)
 - 🔴 **Tauri видео на Windows** — проверить реальное WebRTC-медиа в WebView2 + `setContentProtected` enforce (Linux webkit2gtk WebRTC ненадёжен; D-002 Windows-first).
 - **2-сторонний тест** — desktop ↔ web-call (`/admin/meetings/1/call`) / mobile: встречное видео.
