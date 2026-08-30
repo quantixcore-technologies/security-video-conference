@@ -52,8 +52,7 @@ if config_env() == :prod do
     url: System.get_env("LIVEKIT_URL") || raise("LIVEKIT_URL is missing"),
     api_key: System.get_env("LIVEKIT_API_KEY") || raise("LIVEKIT_API_KEY is missing"),
     api_secret: System.get_env("LIVEKIT_API_SECRET") || raise("LIVEKIT_API_SECRET is missing"),
-    webhook_key:
-      System.get_env("LIVEKIT_WEBHOOK_KEY") || System.get_env("LIVEKIT_API_SECRET")
+    webhook_key: System.get_env("LIVEKIT_WEBHOOK_KEY") || System.get_env("LIVEKIT_API_SECRET")
 
   # ## Using releases
   #

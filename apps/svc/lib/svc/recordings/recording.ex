@@ -25,8 +25,15 @@ defmodule Svc.Recordings.Recording do
   def changeset(recording, attrs) do
     recording
     |> cast(attrs, [
-      :org_id, :meeting_id, :requested_by, :egress_id,
-      :storage_path, :encrypted, :status, :started_at, :ended_at
+      :org_id,
+      :meeting_id,
+      :requested_by,
+      :egress_id,
+      :storage_path,
+      :encrypted,
+      :status,
+      :started_at,
+      :ended_at
     ])
     |> validate_required([:org_id, :meeting_id])
     |> unique_constraint(:egress_id)

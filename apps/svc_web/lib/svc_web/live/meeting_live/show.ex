@@ -48,7 +48,10 @@ defmodule SvcWeb.MeetingLive.Show do
     if Meetings.can_organize?(actor) do
       socket
       |> assign(:assignees, Svc.Accounts.list_users(actor.org_id))
-      |> assign(:form, to_form(%{"title" => "", "priority" => "normal", "assignee_id" => ""}, as: :task))
+      |> assign(
+        :form,
+        to_form(%{"title" => "", "priority" => "normal", "assignee_id" => ""}, as: :task)
+      )
     else
       socket
       |> put_flash(:error, "Недостаточно прав для постановки поручений.")
@@ -126,7 +129,8 @@ defmodule SvcWeb.MeetingLive.Show do
          |> push_navigate(to: ~p"/admin/tasks")}
 
       {:error, %Ecto.Changeset{}} ->
-        {:noreply, put_flash(socket, :error, "Не удалось создать поручение — проверьте название.")}
+        {:noreply,
+         put_flash(socket, :error, "Не удалось создать поручение — проверьте название.")}
     end
   end
 
@@ -155,7 +159,12 @@ defmodule SvcWeb.MeetingLive.Show do
   @impl true
   def render(assigns) do
     ~H"""
-    <Layouts.app flash={@flash} active="meetings" current_user={@current_user} unread_count={@unread_count}>
+    <Layouts.app
+      flash={@flash}
+      active="meetings"
+      current_user={@current_user}
+      unread_count={@unread_count}
+    >
       <.link
         navigate={~p"/admin/meetings"}
         class="inline-flex items-center gap-1.5 text-sm text-base-content/55 hover:text-base-content transition mb-5"
@@ -180,8 +189,14 @@ defmodule SvcWeb.MeetingLive.Show do
               </span>
             </span>
             <span class="inline-flex items-center gap-1.5">
-              <.icon name={if @meeting.recording_policy == :off, do: "hero-no-symbol", else: "hero-video-camera"} class="size-4" />
-              запись: {if @meeting.recording_policy == :off, do: "нет", else: "да"}
+              <.icon
+                name={
+                  if @meeting.recording_policy == :off,
+                    do: "hero-no-symbol",
+                    else: "hero-video-camera"
+                }
+                class="size-4"
+              /> запись: {if @meeting.recording_policy == :off, do: "нет", else: "да"}
             </span>
           </div>
         </div>
@@ -222,7 +237,10 @@ defmodule SvcWeb.MeetingLive.Show do
         </div>
       </div>
 
-      <div :if={@live_action == :edit} class="rounded-xl border border-base-300 bg-base-100/50 p-5 mt-6">
+      <div
+        :if={@live_action == :edit}
+        class="rounded-xl border border-base-300 bg-base-100/50 p-5 mt-6"
+      >
         <h3 class="font-medium mb-4 flex items-center gap-2">
           <.icon name="hero-pencil-square" class="size-4 text-primary" /> Редактирование встречи
         </h3>
@@ -232,8 +250,17 @@ defmodule SvcWeb.MeetingLive.Show do
             <.input field={@form[:scheduled_start]} type="datetime-local" label="Начало" />
             <.input field={@form[:scheduled_end]} type="datetime-local" label="Конец" />
           </div>
-          <.input field={@form[:recording_policy]} type="select" label="Запись" options={policy_options()} />
-          <.input field={@form[:late_threshold_seconds]} type="number" label="Порог опоздания (сек)" />
+          <.input
+            field={@form[:recording_policy]}
+            type="select"
+            label="Запись"
+            options={policy_options()}
+          />
+          <.input
+            field={@form[:late_threshold_seconds]}
+            type="number"
+            label="Порог опоздания (сек)"
+          />
           <div class="flex gap-2 pt-2">
             <.button type="submit" phx-disable-with="Сохраняем...">Сохранить</.button>
             <.link navigate={~p"/admin/meetings/#{@meeting.id}"} class="btn btn-ghost">Отмена</.link>
@@ -241,14 +268,25 @@ defmodule SvcWeb.MeetingLive.Show do
         </.form>
       </div>
 
-      <div :if={@live_action == :assign_task} class="rounded-xl border border-base-300 bg-base-100/50 p-5 mt-6">
+      <div
+        :if={@live_action == :assign_task}
+        class="rounded-xl border border-base-300 bg-base-100/50 p-5 mt-6"
+      >
         <h3 class="font-medium mb-1 flex items-center gap-2">
-          <.icon name="hero-clipboard-document-list" class="size-4 text-primary" /> Поручение по итогам встречи
+          <.icon name="hero-clipboard-document-list" class="size-4 text-primary" />
+          Поручение по итогам встречи
         </h3>
-        <p class="text-sm text-base-content/55 mb-4">Будет привязано к «{@meeting.title}» и появится на Kanban-доске.</p>
+        <p class="text-sm text-base-content/55 mb-4">
+          Будет привязано к «{@meeting.title}» и появится на Kanban-доске.
+        </p>
         <.form for={@form} phx-submit="create_task" class="space-y-3">
           <.input field={@form[:title]} type="text" label="Что нужно сделать" required />
-          <.input field={@form[:description]} type="textarea" label="Описание (необязательно)" rows="2" />
+          <.input
+            field={@form[:description]}
+            type="textarea"
+            label="Описание (необязательно)"
+            rows="2"
+          />
           <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <.input
               field={@form[:assignee_id]}
@@ -261,7 +299,12 @@ defmodule SvcWeb.MeetingLive.Show do
               field={@form[:priority]}
               type="select"
               label="Приоритет"
-              options={[{"Низкий", "low"}, {"Обычный", "normal"}, {"Высокий", "high"}, {"Срочный", "urgent"}]}
+              options={[
+                {"Низкий", "low"},
+                {"Обычный", "normal"},
+                {"Высокий", "high"},
+                {"Срочный", "urgent"}
+              ]}
             />
             <.input field={@form[:due_at]} type="datetime-local" label="Срок" />
           </div>
@@ -277,7 +320,8 @@ defmodule SvcWeb.MeetingLive.Show do
         class="mt-6 rounded-xl border border-base-300 bg-base-100/50 p-4 flex items-center justify-between gap-4 flex-wrap"
       >
         <div class="flex items-center gap-2 text-sm">
-          <.icon name="hero-envelope" class="size-4 text-base-content/50" /> Вы приглашены · ваш ответ:
+          <.icon name="hero-envelope" class="size-4 text-base-content/50" />
+          Вы приглашены · ваш ответ:
           <span class={"px-2 py-0.5 rounded-full text-xs font-medium #{rsvp_class(@my_invitee.rsvp_status)}"}>
             {rsvp_label(@my_invitee.rsvp_status)}
           </span>
@@ -286,21 +330,33 @@ defmodule SvcWeb.MeetingLive.Show do
           <button
             phx-click="rsvp"
             phx-value-status="accepted"
-            class={["btn btn-sm gap-1.5", @my_invitee.rsvp_status == :accepted && "btn-success", @my_invitee.rsvp_status != :accepted && "btn-ghost"]}
+            class={[
+              "btn btn-sm gap-1.5",
+              @my_invitee.rsvp_status == :accepted && "btn-success",
+              @my_invitee.rsvp_status != :accepted && "btn-ghost"
+            ]}
           >
             <.icon name="hero-check" class="size-4" /> Приду
           </button>
           <button
             phx-click="rsvp"
             phx-value-status="tentative"
-            class={["btn btn-sm gap-1.5", @my_invitee.rsvp_status == :tentative && "btn-warning", @my_invitee.rsvp_status != :tentative && "btn-ghost"]}
+            class={[
+              "btn btn-sm gap-1.5",
+              @my_invitee.rsvp_status == :tentative && "btn-warning",
+              @my_invitee.rsvp_status != :tentative && "btn-ghost"
+            ]}
           >
             <.icon name="hero-question-mark-circle" class="size-4" /> Возможно
           </button>
           <button
             phx-click="rsvp"
             phx-value-status="declined"
-            class={["btn btn-sm gap-1.5", @my_invitee.rsvp_status == :declined && "btn-error", @my_invitee.rsvp_status != :declined && "btn-ghost"]}
+            class={[
+              "btn btn-sm gap-1.5",
+              @my_invitee.rsvp_status == :declined && "btn-error",
+              @my_invitee.rsvp_status != :declined && "btn-ghost"
+            ]}
           >
             <.icon name="hero-x-mark" class="size-4" /> Не приду
           </button>
@@ -314,7 +370,10 @@ defmodule SvcWeb.MeetingLive.Show do
         <.stat label="Отсутствовали" value={@summary[:absent] || 0} tone="error" />
       </div>
 
-      <div :if={@live_action == :show} class="mt-6 rounded-xl border border-base-300 bg-base-100/50 overflow-hidden">
+      <div
+        :if={@live_action == :show}
+        class="mt-6 rounded-xl border border-base-300 bg-base-100/50 overflow-hidden"
+      >
         <div class="px-5 py-3 border-b border-base-300 flex items-center gap-2">
           <.icon name="hero-clipboard-document-check" class="size-4 text-base-content/45" />
           <span class="text-sm font-medium">Журнал посещаемости</span>

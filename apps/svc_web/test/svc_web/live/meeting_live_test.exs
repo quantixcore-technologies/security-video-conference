@@ -81,7 +81,9 @@ defmodule SvcWeb.MeetingLiveTest do
     assert html =~ "Поручение по итогам"
 
     lv
-    |> form("form", task: %{title: "Подготовить смету", assignee_id: to_string(emp.id), priority: "high"})
+    |> form("form",
+      task: %{title: "Подготовить смету", assignee_id: to_string(emp.id), priority: "high"}
+    )
     |> render_submit()
 
     task = Tasks.list_tasks(mgr.org_id) |> Enum.find(&(&1.title == "Подготовить смету"))

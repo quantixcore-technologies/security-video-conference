@@ -22,7 +22,11 @@ defmodule Svc.Meetings.ReminderWorker do
     else
       user_ids = meeting.id |> Attendance.list_invitees() |> Enum.map(& &1.user_id)
       users = Repo.all(from u in User, where: u.id in ^user_ids)
-      Notifications.notify_many(users, :reminder, reminder_title(kind, meeting), meeting_id: meeting.id)
+
+      Notifications.notify_many(users, :reminder, reminder_title(kind, meeting),
+        meeting_id: meeting.id
+      )
+
       :ok
     end
   rescue

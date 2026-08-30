@@ -55,7 +55,12 @@ defmodule SvcWeb.SecurityLive do
   @impl true
   def render(assigns) do
     ~H"""
-    <Layouts.app flash={@flash} active="security" current_user={@current_user} unread_count={@unread_count}>
+    <Layouts.app
+      flash={@flash}
+      active="security"
+      current_user={@current_user}
+      unread_count={@unread_count}
+    >
       <div class="flex items-start justify-between gap-4 mb-6">
         <div>
           <h1 class="text-2xl font-semibold tracking-tight">Безопасность</h1>
@@ -71,7 +76,8 @@ defmodule SvcWeb.SecurityLive do
 
       <div class="rounded-xl border border-base-300 bg-base-100/50 p-5 mb-6">
         <h2 class="text-sm font-medium mb-4 flex items-center gap-2">
-          <.icon name="hero-adjustments-horizontal" class="size-4 text-base-content/45" /> Гео-политика (pre-join gate)
+          <.icon name="hero-adjustments-horizontal" class="size-4 text-base-content/45" />
+          Гео-политика (pre-join gate)
         </h2>
         <form phx-submit="save_policy" class="space-y-3">
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -84,7 +90,9 @@ defmodule SvcWeb.SecurityLive do
               </select>
             </label>
             <label class="block">
-              <span class="text-xs font-medium text-base-content/60 mb-1 block">Разрешённые страны (ISO)</span>
+              <span class="text-xs font-medium text-base-content/60 mb-1 block">
+                Разрешённые страны (ISO)
+              </span>
               <input
                 type="text"
                 name="policy[allowed_countries]"
@@ -94,7 +102,9 @@ defmodule SvcWeb.SecurityLive do
             </label>
           </div>
           <label class="block">
-            <span class="text-xs font-medium text-base-content/60 mb-1 block">Whitelist IP (через запятую)</span>
+            <span class="text-xs font-medium text-base-content/60 mb-1 block">
+              Whitelist IP (через запятую)
+            </span>
             <input
               type="text"
               name="policy[whitelist_ips]"
@@ -106,11 +116,23 @@ defmodule SvcWeb.SecurityLive do
           <div class="flex items-center gap-4 flex-wrap">
             <label class="flex items-center gap-2 text-sm">
               <input type="hidden" name="policy[block_vpn]" value="false" />
-              <input type="checkbox" name="policy[block_vpn]" value="true" checked={@policy.block_vpn} class="checkbox checkbox-sm" /> Блокировать VPN
+              <input
+                type="checkbox"
+                name="policy[block_vpn]"
+                value="true"
+                checked={@policy.block_vpn}
+                class="checkbox checkbox-sm"
+              /> Блокировать VPN
             </label>
             <label class="flex items-center gap-2 text-sm">
               <input type="hidden" name="policy[block_proxy]" value="false" />
-              <input type="checkbox" name="policy[block_proxy]" value="true" checked={@policy.block_proxy} class="checkbox checkbox-sm" /> Блокировать proxy
+              <input
+                type="checkbox"
+                name="policy[block_proxy]"
+                value="true"
+                checked={@policy.block_proxy}
+                class="checkbox checkbox-sm"
+              /> Блокировать proxy
             </label>
             <button type="submit" class="btn btn-primary btn-sm ml-auto gap-1.5">
               <.icon name="hero-check" class="size-4" /> Сохранить
@@ -134,7 +156,10 @@ defmodule SvcWeb.SecurityLive do
         </div>
       </div>
 
-      <div :if={@events != []} class="rounded-xl border border-base-300 bg-base-100/50 overflow-hidden">
+      <div
+        :if={@events != []}
+        class="rounded-xl border border-base-300 bg-base-100/50 overflow-hidden"
+      >
         <table class="w-full text-sm">
           <thead>
             <tr class="text-left text-xs uppercase tracking-wider text-base-content/40 border-b border-base-300">
@@ -180,7 +205,10 @@ defmodule SvcWeb.SecurityLive do
         Проверок ещё не было
       </div>
 
-      <div :if={@geo_checks != []} class="rounded-xl border border-base-300 bg-base-100/50 overflow-hidden">
+      <div
+        :if={@geo_checks != []}
+        class="rounded-xl border border-base-300 bg-base-100/50 overflow-hidden"
+      >
         <table class="w-full text-sm">
           <thead>
             <tr class="text-left text-xs uppercase tracking-wider text-base-content/40 border-b border-base-300">

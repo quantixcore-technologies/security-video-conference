@@ -38,7 +38,10 @@ defmodule Svc.LiveKitTest do
     assert claims["video"]["canSubscribe"] == true
   end
 
-  test "join_token уважает can_publish: false (например, зритель)", %{user: user, meeting: meeting} do
+  test "join_token уважает can_publish: false (например, зритель)", %{
+    user: user,
+    meeting: meeting
+  } do
     {:ok, jwt} = LiveKit.join_token(user, meeting, can_publish: false)
     assert decode_claims(jwt)["video"]["canPublish"] == false
   end

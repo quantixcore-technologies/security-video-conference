@@ -78,9 +78,16 @@ defmodule SvcWeb.UserLive.Show do
     new_status = if user.status == :active, do: :disabled, else: :active
 
     {:ok, updated} = Accounts.set_status(user, new_status)
-    Audit.log_action(actor, :user_set_status, resource_type: :user, resource_id: user.id, metadata: %{status: new_status})
 
-    msg = if new_status == :disabled, do: "Сотрудник деактивирован.", else: "Сотрудник активирован."
+    Audit.log_action(actor, :user_set_status,
+      resource_type: :user,
+      resource_id: user.id,
+      metadata: %{status: new_status}
+    )
+
+    msg =
+      if new_status == :disabled, do: "Сотрудник деактивирован.", else: "Сотрудник активирован."
+
     {:noreply, socket |> assign(:user, updated) |> put_flash(:info, msg)}
   end
 
@@ -99,7 +106,8 @@ defmodule SvcWeb.UserLive.Show do
     end
   end
 
-  defp gen_password, do: :crypto.strong_rand_bytes(12) |> Base.url_encode64() |> binary_part(0, 16)
+  defp gen_password,
+    do: :crypto.strong_rand_bytes(12) |> Base.url_encode64() |> binary_part(0, 16)
 
   defp can_manage?(%{role: role}), do: role in [:super_admin, :admin_hr]
 
@@ -112,7 +120,8 @@ defmodule SvcWeb.UserLive.Show do
   defp role_label(:employee), do: "Сотрудник"
   defp role_label(:security_officer), do: "Офицер безопасности"
 
-  defp initials(name), do: name |> String.split() |> Enum.take(2) |> Enum.map_join(&String.first/1)
+  defp initials(name),
+    do: name |> String.split() |> Enum.take(2) |> Enum.map_join(&String.first/1)
 
   defp fmt(nil), do: "—"
   defp fmt(dt), do: Calendar.strftime(dt, "%d.%m.%Y %H:%M")
@@ -120,7 +129,12 @@ defmodule SvcWeb.UserLive.Show do
   @impl true
   def render(assigns) do
     ~H"""
-    <Layouts.app flash={@flash} active="users" current_user={@current_user} unread_count={@unread_count}>
+    <Layouts.app
+      flash={@flash}
+      active="users"
+      current_user={@current_user}
+      unread_count={@unread_count}
+    >
       <.link
         navigate={~p"/admin/users"}
         class="inline-flex items-center gap-1.5 text-sm text-base-content/55 hover:text-base-content transition mb-5"
@@ -130,7 +144,12 @@ defmodule SvcWeb.UserLive.Show do
 
       <div class="rounded-xl border border-base-300 bg-base-100/50 p-6 flex items-center gap-5 mb-5">
         <span class="grid place-items-center size-20 rounded-full bg-primary/15 text-primary text-2xl font-semibold ring-1 ring-primary/15 overflow-hidden shrink-0">
-          <img :if={@user.photo_path} src={@user.photo_path} class="w-full h-full object-cover" alt="" />
+          <img
+            :if={@user.photo_path}
+            src={@user.photo_path}
+            class="w-full h-full object-cover"
+            alt=""
+          />
           <span :if={!@user.photo_path}>{initials(@user.full_name)}</span>
         </span>
         <div class="min-w-0 flex-1">
@@ -153,15 +172,30 @@ defmodule SvcWeb.UserLive.Show do
           <.link navigate={~p"/admin/users/#{@user.id}/edit"} class="btn btn-sm btn-ghost gap-1.5">
             <.icon name="hero-pencil-square" class="size-4" /> Изменить
           </.link>
-          <button phx-click="reset_password" data-confirm="Сбросить пароль сотрудника?" class="btn btn-sm btn-ghost gap-1.5">
+          <button
+            phx-click="reset_password"
+            data-confirm="Сбросить пароль сотрудника?"
+            class="btn btn-sm btn-ghost gap-1.5"
+          >
             <.icon name="hero-key" class="size-4" /> Сброс пароля
           </button>
           <button
             phx-click="toggle_status"
-            data-confirm={if @user.status == :active, do: "Деактивировать сотрудника?", else: "Активировать сотрудника?"}
-            class={["btn btn-sm gap-1.5", @user.status == :active && "btn-ghost text-error", @user.status != :active && "btn-ghost text-success"]}
+            data-confirm={
+              if @user.status == :active,
+                do: "Деактивировать сотрудника?",
+                else: "Активировать сотрудника?"
+            }
+            class={[
+              "btn btn-sm gap-1.5",
+              @user.status == :active && "btn-ghost text-error",
+              @user.status != :active && "btn-ghost text-success"
+            ]}
           >
-            <.icon name={if @user.status == :active, do: "hero-no-symbol", else: "hero-check-circle"} class="size-4" />
+            <.icon
+              name={if @user.status == :active, do: "hero-no-symbol", else: "hero-check-circle"}
+              class="size-4"
+            />
             {if @user.status == :active, do: "Деактивировать", else: "Активировать"}
           </button>
         </div>
@@ -195,7 +229,10 @@ defmodule SvcWeb.UserLive.Show do
         </.form>
       </div>
 
-      <div :if={@live_action == :show} class="rounded-xl border border-base-300 bg-base-100/50 overflow-hidden">
+      <div
+        :if={@live_action == :show}
+        class="rounded-xl border border-base-300 bg-base-100/50 overflow-hidden"
+      >
         <div class="px-5 py-3 border-b border-base-300 flex items-center gap-2">
           <.icon name="hero-identification" class="size-4 text-base-content/45" />
           <span class="text-sm font-medium">Учётные данные</span>
@@ -209,8 +246,12 @@ defmodule SvcWeb.UserLive.Show do
             </span>
             <span :if={!@user.totp_enabled} class="text-base-content/45">выключена</span>
           </.row>
-          <.row label="Последний вход"><span class="tabular text-base-content/70">{fmt(@user.last_login_at)}</span></.row>
-          <.row label="Создан"><span class="tabular text-base-content/70">{fmt(@user.inserted_at)}</span></.row>
+          <.row label="Последний вход">
+            <span class="tabular text-base-content/70">{fmt(@user.last_login_at)}</span>
+          </.row>
+          <.row label="Создан">
+            <span class="tabular text-base-content/70">{fmt(@user.inserted_at)}</span>
+          </.row>
         </dl>
       </div>
     </Layouts.app>

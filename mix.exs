@@ -33,7 +33,10 @@ defmodule Svc.Umbrella.MixProject do
   defp deps do
     [
       # Required to run "mix format" on ~H/.heex files from the umbrella root
-      {:phoenix_live_view, ">= 0.0.0"}
+      {:phoenix_live_view, ">= 0.0.0"},
+      # Kod-sifat va xavfsizlik tahlili (dev/test)
+      {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
+      {:sobelow, "~> 0.13", only: [:dev, :test], runtime: false}
     ]
   end
 
@@ -50,7 +53,14 @@ defmodule Svc.Umbrella.MixProject do
     [
       # run `mix setup` in all child apps
       setup: ["cmd mix setup"],
-      precommit: ["compile --warnings-as-errors", "deps.unlock --unused", "format", "test"]
+      precommit: [
+        "compile --warnings-as-errors",
+        "deps.unlock --unused",
+        "format",
+        "credo",
+        "sobelow --exit Medium --root apps/svc_web -i Config.CSRF",
+        "test"
+      ]
     ]
   end
 end

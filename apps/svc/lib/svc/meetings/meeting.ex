@@ -32,8 +32,15 @@ defmodule Svc.Meetings.Meeting do
   def create_changeset(meeting, attrs) do
     meeting
     |> cast(attrs, [
-      :org_id, :organizer_id, :title, :type, :scheduled_start,
-      :scheduled_end, :recording_policy, :late_threshold_seconds, :livekit_room_name,
+      :org_id,
+      :organizer_id,
+      :title,
+      :type,
+      :scheduled_start,
+      :scheduled_end,
+      :recording_policy,
+      :late_threshold_seconds,
+      :livekit_room_name,
       :recurrence_group
     ])
     |> validate_required([:org_id, :organizer_id, :title, :livekit_room_name])
@@ -49,8 +56,12 @@ defmodule Svc.Meetings.Meeting do
   def update_changeset(meeting, attrs) do
     meeting
     |> cast(attrs, [
-      :title, :type, :scheduled_start, :scheduled_end,
-      :recording_policy, :late_threshold_seconds
+      :title,
+      :type,
+      :scheduled_start,
+      :scheduled_end,
+      :recording_policy,
+      :late_threshold_seconds
     ])
     |> validate_required([:title])
     |> validate_length(:title, min: 2, max: 300)

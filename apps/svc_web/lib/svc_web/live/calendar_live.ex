@@ -5,8 +5,8 @@ defmodule SvcWeb.CalendarLive do
   alias Svc.Meetings
 
   @weekdays ~w(Пн Вт Ср Чт Пт Сб Вс)
-  @months {"", "Январь", "Февраль", "Март", "Апрель", "Май", "Июнь", "Июль",
-           "Август", "Сентябрь", "Октябрь", "Ноябрь", "Декабрь"}
+  @months {"", "Январь", "Февраль", "Март", "Апрель", "Май", "Июнь", "Июль", "Август", "Сентябрь",
+           "Октябрь", "Ноябрь", "Декабрь"}
 
   @impl true
   def mount(_params, _session, socket), do: {:ok, socket}
@@ -52,7 +52,12 @@ defmodule SvcWeb.CalendarLive do
   @impl true
   def render(assigns) do
     ~H"""
-    <Layouts.app flash={@flash} active="calendar" current_user={@current_user} unread_count={@unread_count}>
+    <Layouts.app
+      flash={@flash}
+      active="calendar"
+      current_user={@current_user}
+      unread_count={@unread_count}
+    >
       <div class="flex items-center justify-between gap-4 mb-6 flex-wrap">
         <div>
           <h1 class="text-2xl font-semibold tracking-tight">
@@ -61,11 +66,17 @@ defmodule SvcWeb.CalendarLive do
           <p class="text-sm text-base-content/55 mt-1">Календарь встреч организации</p>
         </div>
         <div class="flex items-center gap-1.5">
-          <.link patch={~p"/admin/calendar?#{%{year: @prev.year, month: @prev.month}}"} class="btn btn-ghost btn-sm btn-square">
+          <.link
+            patch={~p"/admin/calendar?#{%{year: @prev.year, month: @prev.month}}"}
+            class="btn btn-ghost btn-sm btn-square"
+          >
             <.icon name="hero-chevron-left" class="size-4" />
           </.link>
           <.link patch={~p"/admin/calendar"} class="btn btn-ghost btn-sm">Сегодня</.link>
-          <.link patch={~p"/admin/calendar?#{%{year: @next.year, month: @next.month}}"} class="btn btn-ghost btn-sm btn-square">
+          <.link
+            patch={~p"/admin/calendar?#{%{year: @next.year, month: @next.month}}"}
+            class="btn btn-ghost btn-sm btn-square"
+          >
             <.icon name="hero-chevron-right" class="size-4" />
           </.link>
         </div>
@@ -96,7 +107,10 @@ defmodule SvcWeb.CalendarLive do
             <.link
               :for={m <- Map.get(@by_day, day, [])}
               navigate={~p"/admin/meetings/#{m.id}"}
-              class={["block text-[11px] px-1.5 py-0.5 rounded truncate leading-tight", chip_class(m.status)]}
+              class={[
+                "block text-[11px] px-1.5 py-0.5 rounded truncate leading-tight",
+                chip_class(m.status)
+              ]}
               title={m.title}
             >
               <span class="tabular">{Calendar.strftime(m.scheduled_start, "%H:%M")}</span> {m.title}

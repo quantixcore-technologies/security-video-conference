@@ -22,8 +22,14 @@ defmodule Svc.Audit.Log do
   def changeset(log, attrs) do
     log
     |> cast(attrs, [
-      :org_id, :actor_user_id, :action, :resource_type,
-      :resource_id, :metadata, :ip, :user_agent
+      :org_id,
+      :actor_user_id,
+      :action,
+      :resource_type,
+      :resource_id,
+      :metadata,
+      :ip,
+      :user_agent
     ])
     |> validate_required([:action])
   end

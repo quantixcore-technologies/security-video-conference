@@ -54,6 +54,7 @@ defmodule SvcWeb.API.MeetingController do
 
   defp to_float(nil), do: nil
   defp to_float(n) when is_number(n), do: n / 1
+
   defp to_float(s) when is_binary(s) do
     case Float.parse(s) do
       {f, _} -> f

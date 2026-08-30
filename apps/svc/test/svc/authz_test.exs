@@ -7,7 +7,10 @@ defmodule Svc.AuthzTest do
   setup do
     {:ok, org} = Orgs.create_organization(%{name: "Ведомство", slug: "ved"})
     {:ok, upr_a} = Orgs.create_department(%{org_id: org.id, name: "Управление А"})
-    {:ok, otd_a1} = Orgs.create_department(%{org_id: org.id, parent_id: upr_a.id, name: "Отдел А1"})
+
+    {:ok, otd_a1} =
+      Orgs.create_department(%{org_id: org.id, parent_id: upr_a.id, name: "Отдел А1"})
+
     {:ok, upr_b} = Orgs.create_department(%{org_id: org.id, name: "Управление Б"})
 
     admin = mk_user(org, "admin", :admin_hr, nil)
@@ -17,8 +20,12 @@ defmodule Svc.AuthzTest do
     emp_b = mk_user(org, "emp_b", :employee, upr_b.id)
 
     %{
-      org: org, admin: admin, sec: sec, mgr_a: mgr_a,
-      emp_a1: emp_a1, emp_b: emp_b
+      org: org,
+      admin: admin,
+      sec: sec,
+      mgr_a: mgr_a,
+      emp_a1: emp_a1,
+      emp_b: emp_b
     }
   end
 
@@ -39,6 +46,7 @@ defmodule Svc.AuthzTest do
   describe "visible_user_ids/1 — org-wide роли" do
     test "admin_hr видит всех в организации", ctx do
       ids = Authz.visible_user_ids(ctx.admin)
+
       for u <- [ctx.admin, ctx.sec, ctx.mgr_a, ctx.emp_a1, ctx.emp_b] do
         assert u.id in ids
       end

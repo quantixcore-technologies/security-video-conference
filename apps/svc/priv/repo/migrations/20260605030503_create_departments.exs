@@ -4,6 +4,7 @@ defmodule Svc.Repo.Migrations.CreateDepartments do
   def change do
     create table(:departments) do
       add :org_id, references(:organizations, on_delete: :delete_all), null: false
+
       # self-ref иерархия (ведомство→управление→отдел) — D-007
       add :parent_id, references(:departments, on_delete: :nilify_all)
       add :name, :string, null: false

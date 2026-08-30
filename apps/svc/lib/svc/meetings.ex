@@ -86,7 +86,8 @@ defmodule Svc.Meetings do
     end
   end
 
-  defp fetch_start(attrs), do: Map.get(attrs, :scheduled_start) || Map.get(attrs, "scheduled_start")
+  defp fetch_start(attrs),
+    do: Map.get(attrs, :scheduled_start) || Map.get(attrs, "scheduled_start")
 
   defp duration_seconds(attrs) do
     s = fetch_start(attrs)

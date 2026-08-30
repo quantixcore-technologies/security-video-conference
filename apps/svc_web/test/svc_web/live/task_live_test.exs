@@ -40,7 +40,9 @@ defmodule SvcWeb.TaskLiveTest do
   end
 
   test "карточки попадают в колонки по статусу", %{conn: conn, mgr: mgr, emp: emp} do
-    {:ok, _t1} = Tasks.create_task(mgr, %{"title" => "Подготовить отчёт", "assignee_id" => emp.id})
+    {:ok, _t1} =
+      Tasks.create_task(mgr, %{"title" => "Подготовить отчёт", "assignee_id" => emp.id})
+
     {:ok, t2} = Tasks.create_task(mgr, %{"title" => "Согласовать бюджет"})
     {:ok, _} = Tasks.set_status(t2, :in_progress)
 
@@ -112,7 +114,11 @@ defmodule SvcWeb.TaskLiveTest do
     assert Tasks.get_task!(mgr.org_id, t.id).status == :todo
   end
 
-  test "руководитель видит сводку + отчёт по исполнителям (E4-D)", %{conn: conn, mgr: mgr, emp: emp} do
+  test "руководитель видит сводку + отчёт по исполнителям (E4-D)", %{
+    conn: conn,
+    mgr: mgr,
+    emp: emp
+  } do
     Tasks.create_task(mgr, %{"title" => "Задача", "assignee_id" => emp.id})
 
     {:ok, _lv, html} = conn |> login(mgr) |> live(~p"/admin/tasks")

@@ -9,7 +9,15 @@ defmodule SvcWeb.Router do
     plug :fetch_live_flash
     plug :put_root_layout, html: {SvcWeb.Layouts, :root}
     plug :protect_from_forgery
-    plug :put_secure_browser_headers
+
+    plug :put_secure_browser_headers,
+         %{
+           "content-security-policy" =>
+             "default-src 'self'; img-src 'self' data: blob:; media-src 'self' blob:; " <>
+               "style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; " <>
+               "connect-src 'self' ws: wss:; frame-ancestors 'self'"
+         }
+
     plug :fetch_current_user
   end
 
@@ -17,6 +25,7 @@ defmodule SvcWeb.Router do
     plug :accepts, ["json"]
   end
 
+  # Bearer-token JSON API (mobil/Tauri) — CSRF talab qilinmaydi (sessiya-cookie emas, token).
   pipeline :api_authenticated do
     plug :accepts, ["json"]
     plug :fetch_session
@@ -82,7 +91,10 @@ defmodule SvcWeb.Router do
     get "/meetings/:id/ics", MeetingController, :ics
 
     live_session :admin,
-      on_mount: [{SvcWeb.UserAuth, :require_authenticated}, {SvcWeb.UserAuth, :mount_notifications}] do
+      on_mount: [
+        {SvcWeb.UserAuth, :require_authenticated},
+        {SvcWeb.UserAuth, :mount_notifications}
+      ] do
       live "/", DashboardLive, :index
       live "/security", SecurityLive, :index
       live "/calendar", CalendarLive, :index

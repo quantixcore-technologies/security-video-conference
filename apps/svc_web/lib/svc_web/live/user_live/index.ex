@@ -152,14 +152,20 @@ defmodule SvcWeb.UserLive.Index do
   defp filter_role(query, role), do: where(query, [u], u.role == ^String.to_existing_atom(role))
 
   defp filter_status(query, ""), do: query
-  defp filter_status(query, status), do: where(query, [u], u.status == ^String.to_existing_atom(status))
+
+  defp filter_status(query, status),
+    do: where(query, [u], u.status == ^String.to_existing_atom(status))
 
   # Сохраняет загруженное фото в priv/static/uploads/photos, возвращает публичный путь.
+  # sobelow_skip ["Traversal.FileModule"]
   defp consume_photo(socket, org_id) do
     consume_uploaded_entries(socket, :photo, fn %{path: tmp}, entry ->
       dir = Path.join([:code.priv_dir(:svc_web), "static", "uploads", "photos"])
       File.mkdir_p!(dir)
-      name = "#{org_id}_#{System.unique_integer([:positive])}#{Path.extname(entry.client_name)}"
+      # Kengaytma faqat oq ro'yxatdan — path-traversal/inъeksiya oldini oladi
+      ext = entry.client_name |> Path.extname() |> String.downcase()
+      ext = if ext in ~w(.jpg .jpeg .png .webp), do: ext, else: ".jpg"
+      name = "#{org_id}_#{System.unique_integer([:positive])}#{ext}"
       File.cp!(tmp, Path.join(dir, name))
       {:ok, "/uploads/photos/#{name}"}
     end)
@@ -180,11 +186,18 @@ defmodule SvcWeb.UserLive.Index do
   @impl true
   def render(assigns) do
     ~H"""
-    <Layouts.app flash={@flash} active="users" current_user={@current_user} unread_count={@unread_count}>
+    <Layouts.app
+      flash={@flash}
+      active="users"
+      current_user={@current_user}
+      unread_count={@unread_count}
+    >
       <div class="flex items-start justify-between gap-4 mb-6">
         <div>
           <h1 class="text-2xl font-semibold tracking-tight">Сотрудники</h1>
-          <p class="text-sm text-base-content/55 mt-1">Список ограничен вашей ролью · department-scoping</p>
+          <p class="text-sm text-base-content/55 mt-1">
+            Список ограничен вашей ролью · department-scoping
+          </p>
         </div>
         <.link
           :if={@can_manage and @live_action == :index}
@@ -195,7 +208,10 @@ defmodule SvcWeb.UserLive.Index do
         </.link>
       </div>
 
-      <div :if={@live_action == :new} class="rounded-xl border border-base-300 bg-base-100/50 p-5 mb-5">
+      <div
+        :if={@live_action == :new}
+        class="rounded-xl border border-base-300 bg-base-100/50 p-5 mb-5"
+      >
         <h3 class="font-medium mb-4 flex items-center gap-2">
           <.icon name="hero-user-plus" class="size-4 text-primary" /> Новый сотрудник
         </h3>
@@ -240,7 +256,10 @@ defmodule SvcWeb.UserLive.Index do
       <div :if={@live_action == :index} class="flex flex-wrap items-center gap-2 mb-4">
         <form phx-change="filter" phx-submit="filter" class="flex flex-wrap items-center gap-2 flex-1">
           <div class="relative flex-1 min-w-52">
-            <.icon name="hero-magnifying-glass" class="size-4 absolute left-3 top-1/2 -translate-y-1/2 text-base-content/40" />
+            <.icon
+              name="hero-magnifying-glass"
+              class="size-4 absolute left-3 top-1/2 -translate-y-1/2 text-base-content/40"
+            />
             <input
               type="text"
               name="q"
@@ -252,7 +271,11 @@ defmodule SvcWeb.UserLive.Index do
           </div>
           <select name="role" class="select select-sm select-bordered bg-base-100">
             <option value="">Все роли</option>
-            <option :for={{label, val} <- role_options()} value={val} selected={to_string(val) == @filters.role}>
+            <option
+              :for={{label, val} <- role_options()}
+              value={val}
+              selected={to_string(val) == @filters.role}
+            >
               {label}
             </option>
           </select>
@@ -266,7 +289,8 @@ defmodule SvcWeb.UserLive.Index do
 
       <div class="rounded-xl border border-base-300 bg-base-100/50 overflow-hidden">
         <div :if={@users == []} class="px-5 py-10 text-center text-sm text-base-content/40">
-          <.icon name="hero-magnifying-glass" class="size-8 mx-auto mb-2 opacity-40" /> Ничего не найдено
+          <.icon name="hero-magnifying-glass" class="size-8 mx-auto mb-2 opacity-40" />
+          Ничего не найдено
         </div>
         <table :if={@users != []} class="w-full text-sm">
           <thead>
@@ -299,7 +323,11 @@ defmodule SvcWeb.UserLive.Index do
                 <span :if={!u.totp_enabled} class="text-xs text-base-content/30">—</span>
               </td>
               <td class="px-5 py-3">
-                <span class={["inline-flex items-center gap-1.5 text-xs", u.status == :active && "text-success", u.status != :active && "text-base-content/45"]}>
+                <span class={[
+                  "inline-flex items-center gap-1.5 text-xs",
+                  u.status == :active && "text-success",
+                  u.status != :active && "text-base-content/45"
+                ]}>
                   <span class="size-1.5 rounded-full bg-current"></span>
                   {status_label(u.status)}
                 </span>
@@ -309,8 +337,13 @@ defmodule SvcWeb.UserLive.Index do
         </table>
       </div>
 
-      <div :if={@live_action == :index and @pages > 1} class="flex items-center justify-between mt-4 text-sm">
-        <span class="text-base-content/55 tabular">{@total} сотрудников · стр. {@page} из {@pages}</span>
+      <div
+        :if={@live_action == :index and @pages > 1}
+        class="flex items-center justify-between mt-4 text-sm"
+      >
+        <span class="text-base-content/55 tabular">
+          {@total} сотрудников · стр. {@page} из {@pages}
+        </span>
         <div class="flex items-center gap-1">
           <.link
             patch={page_path(@filters, @page - 1)}
@@ -320,7 +353,10 @@ defmodule SvcWeb.UserLive.Index do
           </.link>
           <.link
             patch={page_path(@filters, @page + 1)}
-            class={["btn btn-sm btn-ghost btn-square", @page >= @pages && "pointer-events-none opacity-30"]}
+            class={[
+              "btn btn-sm btn-ghost btn-square",
+              @page >= @pages && "pointer-events-none opacity-30"
+            ]}
           >
             <.icon name="hero-chevron-right" class="size-4" />
           </.link>
@@ -345,7 +381,12 @@ defmodule SvcWeb.UserLive.Index do
   defp avatar(assigns) do
     ~H"""
     <span class="grid place-items-center size-8 rounded-full bg-primary/15 text-primary text-xs font-medium ring-1 ring-primary/15 overflow-hidden shrink-0">
-      <img :if={@user.photo_path} src={@user.photo_path} class="w-full h-full object-cover" alt={@user.full_name} />
+      <img
+        :if={@user.photo_path}
+        src={@user.photo_path}
+        class="w-full h-full object-cover"
+        alt={@user.full_name}
+      />
       <span :if={!@user.photo_path}>{initials(@user.full_name)}</span>
     </span>
     """

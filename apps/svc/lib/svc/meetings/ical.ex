@@ -36,7 +36,9 @@ defmodule Svc.Meetings.ICal do
   defp end_line(%Meeting{scheduled_end: e}), do: ["DTEND:#{stamp(e)}"]
 
   defp stamp(nil), do: ""
-  defp stamp(%DateTime{} = dt), do: dt |> DateTime.truncate(:second) |> Calendar.strftime("%Y%m%dT%H%M%SZ")
+
+  defp stamp(%DateTime{} = dt),
+    do: dt |> DateTime.truncate(:second) |> Calendar.strftime("%Y%m%dT%H%M%SZ")
 
   defp escape(s) do
     s

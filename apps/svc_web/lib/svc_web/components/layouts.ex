@@ -41,7 +41,10 @@ defmodule SvcWeb.Layouts do
     ~H"""
     <div class="flex min-h-screen">
       <aside class="hidden lg:flex w-64 flex-col border-r border-base-300 bg-base-100">
-        <.link navigate={~p"/admin"} class="px-5 py-5 flex items-center gap-3 border-b border-base-300">
+        <.link
+          navigate={~p"/admin"}
+          class="px-5 py-5 flex items-center gap-3 border-b border-base-300"
+        >
           <span class="grid place-items-center size-9 rounded-xl bg-primary/15 text-primary ring-1 ring-primary/20">
             <.icon name="hero-shield-check" class="size-5" />
           </span>
@@ -52,11 +55,36 @@ defmodule SvcWeb.Layouts do
         </.link>
 
         <nav class="flex-1 p-3 space-y-0.5">
-          <.nav_item navigate={~p"/admin"} icon="hero-squares-2x2" label="Панель" on={@active == "dashboard"} />
-          <.nav_item navigate={~p"/admin/calendar"} icon="hero-calendar-days" label="Календарь" on={@active == "calendar"} />
-          <.nav_item navigate={~p"/admin/users"} icon="hero-users" label="Сотрудники" on={@active == "users"} />
-          <.nav_item navigate={~p"/admin/meetings"} icon="hero-video-camera" label="Встречи" on={@active == "meetings"} />
-          <.nav_item navigate={~p"/admin/tasks"} icon="hero-clipboard-document-list" label="Поручения" on={@active == "tasks"} />
+          <.nav_item
+            navigate={~p"/admin"}
+            icon="hero-squares-2x2"
+            label="Панель"
+            on={@active == "dashboard"}
+          />
+          <.nav_item
+            navigate={~p"/admin/calendar"}
+            icon="hero-calendar-days"
+            label="Календарь"
+            on={@active == "calendar"}
+          />
+          <.nav_item
+            navigate={~p"/admin/users"}
+            icon="hero-users"
+            label="Сотрудники"
+            on={@active == "users"}
+          />
+          <.nav_item
+            navigate={~p"/admin/meetings"}
+            icon="hero-video-camera"
+            label="Встречи"
+            on={@active == "meetings"}
+          />
+          <.nav_item
+            navigate={~p"/admin/tasks"}
+            icon="hero-clipboard-document-list"
+            label="Поручения"
+            on={@active == "tasks"}
+          />
           <.nav_item
             :if={@current_user && @current_user.role in [:super_admin, :security_officer]}
             navigate={~p"/admin/security"}
@@ -75,32 +103,64 @@ defmodule SvcWeb.Layouts do
         <header class="sticky top-0 z-20 flex items-center justify-between gap-3 px-4 sm:px-8 h-14 border-b border-base-300 bg-base-100/85 backdrop-blur">
           <div class="flex items-center gap-2 lg:hidden">
             <div class="dropdown">
-              <div tabindex="0" role="button" class="btn btn-ghost btn-sm btn-square" aria-label="Меню">
+              <div
+                tabindex="0"
+                role="button"
+                class="btn btn-ghost btn-sm btn-square"
+                aria-label="Меню"
+              >
                 <.icon name="hero-bars-3" class="size-5" />
               </div>
-              <ul tabindex="0" class="dropdown-content menu mt-2 w-56 rounded-xl border border-base-300 bg-base-100 shadow-xl z-30 p-1.5 gap-0.5">
+              <ul
+                tabindex="0"
+                class="dropdown-content menu mt-2 w-56 rounded-xl border border-base-300 bg-base-100 shadow-xl z-30 p-1.5 gap-0.5"
+              >
                 <li>
-                  <.link navigate={~p"/admin"} class={["gap-2.5 rounded-lg", @active == "dashboard" && "bg-primary/10 text-primary"]}>
+                  <.link
+                    navigate={~p"/admin"}
+                    class={[
+                      "gap-2.5 rounded-lg",
+                      @active == "dashboard" && "bg-primary/10 text-primary"
+                    ]}
+                  >
                     <.icon name="hero-squares-2x2" class="size-4" /> Панель
                   </.link>
                 </li>
                 <li>
-                  <.link navigate={~p"/admin/calendar"} class={["gap-2.5 rounded-lg", @active == "calendar" && "bg-primary/10 text-primary"]}>
+                  <.link
+                    navigate={~p"/admin/calendar"}
+                    class={[
+                      "gap-2.5 rounded-lg",
+                      @active == "calendar" && "bg-primary/10 text-primary"
+                    ]}
+                  >
                     <.icon name="hero-calendar-days" class="size-4" /> Календарь
                   </.link>
                 </li>
                 <li>
-                  <.link navigate={~p"/admin/users"} class={["gap-2.5 rounded-lg", @active == "users" && "bg-primary/10 text-primary"]}>
+                  <.link
+                    navigate={~p"/admin/users"}
+                    class={["gap-2.5 rounded-lg", @active == "users" && "bg-primary/10 text-primary"]}
+                  >
                     <.icon name="hero-users" class="size-4" /> Сотрудники
                   </.link>
                 </li>
                 <li>
-                  <.link navigate={~p"/admin/meetings"} class={["gap-2.5 rounded-lg", @active == "meetings" && "bg-primary/10 text-primary"]}>
+                  <.link
+                    navigate={~p"/admin/meetings"}
+                    class={[
+                      "gap-2.5 rounded-lg",
+                      @active == "meetings" && "bg-primary/10 text-primary"
+                    ]}
+                  >
                     <.icon name="hero-video-camera" class="size-4" /> Встречи
                   </.link>
                 </li>
                 <li>
-                  <.link navigate={~p"/admin/tasks"} class={["gap-2.5 rounded-lg", @active == "tasks" && "bg-primary/10 text-primary"]}>
+                  <.link
+                    navigate={~p"/admin/tasks"}
+                    class={["gap-2.5 rounded-lg", @active == "tasks" && "bg-primary/10 text-primary"]}
+                  >
                     <.icon name="hero-clipboard-document-list" class="size-4" /> Поручения
                   </.link>
                 </li>
@@ -135,34 +195,47 @@ defmodule SvcWeb.Layouts do
                 role="button"
                 class="flex items-center gap-2.5 pl-1.5 pr-2.5 py-1.5 rounded-xl hover:bg-base-200 transition cursor-pointer"
               >
-              <span class="grid place-items-center size-8 rounded-full bg-primary/15 text-primary text-xs font-semibold ring-1 ring-primary/15 overflow-hidden shrink-0">
-                <img :if={@current_user.photo_path} src={@current_user.photo_path} class="w-full h-full object-cover" alt="" />
-                <span :if={!@current_user.photo_path}>{user_initials(@current_user.full_name)}</span>
-              </span>
-              <span class="hidden sm:block text-left leading-tight">
-                <span class="block text-sm font-medium">{@current_user.full_name}</span>
-                <span class="block text-[11px] text-base-content/50">{role_short(@current_user.role)}</span>
-              </span>
-              <.icon name="hero-chevron-down" class="size-4 text-base-content/40" />
-            </div>
-            <ul
-              tabindex="0"
-              class="dropdown-content menu mt-2 w-56 rounded-xl border border-base-300 bg-base-100 shadow-xl z-30 p-1.5 gap-0.5"
-            >
-              <li class="menu-title px-3 py-1.5 text-[11px] text-base-content/40 sm:hidden">
-                {@current_user.full_name}
-              </li>
-              <li>
-                <.link navigate={~p"/admin/profile"} class="gap-2.5 rounded-lg">
-                  <.icon name="hero-user-circle" class="size-4" /> Профиль
-                </.link>
-              </li>
-              <li>
-                <.link href={~p"/logout"} method="delete" class="gap-2.5 rounded-lg text-error hover:bg-error/10">
-                  <.icon name="hero-arrow-right-start-on-rectangle" class="size-4" /> Выйти
-                </.link>
-              </li>
-            </ul>
+                <span class="grid place-items-center size-8 rounded-full bg-primary/15 text-primary text-xs font-semibold ring-1 ring-primary/15 overflow-hidden shrink-0">
+                  <img
+                    :if={@current_user.photo_path}
+                    src={@current_user.photo_path}
+                    class="w-full h-full object-cover"
+                    alt=""
+                  />
+                  <span :if={!@current_user.photo_path}>
+                    {user_initials(@current_user.full_name)}
+                  </span>
+                </span>
+                <span class="hidden sm:block text-left leading-tight">
+                  <span class="block text-sm font-medium">{@current_user.full_name}</span>
+                  <span class="block text-[11px] text-base-content/50">
+                    {role_short(@current_user.role)}
+                  </span>
+                </span>
+                <.icon name="hero-chevron-down" class="size-4 text-base-content/40" />
+              </div>
+              <ul
+                tabindex="0"
+                class="dropdown-content menu mt-2 w-56 rounded-xl border border-base-300 bg-base-100 shadow-xl z-30 p-1.5 gap-0.5"
+              >
+                <li class="menu-title px-3 py-1.5 text-[11px] text-base-content/40 sm:hidden">
+                  {@current_user.full_name}
+                </li>
+                <li>
+                  <.link navigate={~p"/admin/profile"} class="gap-2.5 rounded-lg">
+                    <.icon name="hero-user-circle" class="size-4" /> Профиль
+                  </.link>
+                </li>
+                <li>
+                  <.link
+                    href={~p"/logout"}
+                    method="delete"
+                    class="gap-2.5 rounded-lg text-error hover:bg-error/10"
+                  >
+                    <.icon name="hero-arrow-right-start-on-rectangle" class="size-4" /> Выйти
+                  </.link>
+                </li>
+              </ul>
             </div>
           </div>
         </header>
@@ -194,13 +267,21 @@ defmodule SvcWeb.Layouts do
         !@on && "text-base-content/65 hover:text-base-content hover:bg-base-200"
       ]}
     >
-      <.icon name={@icon} class={["size-5", @on && "text-primary", !@on && "text-base-content/50 group-hover:text-base-content/80"]} />
+      <.icon
+        name={@icon}
+        class={[
+          "size-5",
+          @on && "text-primary",
+          !@on && "text-base-content/50 group-hover:text-base-content/80"
+        ]}
+      />
       {@label}
     </.link>
     """
   end
 
-  defp user_initials(name), do: name |> String.split() |> Enum.take(2) |> Enum.map_join(&String.first/1)
+  defp user_initials(name),
+    do: name |> String.split() |> Enum.take(2) |> Enum.map_join(&String.first/1)
 
   defp role_short(:super_admin), do: "Суперадмин"
   defp role_short(:admin_hr), do: "Админ / HR"

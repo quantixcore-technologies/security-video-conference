@@ -115,8 +115,10 @@ defmodule Svc.Accounts do
 
     changes =
       if attempts >= @max_failed do
-        [failed_attempts: attempts,
-         locked_until: DateTime.add(DateTime.utc_now(), @lock_minutes * 60, :second)]
+        [
+          failed_attempts: attempts,
+          locked_until: DateTime.add(DateTime.utc_now(), @lock_minutes * 60, :second)
+        ]
       else
         [failed_attempts: attempts]
       end

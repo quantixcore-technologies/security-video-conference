@@ -91,6 +91,7 @@ defmodule Svc.AccountsTest do
 
     test "org-изоляция: чужой org не аутентифицирует", %{user: _user} do
       {:ok, other} = Orgs.create_organization(%{name: "Другое", slug: "drugoe"})
+
       assert {:error, :invalid_credentials} =
                Accounts.authenticate(other.id, "ivanov", "SecurePass123!")
     end
@@ -155,7 +156,11 @@ defmodule Svc.AccountsTest do
       hash = user.hashed_password
 
       {:ok, u} =
-        Accounts.update_user(user, %{"full_name" => "Новое Имя", "role" => "employee", "status" => "active"})
+        Accounts.update_user(user, %{
+          "full_name" => "Новое Имя",
+          "role" => "employee",
+          "status" => "active"
+        })
 
       assert u.hashed_password == hash
       assert u.username == "ivanov"

@@ -72,11 +72,15 @@ defmodule SvcWeb.MeetingLive.Index do
     freq = params["repeat"] || "none"
     count = parse_count(params["repeat_count"])
 
-    if freq in ["daily", "weekly"] and attrs.scheduled_start && count > 1 do
+    if (freq in ["daily", "weekly"] and attrs.scheduled_start) && count > 1 do
       save_recurring(socket, actor, attrs, freq, count, params["invitee_ids"])
     else
       save_single(socket, actor, attrs, params["invitee_ids"])
     end
+  end
+
+  def handle_event("filter", %{"q" => q, "status" => status}, socket) do
+    {:noreply, push_patch(socket, to: ~p"/admin/meetings?#{filter_params(q, status)}")}
   end
 
   defp save_single(socket, actor, attrs, invitee_ids) do
@@ -158,10 +162,6 @@ defmodule SvcWeb.MeetingLive.Index do
 
   defp notify_invitees(_, _, _), do: :ok
 
-  def handle_event("filter", %{"q" => q, "status" => status}, socket) do
-    {:noreply, push_patch(socket, to: ~p"/admin/meetings?#{filter_params(q, status)}")}
-  end
-
   defp filter_params(q, status) do
     %{page: 1} |> put_if(:q, q) |> put_if(:status, status)
   end
@@ -201,7 +201,9 @@ defmodule SvcWeb.MeetingLive.Index do
   defp filter_search(query, term), do: where(query, [m], ilike(m.title, ^"%#{term}%"))
 
   defp filter_status(query, ""), do: query
-  defp filter_status(query, status), do: where(query, [m], m.status == ^String.to_existing_atom(status))
+
+  defp filter_status(query, status),
+    do: where(query, [m], m.status == ^String.to_existing_atom(status))
 
   defp parse_dt(nil), do: nil
   defp parse_dt(""), do: nil
@@ -213,7 +215,8 @@ defmodule SvcWeb.MeetingLive.Index do
     end
   end
 
-  defp policy_options, do: [{"Без записи", "off"}, {"Опционально", "optional"}, {"Обязательно", "required"}]
+  defp policy_options,
+    do: [{"Без записи", "off"}, {"Опционально", "optional"}, {"Обязательно", "required"}]
 
   defp status_label(:planned), do: "Запланирована"
   defp status_label(:live), do: "Идёт"
@@ -222,7 +225,12 @@ defmodule SvcWeb.MeetingLive.Index do
   @impl true
   def render(assigns) do
     ~H"""
-    <Layouts.app flash={@flash} active="meetings" current_user={@current_user} unread_count={@unread_count}>
+    <Layouts.app
+      flash={@flash}
+      active="meetings"
+      current_user={@current_user}
+      unread_count={@unread_count}
+    >
       <div class="flex items-start justify-between gap-4 mb-6">
         <div>
           <h1 class="text-2xl font-semibold tracking-tight">Встречи</h1>
@@ -237,7 +245,10 @@ defmodule SvcWeb.MeetingLive.Index do
         </.link>
       </div>
 
-      <div :if={@live_action == :new} class="rounded-xl border border-base-300 bg-base-100/50 p-5 mb-5">
+      <div
+        :if={@live_action == :new}
+        class="rounded-xl border border-base-300 bg-base-100/50 p-5 mb-5"
+      >
         <h3 class="font-medium mb-4 flex items-center gap-2">
           <.icon name="hero-video-camera" class="size-4 text-primary" /> Новая встреча
         </h3>
@@ -280,7 +291,12 @@ defmodule SvcWeb.MeetingLive.Index do
             <legend class="text-sm font-medium px-1">Ростер (ожидаемые участники)</legend>
             <div class="grid grid-cols-2 gap-1 max-h-48 overflow-y-auto">
               <label :for={u <- @roster} class="flex items-center gap-2 text-sm">
-                <input type="checkbox" name="meeting[invitee_ids][]" value={u.id} class="checkbox checkbox-sm" />
+                <input
+                  type="checkbox"
+                  name="meeting[invitee_ids][]"
+                  value={u.id}
+                  class="checkbox checkbox-sm"
+                />
                 {u.full_name}
               </label>
             </div>
@@ -296,7 +312,10 @@ defmodule SvcWeb.MeetingLive.Index do
       <div :if={@live_action == :index} class="flex flex-wrap items-center gap-2 mb-4">
         <form phx-change="filter" phx-submit="filter" class="flex flex-wrap items-center gap-2 flex-1">
           <div class="relative flex-1 min-w-52">
-            <.icon name="hero-magnifying-glass" class="size-4 absolute left-3 top-1/2 -translate-y-1/2 text-base-content/40" />
+            <.icon
+              name="hero-magnifying-glass"
+              class="size-4 absolute left-3 top-1/2 -translate-y-1/2 text-base-content/40"
+            />
             <input
               type="text"
               name="q"
@@ -317,7 +336,8 @@ defmodule SvcWeb.MeetingLive.Index do
 
       <div class="rounded-xl border border-base-300 bg-base-100/50 overflow-hidden">
         <div :if={@meetings == []} class="px-5 py-10 text-center text-sm text-base-content/40">
-          <.icon name="hero-video-camera-slash" class="size-8 mx-auto mb-2 opacity-40" /> Ничего не найдено
+          <.icon name="hero-video-camera-slash" class="size-8 mx-auto mb-2 opacity-40" />
+          Ничего не найдено
         </div>
         <table :if={@meetings != []} class="w-full text-sm">
           <thead>
@@ -331,12 +351,17 @@ defmodule SvcWeb.MeetingLive.Index do
           <tbody class="divide-y divide-base-300/50">
             <tr :for={m <- @meetings} class="hover:bg-base-200/40 transition">
               <td class="px-5 py-3">
-                <.link navigate={~p"/admin/meetings/#{m.id}"} class="font-medium hover:text-primary transition inline-flex items-center gap-2">
+                <.link
+                  navigate={~p"/admin/meetings/#{m.id}"}
+                  class="font-medium hover:text-primary transition inline-flex items-center gap-2"
+                >
                   <.icon name="hero-video-camera" class="size-4 text-base-content/35" />
                   {m.title}
                 </.link>
               </td>
-              <td class="px-5 py-3 text-base-content/60">{if m.type == :ad_hoc, do: "Ad-hoc", else: "План"}</td>
+              <td class="px-5 py-3 text-base-content/60">
+                {if m.type == :ad_hoc, do: "Ad-hoc", else: "План"}
+              </td>
               <td class="px-5 py-3">
                 <span class={"inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium #{status_class(m.status)}"}>
                   <span class={"size-1.5 rounded-full #{status_dot(m.status)}"}></span>
@@ -344,7 +369,11 @@ defmodule SvcWeb.MeetingLive.Index do
                 </span>
               </td>
               <td class="px-5 py-3">
-                <.icon :if={m.recording_policy != :off} name="hero-check-circle" class="size-4 text-success" />
+                <.icon
+                  :if={m.recording_policy != :off}
+                  name="hero-check-circle"
+                  class="size-4 text-success"
+                />
                 <span :if={m.recording_policy == :off} class="text-base-content/30">—</span>
               </td>
             </tr>
@@ -352,7 +381,10 @@ defmodule SvcWeb.MeetingLive.Index do
         </table>
       </div>
 
-      <div :if={@live_action == :index and @pages > 1} class="flex items-center justify-between mt-4 text-sm">
+      <div
+        :if={@live_action == :index and @pages > 1}
+        class="flex items-center justify-between mt-4 text-sm"
+      >
         <span class="text-base-content/55 tabular">{@total} встреч · стр. {@page} из {@pages}</span>
         <div class="flex items-center gap-1">
           <.link
@@ -363,7 +395,10 @@ defmodule SvcWeb.MeetingLive.Index do
           </.link>
           <.link
             patch={page_path(@filters, @page + 1)}
-            class={["btn btn-sm btn-ghost btn-square", @page >= @pages && "pointer-events-none opacity-30"]}
+            class={[
+              "btn btn-sm btn-ghost btn-square",
+              @page >= @pages && "pointer-events-none opacity-30"
+            ]}
           >
             <.icon name="hero-chevron-right" class="size-4" />
           </.link>

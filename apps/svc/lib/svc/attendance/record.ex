@@ -27,8 +27,14 @@ defmodule Svc.Attendance.Record do
   def changeset(record, attrs) do
     record
     |> cast(attrs, [
-      :org_id, :meeting_id, :user_id, :status,
-      :joined_at, :left_at, :total_seconds, :source
+      :org_id,
+      :meeting_id,
+      :user_id,
+      :status,
+      :joined_at,
+      :left_at,
+      :total_seconds,
+      :source
     ])
     |> validate_required([:org_id, :meeting_id, :user_id, :status])
     |> unique_constraint([:meeting_id, :user_id],

@@ -38,8 +38,15 @@ defmodule Svc.Accounts.User do
   def create_changeset(user, attrs) do
     user
     |> cast(attrs, [
-      :org_id, :department_id, :username, :full_name,
-      :phone, :photo_path, :role, :status, :password
+      :org_id,
+      :department_id,
+      :username,
+      :full_name,
+      :phone,
+      :photo_path,
+      :role,
+      :status,
+      :password
     ])
     |> validate_required([:org_id, :username, :full_name, :password])
     |> validate_length(:username, min: 3, max: 50)

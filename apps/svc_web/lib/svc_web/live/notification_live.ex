@@ -44,7 +44,10 @@ defmodule SvcWeb.NotificationLive do
         </button>
       </div>
 
-      <div :if={@notifications == []} class="rounded-xl border border-base-300 bg-base-100/50 px-5 py-14 text-center text-sm text-base-content/40">
+      <div
+        :if={@notifications == []}
+        class="rounded-xl border border-base-300 bg-base-100/50 px-5 py-14 text-center text-sm text-base-content/40"
+      >
         <.icon name="hero-bell-slash" class="size-10 mx-auto mb-3 opacity-40" /> Уведомлений пока нет
       </div>
 

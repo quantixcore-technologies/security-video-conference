@@ -37,7 +37,13 @@ defmodule Svc.Meetings.ICalTest do
   end
 
   test "экранирует спецсимволы в SUMMARY" do
-    m = %Meeting{id: 1, title: "Встреча; отдел, А", status: :planned, scheduled_start: ~U[2026-06-10 10:00:00Z]}
+    m = %Meeting{
+      id: 1,
+      title: "Встреча; отдел, А",
+      status: :planned,
+      scheduled_start: ~U[2026-06-10 10:00:00Z]
+    }
+
     assert ICal.to_ics(m) =~ "SUMMARY:Встреча\\; отдел\\, А"
   end
 

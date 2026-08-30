@@ -35,9 +35,21 @@ defmodule Svc.Geo.NetworkGeoCheck do
   def changeset(check, attrs) do
     check
     |> cast(attrs, [
-      :org_id, :meeting_id, :user_id, :ip, :ip_country, :is_vpn, :is_proxy,
-      :is_hosting, :decision, :reason, :mmdb_version, :checked_at,
-      :gps_lat, :gps_lon, :gps_accuracy
+      :org_id,
+      :meeting_id,
+      :user_id,
+      :ip,
+      :ip_country,
+      :is_vpn,
+      :is_proxy,
+      :is_hosting,
+      :decision,
+      :reason,
+      :mmdb_version,
+      :checked_at,
+      :gps_lat,
+      :gps_lon,
+      :gps_accuracy
     ])
     |> validate_required([:org_id, :ip, :decision, :checked_at])
     |> foreign_key_constraint(:org_id)

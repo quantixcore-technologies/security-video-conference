@@ -39,7 +39,10 @@ defmodule SvcWeb.TaskLive.Index do
       socket
       |> assign(:page_title, "Новое поручение")
       |> assign(:assignees, Accounts.list_users(actor.org_id))
-      |> assign(:form, to_form(%{"title" => "", "priority" => "normal", "assignee_id" => ""}, as: :task))
+      |> assign(
+        :form,
+        to_form(%{"title" => "", "priority" => "normal", "assignee_id" => ""}, as: :task)
+      )
       |> load_board()
     else
       socket
@@ -89,6 +92,7 @@ defmodule SvcWeb.TaskLive.Index do
   defp load_board(socket) do
     actor = socket.assigns.current_user
     manage? = Tasks.can_manage?(actor)
+
     # Руководитель видит всю доску org, сотрудник — только свои задачи.
     opts = if manage?, do: [], else: [assignee_id: actor.id]
 
@@ -115,12 +119,19 @@ defmodule SvcWeb.TaskLive.Index do
   @impl true
   def render(assigns) do
     ~H"""
-    <Layouts.app flash={@flash} active="tasks" current_user={@current_user} unread_count={@unread_count}>
+    <Layouts.app
+      flash={@flash}
+      active="tasks"
+      current_user={@current_user}
+      unread_count={@unread_count}
+    >
       <div class="flex items-start justify-between gap-4 mb-6">
         <div>
           <h1 class="text-2xl font-semibold tracking-tight">Поручения</h1>
           <p class="text-sm text-base-content/55 mt-1">
-            {if @can_manage, do: "Доска задач отдела — перетаскивайте карточки между колонками", else: "Мои задачи"}
+            {if @can_manage,
+              do: "Доска задач отдела — перетаскивайте карточки между колонками",
+              else: "Мои задачи"}
           </p>
         </div>
         <.link
@@ -132,13 +143,21 @@ defmodule SvcWeb.TaskLive.Index do
         </.link>
       </div>
 
-      <div :if={@live_action == :new} class="rounded-xl border border-base-300 bg-base-100/50 p-5 mb-5">
+      <div
+        :if={@live_action == :new}
+        class="rounded-xl border border-base-300 bg-base-100/50 p-5 mb-5"
+      >
         <h3 class="font-medium mb-4 flex items-center gap-2">
           <.icon name="hero-clipboard-document-list" class="size-4 text-primary" /> Новое поручение
         </h3>
         <.form for={@form} phx-submit="save" class="space-y-3">
           <.input field={@form[:title]} type="text" label="Что нужно сделать" required />
-          <.input field={@form[:description]} type="textarea" label="Описание (необязательно)" rows="2" />
+          <.input
+            field={@form[:description]}
+            type="textarea"
+            label="Описание (необязательно)"
+            rows="2"
+          />
           <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <.input
               field={@form[:assignee_id]}
@@ -200,7 +219,9 @@ defmodule SvcWeb.TaskLive.Index do
               <span class={"size-2 rounded-full #{column_dot(status)}"}></span>
               {title}
             </span>
-            <span class="text-xs text-base-content/40 tabular">{length(tasks_for(@board, status))}</span>
+            <span class="text-xs text-base-content/40 tabular">
+              {length(tasks_for(@board, status))}
+            </span>
           </div>
 
           <div class="flex-1 p-2.5 space-y-2.5">
@@ -210,7 +231,8 @@ defmodule SvcWeb.TaskLive.Index do
               draggable={to_string(@can_manage)}
               class={[
                 "group rounded-lg border border-base-300 bg-base-100 p-3 shadow-sm transition",
-                @can_manage && "cursor-grab hover:border-primary/40 hover:shadow-md active:cursor-grabbing"
+                @can_manage &&
+                  "cursor-grab hover:border-primary/40 hover:shadow-md active:cursor-grabbing"
               ]}
             >
               <div class="flex items-start justify-between gap-2">
@@ -220,7 +242,10 @@ defmodule SvcWeb.TaskLive.Index do
                 </span>
               </div>
 
-              <p :if={t.description not in [nil, ""]} class="mt-1 text-xs text-base-content/50 line-clamp-2">
+              <p
+                :if={t.description not in [nil, ""]}
+                class="mt-1 text-xs text-base-content/50 line-clamp-2"
+              >
                 {t.description}
               </p>
 
@@ -240,7 +265,9 @@ defmodule SvcWeb.TaskLive.Index do
                   </span>
                   <span class="truncate max-w-24">{t.assignee.full_name}</span>
                 </span>
-                <span :if={is_nil(t.assignee)} class="text-xs text-base-content/30">Не назначено</span>
+                <span :if={is_nil(t.assignee)} class="text-xs text-base-content/30">
+                  Не назначено
+                </span>
 
                 <span
                   :if={t.due_at}
@@ -321,7 +348,8 @@ defmodule SvcWeb.TaskLive.Index do
   defp column_dot(:review), do: "bg-warning"
   defp column_dot(:done), do: "bg-success"
 
-  defp initials(name), do: name |> String.split() |> Enum.take(2) |> Enum.map_join(&String.first/1)
+  defp initials(name),
+    do: name |> String.split() |> Enum.take(2) |> Enum.map_join(&String.first/1)
 
   defp format_due(%DateTime{} = dt), do: Calendar.strftime(dt, "%d.%m %H:%M")
 

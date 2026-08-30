@@ -21,7 +21,9 @@ defmodule Svc.TasksTest do
   end
 
   test "create_task: автор + дефолты (todo/normal)", %{boss: boss, emp: emp} do
-    assert {:ok, t} = Tasks.create_task(boss, %{"title" => "Подготовить отчёт", "assignee_id" => emp.id})
+    assert {:ok, t} =
+             Tasks.create_task(boss, %{"title" => "Подготовить отчёт", "assignee_id" => emp.id})
+
     assert t.title == "Подготовить отчёт"
     assert t.creator_id == boss.id
     assert t.assignee_id == emp.id
@@ -74,7 +76,10 @@ defmodule Svc.TasksTest do
 
   test "create_task с исполнителем шлёт ему уведомление (E4-C)", %{boss: boss, emp: emp} do
     assert Notifications.unread_count(emp.id) == 0
-    {:ok, _t} = Tasks.create_task(boss, %{"title" => "Срочное поручение", "assignee_id" => emp.id})
+
+    {:ok, _t} =
+      Tasks.create_task(boss, %{"title" => "Срочное поручение", "assignee_id" => emp.id})
+
     assert Notifications.unread_count(emp.id) == 1
     assert [n] = Notifications.list_for_user(emp.id)
     assert n.kind == :task
@@ -116,7 +121,10 @@ defmodule Svc.TasksTest do
     future = DateTime.add(DateTime.utc_now(), 3600, :second)
     Tasks.create_task(boss, %{"title" => "Просрочена", "assignee_id" => emp.id, "due_at" => past})
     Tasks.create_task(boss, %{"title" => "В срок", "assignee_id" => emp.id, "due_at" => future})
-    {:ok, done_late} = Tasks.create_task(boss, %{"title" => "Просрочена но done", "due_at" => past})
+
+    {:ok, done_late} =
+      Tasks.create_task(boss, %{"title" => "Просрочена но done", "due_at" => past})
+
     Tasks.set_status(done_late, :done)
 
     assert Tasks.overdue_count(boss.org_id) == 1

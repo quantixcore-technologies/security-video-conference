@@ -49,7 +49,12 @@ defmodule Svc.GeoTest do
     end
 
     test "upsert_policy создаёт и обновляет (одна на org)", %{org: org} do
-      assert {:ok, p} = Geo.upsert_policy(org.id, %{"mode" => "enforce", "allowed_countries" => ["UZ", "KZ"]})
+      assert {:ok, p} =
+               Geo.upsert_policy(org.id, %{
+                 "mode" => "enforce",
+                 "allowed_countries" => ["UZ", "KZ"]
+               })
+
       assert p.mode == :enforce
       assert {:ok, p2} = Geo.upsert_policy(org.id, %{"mode" => "off"})
       assert p2.mode == :off

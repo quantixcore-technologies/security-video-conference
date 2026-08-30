@@ -52,7 +52,11 @@ defmodule Svc.MeetingsTest do
       finish = ~U[2026-06-10 09:00:00.000000Z]
 
       assert {:error, cs} =
-               Meetings.create_meeting(m, %{title: "Бяка", scheduled_start: start, scheduled_end: finish})
+               Meetings.create_meeting(m, %{
+                 title: "Бяка",
+                 scheduled_start: start,
+                 scheduled_end: finish
+               })
 
       assert errors_on(cs)[:scheduled_end]
     end
@@ -134,8 +138,15 @@ defmodule Svc.MeetingsTest do
       future = DateTime.add(DateTime.utc_now(), 3 * 86_400, :second)
       {:ok, meeting} = Meetings.create_meeting(m, %{title: "Будущая", scheduled_start: future})
 
-      assert_enqueued(worker: Svc.Meetings.ReminderWorker, args: %{meeting_id: meeting.id, kind: "24h"})
-      assert_enqueued(worker: Svc.Meetings.ReminderWorker, args: %{meeting_id: meeting.id, kind: "1h"})
+      assert_enqueued(
+        worker: Svc.Meetings.ReminderWorker,
+        args: %{meeting_id: meeting.id, kind: "24h"}
+      )
+
+      assert_enqueued(
+        worker: Svc.Meetings.ReminderWorker,
+        args: %{meeting_id: meeting.id, kind: "1h"}
+      )
     end
 
     test "встреча без scheduled_start — без напоминаний", %{manager: m} do
@@ -182,7 +193,12 @@ defmodule Svc.MeetingsTest do
 
     test "create_recurring создаёт серию с общим recurrence_group", %{manager: m} do
       assert {:ok, group, meetings} =
-               Meetings.create_recurring(m, %{title: "Планёрка", scheduled_start: future_start()}, "weekly", 4)
+               Meetings.create_recurring(
+                 m,
+                 %{title: "Планёрка", scheduled_start: future_start()},
+                 "weekly",
+                 4
+               )
 
       assert length(meetings) == 4
       assert Enum.all?(meetings, &(&1.recurrence_group == group))
@@ -190,7 +206,12 @@ defmodule Svc.MeetingsTest do
 
     test "weekly — экземпляры разнесены по неделям", %{manager: m} do
       {:ok, _g, [m1, m2 | _]} =
-        Meetings.create_recurring(m, %{title: "Планёрка", scheduled_start: future_start()}, "weekly", 3)
+        Meetings.create_recurring(
+          m,
+          %{title: "Планёрка", scheduled_start: future_start()},
+          "weekly",
+          3
+        )
 
       assert DateTime.diff(m2.scheduled_start, m1.scheduled_start, :second) == 7 * 86_400
     end
@@ -200,7 +221,12 @@ defmodule Svc.MeetingsTest do
       finish = DateTime.add(start, 3600, :second)
 
       {:ok, _g, [m1, m2 | _]} =
-        Meetings.create_recurring(m, %{title: "Планёрка", scheduled_start: start, scheduled_end: finish}, "daily", 3)
+        Meetings.create_recurring(
+          m,
+          %{title: "Планёрка", scheduled_start: start, scheduled_end: finish},
+          "daily",
+          3
+        )
 
       assert DateTime.diff(m2.scheduled_start, m1.scheduled_start, :second) == 86_400
       assert DateTime.diff(m1.scheduled_end, m1.scheduled_start, :second) == 3600
@@ -212,7 +238,12 @@ defmodule Svc.MeetingsTest do
 
     test "ограничено 52 повторениями", %{manager: m} do
       {:ok, _g, meetings} =
-        Meetings.create_recurring(m, %{title: "Планёрка", scheduled_start: future_start()}, "daily", 100)
+        Meetings.create_recurring(
+          m,
+          %{title: "Планёрка", scheduled_start: future_start()},
+          "daily",
+          100
+        )
 
       assert length(meetings) == 52
     end

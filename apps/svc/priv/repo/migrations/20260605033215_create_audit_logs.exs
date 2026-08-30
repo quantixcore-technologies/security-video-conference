@@ -5,6 +5,7 @@ defmodule Svc.Repo.Migrations.CreateAuditLogs do
     create table(:audit_logs) do
       # org переживает (nilify), лог не каскадит
       add :org_id, references(:organizations, on_delete: :nilify_all)
+
       # НЕ FK: лог переживает удаление актора (D-014, append-only аудит)
       add :actor_user_id, :bigint
       add :action, :string, null: false

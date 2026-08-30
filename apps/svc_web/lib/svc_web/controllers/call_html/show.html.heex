@@ -14,10 +14,27 @@
   </head>
   <body class="app-bg h-screen flex flex-col overflow-hidden">
     <%!-- E5: трассируемый per-user watermark (детеррент + идентификация при утечке, D-013) --%>
-    <svg class="fixed inset-0 w-full h-full pointer-events-none z-50 select-none" style="opacity:0.07">
+    <svg
+      class="fixed inset-0 w-full h-full pointer-events-none z-50 select-none"
+      style="opacity:0.07"
+    >
       <defs>
-        <pattern id="wm" width="360" height="190" patternUnits="userSpaceOnUse" patternTransform="rotate(-28)">
-          <text id="wm-text" x="0" y="44" fill="white" font-size="15" style="font-family:'IBM Plex Mono',monospace"></text>
+        <pattern
+          id="wm"
+          width="360"
+          height="190"
+          patternUnits="userSpaceOnUse"
+          patternTransform="rotate(-28)"
+        >
+          <text
+            id="wm-text"
+            x="0"
+            y="44"
+            fill="white"
+            font-size="15"
+            style="font-family:'IBM Plex Mono',monospace"
+          >
+          </text>
         </pattern>
       </defs>
       <rect width="100%" height="100%" fill="url(#wm)" />
@@ -29,7 +46,8 @@
         <span class="font-medium text-sm truncate">{@meeting.title}</span>
       </div>
       <div class="flex items-center gap-4 shrink-0">
-        <span id="participants-info" class="hidden sm:inline text-xs text-base-content/50 tabular"></span>
+        <span id="participants-info" class="hidden sm:inline text-xs text-base-content/50 tabular">
+        </span>
         <span class="inline-flex items-center gap-1.5 text-xs text-base-content/55">
           <span id="status-dot" class="size-2 rounded-full bg-warning animate-pulse"></span>
           <span id="status-text">Подключение…</span>
@@ -44,7 +62,10 @@
           class="grid gap-4 h-full content-center justify-center"
           style="grid-template-columns:repeat(auto-fit,minmax(min(100%,340px),480px))"
         >
-          <div id="empty" class="col-span-full flex flex-col items-center justify-center text-center text-base-content/40 gap-3">
+          <div
+            id="empty"
+            class="col-span-full flex flex-col items-center justify-center text-center text-base-content/40 gap-3"
+          >
             <.icon name="hero-users" class="size-10 opacity-40" />
             <span class="text-sm">Подключение к комнате…</span>
           </div>
@@ -53,16 +74,26 @@
 
       <aside id="panel" class="hidden w-80 shrink-0 border-l border-base-300 bg-base-100 flex-col">
         <div class="flex border-b border-base-300 shrink-0">
-          <button id="tab-btn-people" onclick="showTab('people')"
-            class="flex-1 px-3 py-3 text-sm font-medium border-b-2 border-primary text-primary inline-flex items-center justify-center gap-1.5">
+          <button
+            id="tab-btn-people"
+            onclick="showTab('people')"
+            class="flex-1 px-3 py-3 text-sm font-medium border-b-2 border-primary text-primary inline-flex items-center justify-center gap-1.5"
+          >
             <.icon name="hero-users" class="size-4" /> Участники
           </button>
-          <button id="tab-btn-chat" onclick="showTab('chat')"
-            class="flex-1 px-3 py-3 text-sm font-medium border-b-2 border-transparent text-base-content/55 inline-flex items-center justify-center gap-1.5">
+          <button
+            id="tab-btn-chat"
+            onclick="showTab('chat')"
+            class="flex-1 px-3 py-3 text-sm font-medium border-b-2 border-transparent text-base-content/55 inline-flex items-center justify-center gap-1.5"
+          >
             <.icon name="hero-chat-bubble-left-right" class="size-4" /> Чат
           </button>
-          <button id="tab-btn-settings" onclick="showTab('settings')"
-            class="px-3 py-3 text-base-content/55 inline-flex items-center justify-center" title="Устройства">
+          <button
+            id="tab-btn-settings"
+            onclick="showTab('settings')"
+            class="px-3 py-3 text-base-content/55 inline-flex items-center justify-center"
+            title="Устройства"
+          >
             <.icon name="hero-cog-6-tooth" class="size-4" />
           </button>
         </div>
@@ -72,8 +103,13 @@
         <div id="tab-chat" class="hidden flex-1 flex-col min-h-0">
           <div id="chat-log" class="flex-1 overflow-auto p-3 space-y-2 text-sm"></div>
           <form id="chat-form" class="p-3 border-t border-base-300 flex gap-2 shrink-0">
-            <input id="chat-input" type="text" placeholder="Сообщение…" autocomplete="off"
-              class="input input-sm input-bordered flex-1 bg-base-200/40" />
+            <input
+              id="chat-input"
+              type="text"
+              placeholder="Сообщение…"
+              autocomplete="off"
+              class="input input-sm input-bordered flex-1 bg-base-200/40"
+            />
             <button type="submit" class="btn btn-sm btn-primary btn-square">
               <.icon name="hero-paper-airplane" class="size-4" />
             </button>
@@ -83,13 +119,21 @@
         <div id="tab-settings" class="hidden flex-1 overflow-auto p-4 space-y-4 text-sm">
           <label class="block">
             <span class="text-xs font-medium text-base-content/60 mb-1.5 block">Камера</span>
-            <select id="sel-cam" onchange="switchDevice('videoinput', this.value)"
-              class="select select-sm select-bordered w-full bg-base-200/40"></select>
+            <select
+              id="sel-cam"
+              onchange="switchDevice('videoinput', this.value)"
+              class="select select-sm select-bordered w-full bg-base-200/40"
+            >
+            </select>
           </label>
           <label class="block">
             <span class="text-xs font-medium text-base-content/60 mb-1.5 block">Микрофон</span>
-            <select id="sel-mic" onchange="switchDevice('audioinput', this.value)"
-              class="select select-sm select-bordered w-full bg-base-200/40"></select>
+            <select
+              id="sel-mic"
+              onchange="switchDevice('audioinput', this.value)"
+              class="select select-sm select-bordered w-full bg-base-200/40"
+            >
+            </select>
           </label>
         </div>
       </aside>
@@ -99,40 +143,77 @@
       <span class="hidden md:inline-flex absolute left-4 items-center gap-1.5 text-xs text-base-content/40">
         <.icon name="hero-lock-closed" class="size-3.5" /> Запись запрещена · контент watermarked
       </span>
-      <button id="btn-mic" onclick="toggleMic()" title="Микрофон"
-        class="grid place-items-center size-12 rounded-full bg-base-200 hover:bg-base-300 transition">
+      <button
+        id="btn-mic"
+        onclick="toggleMic()"
+        title="Микрофон"
+        class="grid place-items-center size-12 rounded-full bg-base-200 hover:bg-base-300 transition"
+      >
         <.icon name="hero-microphone" class="size-5" />
       </button>
-      <button id="btn-cam" onclick="toggleCam()" title="Камера"
-        class="grid place-items-center size-12 rounded-full bg-base-200 hover:bg-base-300 transition">
+      <button
+        id="btn-cam"
+        onclick="toggleCam()"
+        title="Камера"
+        class="grid place-items-center size-12 rounded-full bg-base-200 hover:bg-base-300 transition"
+      >
         <.icon name="hero-video-camera" class="size-5" />
       </button>
-      <button id="btn-screen" onclick="toggleScreen()" title="Демонстрация экрана"
-        class="grid place-items-center size-12 rounded-full bg-base-200 hover:bg-base-300 transition">
+      <button
+        id="btn-screen"
+        onclick="toggleScreen()"
+        title="Демонстрация экрана"
+        class="grid place-items-center size-12 rounded-full bg-base-200 hover:bg-base-300 transition"
+      >
         <.icon name="hero-computer-desktop" class="size-5" />
       </button>
 
       <div class="w-px h-8 bg-base-300 mx-1"></div>
 
-      <button id="btn-people" onclick="togglePanel('people')" title="Участники"
-        class="relative grid place-items-center size-12 rounded-full bg-base-200 hover:bg-base-300 transition">
+      <button
+        id="btn-people"
+        onclick="togglePanel('people')"
+        title="Участники"
+        class="relative grid place-items-center size-12 rounded-full bg-base-200 hover:bg-base-300 transition"
+      >
         <.icon name="hero-users" class="size-5" />
-        <span id="people-badge" class="absolute -top-0.5 -right-0.5 min-w-5 h-5 px-1 grid place-items-center rounded-full bg-primary text-primary-content text-[11px] font-semibold tabular">1</span>
+        <span
+          id="people-badge"
+          class="absolute -top-0.5 -right-0.5 min-w-5 h-5 px-1 grid place-items-center rounded-full bg-primary text-primary-content text-[11px] font-semibold tabular"
+        >
+          1
+        </span>
       </button>
-      <button id="btn-chat" onclick="togglePanel('chat')" title="Чат"
-        class="relative grid place-items-center size-12 rounded-full bg-base-200 hover:bg-base-300 transition">
+      <button
+        id="btn-chat"
+        onclick="togglePanel('chat')"
+        title="Чат"
+        class="relative grid place-items-center size-12 rounded-full bg-base-200 hover:bg-base-300 transition"
+      >
         <.icon name="hero-chat-bubble-left-right" class="size-5" />
-        <span id="chat-badge" class="hidden absolute -top-0.5 -right-0.5 min-w-5 h-5 px-1 grid place-items-center rounded-full bg-error text-error-content text-[11px] font-semibold tabular">0</span>
+        <span
+          id="chat-badge"
+          class="hidden absolute -top-0.5 -right-0.5 min-w-5 h-5 px-1 grid place-items-center rounded-full bg-error text-error-content text-[11px] font-semibold tabular"
+        >
+          0
+        </span>
       </button>
-      <button id="btn-full" onclick="toggleFull()" title="На весь экран"
-        class="grid place-items-center size-12 rounded-full bg-base-200 hover:bg-base-300 transition">
+      <button
+        id="btn-full"
+        onclick="toggleFull()"
+        title="На весь экран"
+        class="grid place-items-center size-12 rounded-full bg-base-200 hover:bg-base-300 transition"
+      >
         <.icon name="hero-arrows-pointing-out" class="size-5" />
       </button>
 
       <div class="w-px h-8 bg-base-300 mx-1"></div>
 
-      <button onclick="leave()" title="Покинуть звонок"
-        class="grid place-items-center size-12 rounded-full bg-error/90 hover:bg-error transition text-error-content">
+      <button
+        onclick="leave()"
+        title="Покинуть звонок"
+        class="grid place-items-center size-12 rounded-full bg-error/90 hover:bg-error transition text-error-content"
+      >
         <.icon name="hero-phone-x-mark" class="size-5" />
       </button>
     </footer>

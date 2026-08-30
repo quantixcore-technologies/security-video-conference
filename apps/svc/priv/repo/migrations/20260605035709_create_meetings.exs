@@ -4,6 +4,7 @@ defmodule Svc.Repo.Migrations.CreateMeetings do
   def change do
     create table(:meetings) do
       add :org_id, references(:organizations, on_delete: :delete_all), null: false
+
       # nullable: встреча-история переживает удаление организатора (nilify)
       add :organizer_id, references(:users, on_delete: :nilify_all)
 

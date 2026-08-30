@@ -49,7 +49,10 @@ defmodule Svc.OrgsTest do
 
     test "subtree_ids/2 возвращает отдел + всех потомков", %{org: org} do
       {:ok, root} = Orgs.create_department(%{org_id: org.id, name: "Ведомство"})
-      {:ok, mid} = Orgs.create_department(%{org_id: org.id, parent_id: root.id, name: "Управление"})
+
+      {:ok, mid} =
+        Orgs.create_department(%{org_id: org.id, parent_id: root.id, name: "Управление"})
+
       {:ok, leaf} = Orgs.create_department(%{org_id: org.id, parent_id: mid.id, name: "Отдел"})
       {:ok, _other} = Orgs.create_department(%{org_id: org.id, name: "Другое ведомство"})
 

@@ -30,8 +30,15 @@ defmodule Svc.Tasks.Task do
   def changeset(task, attrs) do
     task
     |> cast(attrs, [
-      :org_id, :creator_id, :assignee_id, :meeting_id,
-      :title, :description, :priority, :status, :due_at
+      :org_id,
+      :creator_id,
+      :assignee_id,
+      :meeting_id,
+      :title,
+      :description,
+      :priority,
+      :status,
+      :due_at
     ])
     |> validate_required([:org_id, :title])
     |> validate_length(:title, min: 2, max: 300)
@@ -44,9 +51,14 @@ defmodule Svc.Tasks.Task do
   # completed_at проставляется при переходе в :done, сбрасывается при возврате
   defp maybe_set_completed(changeset) do
     case get_change(changeset, :status) do
-      :done -> put_change(changeset, :completed_at, DateTime.utc_now())
-      s when s in [:todo, :in_progress, :review, :cancelled] -> put_change(changeset, :completed_at, nil)
-      _ -> changeset
+      :done ->
+        put_change(changeset, :completed_at, DateTime.utc_now())
+
+      s when s in [:todo, :in_progress, :review, :cancelled] ->
+        put_change(changeset, :completed_at, nil)
+
+      _ ->
+        changeset
     end
   end
 end

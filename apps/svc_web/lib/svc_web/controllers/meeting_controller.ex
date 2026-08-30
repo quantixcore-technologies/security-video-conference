@@ -11,7 +11,10 @@ defmodule SvcWeb.MeetingController do
 
     conn
     |> put_resp_content_type("text/calendar")
-    |> put_resp_header("content-disposition", ~s(attachment; filename="#{ICal.filename(meeting)}"))
+    |> put_resp_header(
+      "content-disposition",
+      ~s(attachment; filename="#{ICal.filename(meeting)}")
+    )
     |> send_resp(200, ICal.to_ics(meeting))
   rescue
     Ecto.NoResultsError ->

@@ -28,8 +28,15 @@ defmodule Svc.AntiCapture.CaptureEvent do
   def changeset(event, attrs) do
     event
     |> cast(attrs, [
-      :org_id, :meeting_id, :user_id, :kind, :platform,
-      :severity, :detail, :client_session_id, :occurred_at
+      :org_id,
+      :meeting_id,
+      :user_id,
+      :kind,
+      :platform,
+      :severity,
+      :detail,
+      :client_session_id,
+      :occurred_at
     ])
     |> validate_required([:org_id, :kind, :occurred_at])
     |> foreign_key_constraint(:org_id)

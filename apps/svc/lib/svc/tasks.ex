@@ -48,7 +48,8 @@ defmodule Svc.Tasks do
     |> Repo.preload([:creator, :assignee, :meeting])
   end
 
-  def update_task(%Task{} = task, attrs), do: task |> Task.changeset(normalize(attrs)) |> Repo.update()
+  def update_task(%Task{} = task, attrs),
+    do: task |> Task.changeset(normalize(attrs)) |> Repo.update()
 
   @doc "Смена статуса (Kanban drag/drop)."
   def set_status(%Task{} = task, status) when is_atom(status) or is_binary(status) do

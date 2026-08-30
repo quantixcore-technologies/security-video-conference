@@ -7,11 +7,17 @@ alias Svc.{Orgs, Accounts, Meetings, Attendance}
 if Orgs.default_organization() do
   IO.puts("Seed пропущен — организация уже существует.")
 else
-  {:ok, org} = Orgs.create_organization(%{name: "Министерство цифрового развития", slug: "mincifra"})
+  {:ok, org} =
+    Orgs.create_organization(%{name: "Министерство цифрового развития", slug: "mincifra"})
+
   {:ok, upr} = Orgs.create_department(%{org_id: org.id, name: "Управление ИТ-инфраструктуры"})
 
   {:ok, otd} =
-    Orgs.create_department(%{org_id: org.id, parent_id: upr.id, name: "Отдел сетевой безопасности"})
+    Orgs.create_department(%{
+      org_id: org.id,
+      parent_id: upr.id,
+      name: "Отдел сетевой безопасности"
+    })
 
   mk = fn username, full_name, role, dept ->
     {:ok, u} =

@@ -29,8 +29,7 @@ defmodule Svc.AuditTest do
 
   test "log_action/3 подставляет org_id и actor_id", %{org: org, actor: actor} do
     assert {:ok, log} =
-             Audit.log_action(actor, :user_create,
-               resource_type: :user, resource_id: 42)
+             Audit.log_action(actor, :user_create, resource_type: :user, resource_id: 42)
 
     assert log.org_id == org.id
     assert log.actor_user_id == actor.id
@@ -53,7 +52,10 @@ defmodule Svc.AuditTest do
     assert List.first(logs).action == "b", "свежие сверху"
   end
 
-  test "append-only: лог переживает удаление актора (actor_user_id не FK)", %{org: org, actor: actor} do
+  test "append-only: лог переживает удаление актора (actor_user_id не FK)", %{
+    org: org,
+    actor: actor
+  } do
     {:ok, log} = Audit.log_action(actor, :sensitive_action)
     assert log.actor_user_id == actor.id
 

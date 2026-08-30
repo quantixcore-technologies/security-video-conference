@@ -23,25 +23,49 @@ defmodule SvcWeb.DashboardLive do
   @impl true
   def render(assigns) do
     ~H"""
-    <Layouts.app flash={@flash} active="dashboard" current_user={@current_user} unread_count={@unread_count}>
-      <h1 class="text-2xl font-semibold tracking-tight">Здравствуйте, {first_name(@current_user.full_name)}</h1>
+    <Layouts.app
+      flash={@flash}
+      active="dashboard"
+      current_user={@current_user}
+      unread_count={@unread_count}
+    >
+      <h1 class="text-2xl font-semibold tracking-tight">
+        Здравствуйте, {first_name(@current_user.full_name)}
+      </h1>
       <p class="text-sm text-base-content/55 mt-1 mb-6">Обзор организации и активности</p>
 
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-        <.metric icon="hero-users" label="Сотрудники" value={@visible_users} hint="видимых по вашей роли" />
-        <.metric icon="hero-video-camera" label="Встречи" value={@meetings_count} hint="всего в организации" />
+        <.metric
+          icon="hero-users"
+          label="Сотрудники"
+          value={@visible_users}
+          hint="видимых по вашей роли"
+        />
+        <.metric
+          icon="hero-video-camera"
+          label="Встречи"
+          value={@meetings_count}
+          hint="всего в организации"
+        />
         <.link
           navigate={~p"/admin/tasks"}
           class="group rounded-xl border border-base-300 bg-base-100/50 p-5 hover:border-primary/30 transition"
         >
           <div class="flex items-center justify-between">
             <span class="text-xs uppercase tracking-wider text-base-content/45">Мои поручения</span>
-            <.icon name="hero-clipboard-document-list" class="size-4 text-base-content/35 group-hover:text-primary transition" />
+            <.icon
+              name="hero-clipboard-document-list"
+              class="size-4 text-base-content/35 group-hover:text-primary transition"
+            />
           </div>
           <div class="mt-2 text-3xl font-semibold tabular">{@my_open_tasks}</div>
           <div class="text-xs mt-1">
-            <span :if={@my_overdue_tasks > 0} class="text-error font-medium">{@my_overdue_tasks} просрочено</span>
-            <span :if={@my_overdue_tasks == 0} class="text-base-content/45">открытых · всё в срок</span>
+            <span :if={@my_overdue_tasks > 0} class="text-error font-medium">
+              {@my_overdue_tasks} просрочено
+            </span>
+            <span :if={@my_overdue_tasks == 0} class="text-base-content/45">
+              открытых · всё в срок
+            </span>
           </div>
         </.link>
         <.link
@@ -56,7 +80,10 @@ defmodule SvcWeb.DashboardLive do
         </.link>
       </div>
 
-      <div :if={@recent_audit != []} class="mt-8 rounded-xl border border-base-300 bg-base-100/50 overflow-hidden">
+      <div
+        :if={@recent_audit != []}
+        class="mt-8 rounded-xl border border-base-300 bg-base-100/50 overflow-hidden"
+      >
         <div class="px-5 py-3 border-b border-base-300 flex items-center gap-2">
           <.icon name="hero-clock" class="size-4 text-base-content/45" />
           <span class="text-sm font-medium">Журнал аудита</span>

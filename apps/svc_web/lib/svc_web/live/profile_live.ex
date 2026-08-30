@@ -46,7 +46,8 @@ defmodule SvcWeb.ProfileLive do
     end
   end
 
-  def handle_event("cancel_2fa", _params, socket), do: {:noreply, assign(socket, :totp_setup, nil)}
+  def handle_event("cancel_2fa", _params, socket),
+    do: {:noreply, assign(socket, :totp_setup, nil)}
 
   def handle_event("disable_2fa", _params, socket) do
     user = socket.assigns.current_user
@@ -60,7 +61,11 @@ defmodule SvcWeb.ProfileLive do
   end
 
   @impl true
-  def handle_event("change_password", %{"password" => %{"current" => cur, "new" => new} = params}, socket) do
+  def handle_event(
+        "change_password",
+        %{"password" => %{"current" => cur, "new" => new} = params},
+        socket
+      ) do
     user = socket.assigns.current_user
 
     if new != Map.get(params, "confirm") do
@@ -97,7 +102,12 @@ defmodule SvcWeb.ProfileLive do
 
       <div class="rounded-xl border border-base-300 bg-base-100/50 p-6 flex items-center gap-5 mb-5">
         <span class="grid place-items-center size-20 rounded-full bg-primary/15 text-primary text-2xl font-semibold ring-1 ring-primary/15 overflow-hidden shrink-0">
-          <img :if={@current_user.photo_path} src={@current_user.photo_path} class="w-full h-full object-cover" alt="" />
+          <img
+            :if={@current_user.photo_path}
+            src={@current_user.photo_path}
+            class="w-full h-full object-cover"
+            alt=""
+          />
           <span :if={!@current_user.photo_path}>{initials(@current_user.full_name)}</span>
         </span>
         <div class="min-w-0">
@@ -106,7 +116,10 @@ defmodule SvcWeb.ProfileLive do
             <span class="px-2.5 py-0.5 rounded-full bg-primary/10 text-primary text-xs font-medium">
               {role_label(@current_user.role)}
             </span>
-            <span :if={@department} class="inline-flex items-center gap-1 text-sm text-base-content/55">
+            <span
+              :if={@department}
+              class="inline-flex items-center gap-1 text-sm text-base-content/55"
+            >
               <.icon name="hero-building-office-2" class="size-3.5" /> {@department}
             </span>
           </div>
@@ -123,14 +136,19 @@ defmodule SvcWeb.ProfileLive do
             <.row label="Логин"><span class="tabular">{@current_user.username}</span></.row>
             <.row label="Телефон">{@current_user.phone || "—"}</.row>
             <.row label="Статус">
-              <span class={["inline-flex items-center gap-1.5", @current_user.status == :active && "text-success"]}>
+              <span class={[
+                "inline-flex items-center gap-1.5",
+                @current_user.status == :active && "text-success"
+              ]}>
                 <span class="size-1.5 rounded-full bg-current"></span>
                 {if @current_user.status == :active, do: "Активен", else: "Отключён"}
               </span>
             </.row>
             <.row label="Последний вход">
               <span class="tabular text-base-content/70">
-                {if @current_user.last_login_at, do: Calendar.strftime(@current_user.last_login_at, "%d.%m.%Y %H:%M"), else: "—"}
+                {if @current_user.last_login_at,
+                  do: Calendar.strftime(@current_user.last_login_at, "%d.%m.%Y %H:%M"),
+                  else: "—"}
               </span>
             </.row>
           </dl>
@@ -146,10 +164,17 @@ defmodule SvcWeb.ProfileLive do
               <div class="flex items-center justify-between">
                 <div class="flex items-center gap-2 text-sm">
                   <.icon
-                    name={if @current_user.totp_enabled, do: "hero-shield-check", else: "hero-shield-exclamation"}
-                    class={["size-5", @current_user.totp_enabled && "text-success", !@current_user.totp_enabled && "text-warning"]}
-                  />
-                  Двухфакторная аутентификация
+                    name={
+                      if @current_user.totp_enabled,
+                        do: "hero-shield-check",
+                        else: "hero-shield-exclamation"
+                    }
+                    class={[
+                      "size-5",
+                      @current_user.totp_enabled && "text-success",
+                      !@current_user.totp_enabled && "text-warning"
+                    ]}
+                  /> Двухфакторная аутентификация
                 </div>
                 <span class={[
                   "px-2.5 py-0.5 rounded-full text-xs font-medium",
@@ -161,7 +186,11 @@ defmodule SvcWeb.ProfileLive do
               </div>
 
               <div :if={@current_user.totp_enabled and is_nil(@totp_setup)} class="mt-3">
-                <button phx-click="disable_2fa" data-confirm="Отключить двухфакторную аутентификацию?" class="btn btn-ghost btn-sm text-error gap-1.5">
+                <button
+                  phx-click="disable_2fa"
+                  data-confirm="Отключить двухфакторную аутентификацию?"
+                  class="btn btn-ghost btn-sm text-error gap-1.5"
+                >
                   <.icon name="hero-shield-exclamation" class="size-4" /> Отключить
                 </button>
               </div>
@@ -172,16 +201,23 @@ defmodule SvcWeb.ProfileLive do
                 </button>
               </div>
 
-              <div :if={@totp_setup} class="mt-4 rounded-lg border border-base-300 bg-base-200/30 p-4 space-y-3">
+              <div
+                :if={@totp_setup}
+                class="mt-4 rounded-lg border border-base-300 bg-base-200/30 p-4 space-y-3"
+              >
                 <p class="text-xs text-base-content/60">
                   Отсканируйте QR в приложении-аутентификаторе или введите ключ вручную, затем подтвердите кодом:
                 </p>
                 <div class="flex gap-4 items-start flex-wrap">
-                  <div class="bg-white rounded-lg p-2 shrink-0 [&_svg]:size-44">{Phoenix.HTML.raw(@totp_setup.qr)}</div>
+                  <div class="bg-white rounded-lg p-2 shrink-0 [&_svg]:size-44">
+                    {Phoenix.HTML.raw(@totp_setup.qr)}
+                  </div>
                   <div class="min-w-0 flex-1 space-y-2.5">
                     <div>
                       <div class="text-[11px] text-base-content/50 mb-1">Ключ для ручного ввода:</div>
-                      <code class="text-xs tabular break-all bg-base-300/40 px-2 py-1.5 rounded block">{@totp_setup.secret}</code>
+                      <code class="text-xs tabular break-all bg-base-300/40 px-2 py-1.5 rounded block">
+                        {@totp_setup.secret}
+                      </code>
                     </div>
                     <.form for={to_form(%{}, as: :totp)} phx-submit="confirm_2fa" class="flex gap-2">
                       <input
@@ -196,7 +232,10 @@ defmodule SvcWeb.ProfileLive do
                       />
                       <button type="submit" class="btn btn-sm btn-primary">Подтвердить</button>
                     </.form>
-                    <button phx-click="cancel_2fa" class="text-xs text-base-content/50 hover:text-base-content transition">
+                    <button
+                      phx-click="cancel_2fa"
+                      class="text-xs text-base-content/50 hover:text-base-content transition"
+                    >
                       Отмена
                     </button>
                   </div>
@@ -233,7 +272,11 @@ defmodule SvcWeb.ProfileLive do
                   autocomplete="new-password"
                   class="input input-sm input-bordered w-full bg-base-200/40"
                 />
-                <button type="submit" phx-disable-with="Сохраняем…" class="btn btn-primary btn-sm gap-2 w-full">
+                <button
+                  type="submit"
+                  phx-disable-with="Сохраняем…"
+                  class="btn btn-primary btn-sm gap-2 w-full"
+                >
                   <.icon name="hero-key" class="size-4" /> Сменить пароль
                 </button>
               </.form>
@@ -265,7 +308,8 @@ defmodule SvcWeb.ProfileLive do
     _ -> nil
   end
 
-  defp initials(name), do: name |> String.split() |> Enum.take(2) |> Enum.map_join(&String.first/1)
+  defp initials(name),
+    do: name |> String.split() |> Enum.take(2) |> Enum.map_join(&String.first/1)
 
   defp role_label(:super_admin), do: "Суперадмин"
   defp role_label(:admin_hr), do: "Админ/HR"
