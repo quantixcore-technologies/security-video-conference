@@ -57,6 +57,12 @@
 - `mix precommit` зелёный: format · credo 0 · sobelow 0 High/Med · **202 теста, 0 failures** (+9 i18n-тестов `SvcWeb.LocaleTest`, без БД).
 - ⬜ Остаток: обернуть контент страниц (meetings/tasks/users/security/profile — ~210 строк). Инфра готова — механическая работа.
 
+## 🛡 Сессия 2026-09-01 — E5-C пер-встречная анти-захват политика (S30) ✅
+- **Схема:** +`watermark_enabled` (bool, default true) +`capture_reaction` (enum none/warn/eject, default none) на `meetings` (миграция `20260901120000`); оба поля в create/update-changeset.
+- **Enforcement:** `Svc.AntiCapture.enforce_policy(event)` читает политику встречи: `:warn` → уведомление организатору + audit `capture_reaction`; `:eject` → `Svc.LiveKit.remove_participant` (RoomService/RemoveParticipant, best-effort) + audit; `:none` → noop. Вызов в `CaptureController.create` (POST /api/capture-events), реакция возвращается клиенту.
+- **UI:** в редакторе встречи — чекбокс watermark + селект реакции; в звонке watermark (SVG + tile) рендерится только при `@meeting.watermark_enabled`.
+- `mix precommit` зелёный: **209 тестов, 0 failures** (+7 `AntiCapturePolicyTest`).
+
 ## ⏭️ СЛЕДУЮЩИЙ КВЕСТ (Tauri-каркас + звонок готовы ✅ S26/S27)
 - 🔴 **Tauri видео на Windows** — проверить реальное WebRTC-медиа в WebView2 + `setContentProtected` enforce (Linux webkit2gtk WebRTC ненадёжен; D-002 Windows-first).
 - **2-сторонний тест** — desktop ↔ web-call (`/admin/meetings/1/call`) / mobile: встречное видео.

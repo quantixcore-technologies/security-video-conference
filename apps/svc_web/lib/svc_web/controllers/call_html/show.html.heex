@@ -15,6 +15,7 @@
   <body class="app-bg h-screen flex flex-col overflow-hidden">
     <%!-- E5: трассируемый per-user watermark (детеррент + идентификация при утечке, D-013) --%>
     <svg
+      :if={@meeting.watermark_enabled}
       class="fixed inset-0 w-full h-full pointer-events-none z-50 select-none"
       style="opacity:0.07"
     >
@@ -225,6 +226,7 @@
       const url = "<%= @livekit_url %>";
       const token = "<%= @token %>";
       const watermark = "<%= @current_user.full_name %>";
+      const watermarkEnabled = <%= @meeting.watermark_enabled %>;
 
       // E5: трассируемый watermark (ФИО + ID пользователя + время сессии)
       function updateWatermark() {
@@ -266,7 +268,7 @@
           '<div class="ph grid place-items-center size-20 rounded-full bg-primary/15 text-primary text-2xl font-semibold">' + initials(p.name || p.identity) + '</div>' +
           '<div class="absolute bottom-2.5 left-2.5 flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-black/55 text-white text-xs">' +
             '<span class="mic-ind hidden"></span><span>' + label + '</span></div>' +
-          '<div class="absolute top-2.5 right-2.5 text-[10px] text-white/35 pointer-events-none select-none">' + watermark + '</div>';
+          (watermarkEnabled ? '<div class="absolute top-2.5 right-2.5 text-[10px] text-white/35 pointer-events-none select-none">' + watermark + '</div>' : '');
         grid.appendChild(tile);
         tiles[key] = tile;
         return tile;

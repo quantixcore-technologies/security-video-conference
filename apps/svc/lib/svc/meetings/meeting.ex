@@ -1,11 +1,13 @@
 defmodule Svc.Meetings.Meeting do
-  @moduledoc "Видеоконференция (E1). LiveKit room, recording_policy (D-009)."
+  @moduledoc "Видеоконференция (E1). LiveKit room, recording_policy (D-009), анти-захват политика (E5-C)."
   use Ecto.Schema
   import Ecto.Changeset
 
   @types ~w(scheduled ad_hoc)a
   @statuses ~w(planned live ended)a
   @recording_policies ~w(off optional required)a
+  # E5-C: реакция на детект захвата экрана
+  @capture_reactions ~w(none warn eject)a
 
   @type t :: %__MODULE__{}
 
@@ -17,6 +19,9 @@ defmodule Svc.Meetings.Meeting do
     field :scheduled_end, :utc_datetime_usec
     field :livekit_room_name, :string
     field :recording_policy, Ecto.Enum, values: @recording_policies, default: :off
+    # E5-C: пер-встречная анти-захват политика
+    field :watermark_enabled, :boolean, default: true
+    field :capture_reaction, Ecto.Enum, values: @capture_reactions, default: :none
     field :late_threshold_seconds, :integer, default: 300
     field :recurrence_group, :string
 
@@ -28,6 +33,7 @@ defmodule Svc.Meetings.Meeting do
 
   def types, do: @types
   def recording_policies, do: @recording_policies
+  def capture_reactions, do: @capture_reactions
 
   def create_changeset(meeting, attrs) do
     meeting
@@ -39,6 +45,8 @@ defmodule Svc.Meetings.Meeting do
       :scheduled_start,
       :scheduled_end,
       :recording_policy,
+      :watermark_enabled,
+      :capture_reaction,
       :late_threshold_seconds,
       :livekit_room_name,
       :recurrence_group
@@ -61,6 +69,8 @@ defmodule Svc.Meetings.Meeting do
       :scheduled_start,
       :scheduled_end,
       :recording_policy,
+      :watermark_enabled,
+      :capture_reaction,
       :late_threshold_seconds
     ])
     |> validate_required([:title])

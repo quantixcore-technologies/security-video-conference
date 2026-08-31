@@ -156,6 +156,9 @@ defmodule SvcWeb.MeetingLive.Show do
   defp policy_options,
     do: [{"Нет", :off}, {"Опционально", :optional}, {"Обязательно", :required}]
 
+  defp reaction_options,
+    do: [{"Ничего", :none}, {"Предупредить", :warn}, {"Выгнать", :eject}]
+
   @impl true
   def render(assigns) do
     ~H"""
@@ -256,6 +259,19 @@ defmodule SvcWeb.MeetingLive.Show do
             label="Запись"
             options={policy_options()}
           />
+          <div class="grid grid-cols-2 gap-3">
+            <.input
+              field={@form[:watermark_enabled]}
+              type="checkbox"
+              label="Водяной знак (watermark)"
+            />
+            <.input
+              field={@form[:capture_reaction]}
+              type="select"
+              label="Реакция на захват"
+              options={reaction_options()}
+            />
+          </div>
           <.input
             field={@form[:late_threshold_seconds]}
             type="number"

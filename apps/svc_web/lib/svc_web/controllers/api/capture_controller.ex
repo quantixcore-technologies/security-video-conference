@@ -20,7 +20,12 @@ defmodule SvcWeb.API.CaptureController do
 
     case AntiCapture.log_event(attrs) do
       {:ok, event} ->
-        conn |> put_status(:created) |> json(%{id: event.id, status: "logged"})
+        # E5-C: применяем пер-встречную политику (warn/eject) и возвращаем реакцию клиенту
+        reaction = AntiCapture.enforce_policy(event)
+
+        conn
+        |> put_status(:created)
+        |> json(%{id: event.id, status: "logged", reaction: reaction})
 
       {:error, changeset} ->
         errors = Ecto.Changeset.traverse_errors(changeset, fn {msg, _} -> msg end)

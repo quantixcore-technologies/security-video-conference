@@ -47,4 +47,55 @@ defmodule Svc.AntiCapture do
       :count
     )
   end
+
+  @doc """
+  E5-C: применяет пер-встречную анти-захват политику к событию.
+  Читает `capture_reaction` встречи:
+    :none → ничего · :warn → уведомление организатору + audit · :eject → удаление из LiveKit + audit.
+  Возвращает применённую реакцию (:none | :warn | :eject).
+  """
+  def enforce_policy(%CaptureEvent{meeting_id: nil}), do: :none
+
+  def enforce_policy(%CaptureEvent{} = event) do
+    meeting = Svc.Meetings.get_meeting!(event.org_id, event.meeting_id)
+    apply_reaction(meeting.capture_reaction, meeting, event)
+  rescue
+    Ecto.NoResultsError -> :none
+  end
+
+  defp apply_reaction(:none, _meeting, _event), do: :none
+
+  defp apply_reaction(reaction, meeting, event) do
+    Svc.Audit.log(:capture_reaction,
+      org_id: event.org_id,
+      actor_id: event.user_id,
+      resource_type: :meeting,
+      resource_id: meeting.id,
+      metadata: %{"kind" => to_string(event.kind), "reaction" => to_string(reaction)}
+    )
+
+    do_reaction(reaction, meeting, event)
+    reaction
+  end
+
+  defp do_reaction(:warn, meeting, event) do
+    if meeting.organizer_id do
+      organizer = Svc.Accounts.get_user!(meeting.org_id, meeting.organizer_id)
+
+      Svc.Notifications.notify(
+        organizer,
+        :update,
+        "Обнаружен захват экрана",
+        body: "Встреча «#{meeting.title}»: #{event.kind}. Реакция: предупреждение.",
+        meeting_id: meeting.id
+      )
+    end
+
+    :ok
+  end
+
+  defp do_reaction(:eject, meeting, event) do
+    Svc.LiveKit.remove_participant(meeting.livekit_room_name, "user-#{event.user_id}")
+    :ok
+  end
 end

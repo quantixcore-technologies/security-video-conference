@@ -75,6 +75,50 @@ defmodule Svc.LiveKit do
     end
   end
 
+  @doc """
+  E5-C: удаляет участника из комнаты LiveKit (реакция :eject). Best-effort.
+  Возвращает {:ok, :removed} | {:error, reason}. Требует admin-грант (roomAdmin).
+  """
+  def remove_participant(room_name, identity)
+      when is_binary(room_name) and is_binary(identity) do
+    with key when is_binary(key) <- config(:api_key),
+         secret when is_binary(secret) <- config(:api_secret),
+         ws_url when is_binary(ws_url) <- config(:url),
+         {:ok, jwt, _} <- admin_jwt(key, secret, room_name) do
+      http_post_remove(ws_url, jwt, room_name, identity)
+    else
+      _ -> {:error, :not_configured}
+    end
+  rescue
+    e -> {:error, e}
+  end
+
+  defp admin_jwt(key, secret, room_name) do
+    grant = VideoGrant.new(room_admin: true, room: room_name)
+
+    key
+    |> AccessToken.create(secret, identity: "svc-admin", ttl: 60)
+    |> AccessToken.set_video_grant(grant)
+    |> AccessToken.to_jwt()
+  end
+
+  defp http_post_remove(ws_url, jwt, room, identity) do
+    http =
+      ws_url
+      |> String.replace_prefix("wss://", "https://")
+      |> String.replace_prefix("ws://", "http://")
+
+    url = String.to_charlist(http <> "/twirp/livekit.RoomService/RemoveParticipant")
+    body = Jason.encode!(%{room: room, identity: identity})
+    headers = [{~c"authorization", String.to_charlist("Bearer " <> jwt)}]
+
+    case :httpc.request(:post, {url, headers, ~c"application/json", body}, [], []) do
+      {:ok, {{_, status, _}, _, _}} when status in 200..299 -> {:ok, :removed}
+      {:ok, {{_, status, _}, _, resp}} -> {:error, {:http, status, to_string(resp)}}
+      {:error, reason} -> {:error, reason}
+    end
+  end
+
   @doc "LiveKit WS URL для клиента."
   def url, do: config(:url)
 

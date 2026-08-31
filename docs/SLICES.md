@@ -4,7 +4,7 @@
 > Статус: ✅ done · 🔵 in progress · ⬜ planned · 🔒 blocked (заказчик/лицензия/R&D).
 > Обновлять при закрытии каждого слайса. Источник истины по прогрессу проекта.
 
-## 📊 Прогресс: 29 ✅ · 12 ⬜ · 5 🔒 — **29 из ~40** (+ Android: PoC, 2FA, GPS, чат/screen-share · + Tauri desktop · + i18n)
+## 📊 Прогресс: 30 ✅ · 11 ⬜ · 5 🔒 — **30 из ~40** (+ Android: PoC, 2FA, GPS, чат/screen-share · + Tauri desktop · + i18n)
 
 ---
 
@@ -35,12 +35,12 @@
 | S14 | **E3-F** `.ics`-экспорт (Outlook/Google) | ✅ |
 | —   | E3-внешние каналы (email/SMS/Telegram) | 🔒 каналы для гос = открытый вопрос |
 
-## E5 — Анти-захват ✅ 2/5
+## E5 — Анти-захват ✅ 3/5
 | # | Слайс | Статус |
 |---|-------|--------|
 | S15 | **E5-A** Watermark + журнал capture_events + матрица | ✅ |
 | S16 | **E5-B** Журнал захвата UI (SecurityLive) + API endpoint | ✅ |
-| —   | **E5-C** Anti-capture политика per-meeting (watermark on/off, реакция warn/eject) | ⬜ |
+| S30 | **E5-C** Пер-встречная политика: `watermark_enabled` + `capture_reaction` (none/warn/eject) · `AntiCapture.enforce_policy` (warn→уведомление+audit · eject→LiveKit RemoveParticipant+audit) · gating watermark в звонке · UI в редакторе встречи | ✅ 2026-09-01 |
 | —   | **E5-ENFORCE** setContentProtected (Win) / FLAG_SECURE (Android) | ⬜ Android FLAG_SECURE ✅ · Tauri `contentProtected:true` задан → нужна Windows-валидация |
 | —   | E5-forensic аудио-watermark | 🔒 R&D + библиотека |
 
