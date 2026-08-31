@@ -70,6 +70,13 @@
 - `mix precommit` зелёный: **216 тестов, 0 failures** (+7 `RecordingsEgressTest`).
 - ⚠️ Реальный захват видео требует запущенного **LiveKit Egress-сервиса + storage** (S3/local) в deploy — оркестрация/жизненный цикл готовы.
 
+## 🌍 Сессия 2026-09-01 — E7-spoofing детект подмены геолокации (S32) ✅
+- **Логика (без MMDB):** `Svc.Geo.detect_spoofing/5` — impossible-travel по GPS-истории пользователя: haversine-расстояние между текущим и прошлым GPS-чеком; > 25 км с невозможной скоростью (> 900 км/ч) ⇒ подмена. `haversine_km/4` — публичная.
+- **Схема:** +`spoofing` (bool) +`spoofing_reason` на `network_geo_checks` (миграция `20260901130000`).
+- **Интеграция:** в `gate/3` — при спуфинге `allow → flag` (block не трогаем, D-012 fail-open); флаг + причина пишутся в журнал. Метрика `spoofing_count/1`.
+- **UI:** бейдж «спуф» (с причиной в title) в гео-журнале `SecurityLive`.
+- `mix precommit` зелёный: **224 теста, 0 failures** (+8 `GeoSpoofingTest`).
+
 ## ⏭️ СЛЕДУЮЩИЙ КВЕСТ (Tauri-каркас + звонок готовы ✅ S26/S27)
 - 🔴 **Tauri видео на Windows** — проверить реальное WebRTC-медиа в WebView2 + `setContentProtected` enforce (Linux webkit2gtk WebRTC ненадёжен; D-002 Windows-first).
 - **2-сторонний тест** — desktop ↔ web-call (`/admin/meetings/1/call`) / mobile: встречное видео.

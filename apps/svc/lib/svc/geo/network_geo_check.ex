@@ -23,6 +23,10 @@ defmodule Svc.Geo.NetworkGeoCheck do
     field :gps_lon, :float
     field :gps_accuracy, :float
 
+    # E7-spoofing: подозрение на подмену геолокации (impossible-travel)
+    field :spoofing, :boolean, default: false
+    field :spoofing_reason, :string
+
     belongs_to :organization, Svc.Orgs.Organization, foreign_key: :org_id
     belongs_to :meeting, Svc.Meetings.Meeting
     belongs_to :user, Svc.Accounts.User
@@ -49,7 +53,9 @@ defmodule Svc.Geo.NetworkGeoCheck do
       :checked_at,
       :gps_lat,
       :gps_lon,
-      :gps_accuracy
+      :gps_accuracy,
+      :spoofing,
+      :spoofing_reason
     ])
     |> validate_required([:org_id, :ip, :decision, :checked_at])
     |> foreign_key_constraint(:org_id)

@@ -46,6 +46,16 @@ defmodule Svc.Geo do
   """
   def gate(org_id, ip, opts \\ []) when is_binary(ip) do
     {decision, reason, attrs} = decide(ip, get_policy(org_id))
+    at = DateTime.utc_now()
+
+    {spoofing, spoof_reason} =
+      detect_spoofing(org_id, opts[:user_id], opts[:gps_lat], opts[:gps_lon], at)
+
+    # E7-spoofing: подмена геолокации поднимает allow → flag (block не трогаем; D-012 fail-open)
+    {decision, reason} =
+      if spoofing and decision == :allow,
+        do: {:flag, "Подозрение на подмену геолокации: #{spoof_reason}"},
+        else: {decision, reason}
 
     record_check(
       Map.merge(attrs, %{
@@ -57,7 +67,10 @@ defmodule Svc.Geo do
         reason: reason,
         gps_lat: opts[:gps_lat],
         gps_lon: opts[:gps_lon],
-        gps_accuracy: opts[:gps_accuracy]
+        gps_accuracy: opts[:gps_accuracy],
+        checked_at: at,
+        spoofing: spoofing,
+        spoofing_reason: spoof_reason
       })
     )
 
@@ -111,6 +124,84 @@ defmodule Svc.Geo do
     Repo.aggregate(
       from(c in NetworkGeoCheck, where: c.org_id == ^org_id and c.decision in [:block, :flag]),
       :count
+    )
+  end
+
+  @doc "Число проверок с подозрением на подмену геолокации (E7-spoofing)."
+  def spoofing_count(org_id) do
+    Repo.aggregate(
+      from(c in NetworkGeoCheck, where: c.org_id == ^org_id and c.spoofing == true),
+      :count
+    )
+  end
+
+  # --- E7-spoofing: детект «невозможного перемещения» по GPS-истории ---
+
+  # airplane-скорость как порог «невозможного» перемещения
+  @spoof_max_speed_kmh 900.0
+  # игнорируем дрожание GPS (< 25 км между точками)
+  @spoof_min_distance_km 25.0
+
+  @doc """
+  Детект подмены геолокации (impossible-travel): сравнивает текущий GPS с последним
+  прошлым GPS-чеком пользователя. {spoofing?, reason}. Без GPS/истории — {false, nil}.
+  Перемещение > 25 км с невозможной скоростью (> 900 км/ч) ⇒ подмена.
+  """
+  def detect_spoofing(org_id, user_id, lat, lon, at)
+      when is_integer(user_id) and is_number(lat) and is_number(lon) do
+    case last_gps_check(org_id, user_id) do
+      %NetworkGeoCheck{gps_lat: plat, gps_lon: plon, checked_at: pat}
+      when is_number(plat) and is_number(plon) ->
+        classify_travel(
+          haversine_km(plat, plon, lat, lon),
+          DateTime.diff(at, pat, :second) / 3600.0
+        )
+
+      _ ->
+        {false, nil}
+    end
+  end
+
+  def detect_spoofing(_org_id, _user_id, _lat, _lon, _at), do: {false, nil}
+
+  # Классификация перемещения (расстояние км + время ч) → {spoofing?, reason}.
+  defp classify_travel(dist, _hours) when dist < @spoof_min_distance_km, do: {false, nil}
+
+  defp classify_travel(dist, hours) when hours <= 0,
+    do: {true, "мгновенное перемещение на #{trunc(dist)} км"}
+
+  defp classify_travel(dist, hours) do
+    speed = dist / hours
+
+    if speed > @spoof_max_speed_kmh do
+      {true,
+       "невозможная скорость #{trunc(speed)} км/ч (#{trunc(dist)} км за #{Float.round(hours, 2)} ч)"}
+    else
+      {false, nil}
+    end
+  end
+
+  @doc "Расстояние между двумя GPS-точками (км, формула гаверсинусов)."
+  def haversine_km(lat1, lon1, lat2, lon2) do
+    r = 6371.0
+    dlat = deg2rad(lat2 - lat1)
+    dlon = deg2rad(lon2 - lon1)
+    slat = :math.sin(dlat / 2)
+    slon = :math.sin(dlon / 2)
+    a = slat * slat + :math.cos(deg2rad(lat1)) * :math.cos(deg2rad(lat2)) * slon * slon
+    r * 2 * :math.atan2(:math.sqrt(a), :math.sqrt(1.0 - a))
+  end
+
+  defp deg2rad(d), do: d * :math.pi() / 180.0
+
+  defp last_gps_check(org_id, user_id) do
+    Repo.one(
+      from c in NetworkGeoCheck,
+        where:
+          c.org_id == ^org_id and c.user_id == ^user_id and
+            not is_nil(c.gps_lat) and not is_nil(c.gps_lon),
+        order_by: [desc: c.checked_at, desc: c.id],
+        limit: 1
     )
   end
 

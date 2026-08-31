@@ -4,7 +4,7 @@
 > Статус: ✅ done · 🔵 in progress · ⬜ planned · 🔒 blocked (заказчик/лицензия/R&D).
 > Обновлять при закрытии каждого слайса. Источник истины по прогрессу проекта.
 
-## 📊 Прогресс: 31 ✅ · 10 ⬜ · 5 🔒 — **31 из ~40** (+ Android: PoC, 2FA, GPS, чат/screen-share · + Tauri desktop · + i18n)
+## 📊 Прогресс: 32 ✅ · 9 ⬜ · 5 🔒 — **32 из ~40** (+ Android: PoC, 2FA, GPS, чат/screen-share · + Tauri desktop · + i18n)
 
 ---
 
@@ -44,14 +44,14 @@
 | —   | **E5-ENFORCE** setContentProtected (Win) / FLAG_SECURE (Android) | ⬜ Android FLAG_SECURE ✅ · Tauri `contentProtected:true` задан → нужна Windows-валидация |
 | —   | E5-forensic аудио-watermark | 🔒 R&D + библиотека |
 
-## E7 — Сеть + Гео ✅ 2/5
+## E7 — Сеть + Гео ✅ 3/5
 | # | Слайс | Статус |
 |---|-------|--------|
 | S17 | **E7-A** Pre-join gate + Svc.Geo + журнал network_geo_checks | ✅ |
 | S18 | **E7-B** Гео-политика per-org (mode/страны/whitelist/VPN) | ✅ |
 | —   | **E7-C** locus/MaxMind интеграция (реальный country+VPN-детект) | 🔒 MMDB-лицензия |
 | —   | E7-GPS кросс-чек | ⬜ требует mobile-клиент |
-| —   | E7-spoofing-детект (IP↔GPS mismatch) | ⬜ |
+| S32 | **E7-spoofing** детект подмены геолокации (impossible-travel по GPS-истории, haversine, порог 900 км/ч) · поля spoofing/spoofing_reason · интеграция в gate (allow→flag) · метрика + бейдж в SecurityLive | ✅ 2026-09-01 (без MMDB — по GPS-истории пользователя) |
 
 ## E4 — Поручения + Задачи (Kanban) ✅ 4/4 — ЭПИК ЗАКРЫТ (D-015)
 | # | Слайс | Статус |

@@ -227,6 +227,13 @@ defmodule SvcWeb.SecurityLive do
                   <span class={"size-1.5 rounded-full #{dec_dot(c.decision)}"}></span>
                   {dec_label(c.decision)}
                 </span>
+                <span
+                  :if={c.spoofing}
+                  title={c.spoofing_reason}
+                  class="ml-1.5 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-error/15 text-error"
+                >
+                  <.icon name="hero-map-pin" class="size-3" /> спуф
+                </span>
               </td>
               <td class="px-5 py-3 tabular text-base-content/60">
                 {Calendar.strftime(c.checked_at, "%d.%m %H:%M")}
