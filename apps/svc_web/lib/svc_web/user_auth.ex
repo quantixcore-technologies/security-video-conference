@@ -1,6 +1,7 @@
 defmodule SvcWeb.UserAuth do
   @moduledoc "Session-аутентификация + LiveView on_mount хуки (E0, D-006)."
   use SvcWeb, :verified_routes
+  use Gettext, backend: SvcWeb.Gettext
 
   import Plug.Conn
   import Phoenix.Controller
@@ -36,7 +37,7 @@ defmodule SvcWeb.UserAuth do
       conn
     else
       conn
-      |> put_flash(:error, "Требуется вход в систему.")
+      |> put_flash(:error, gettext("Требуется вход в систему."))
       |> redirect(to: ~p"/login")
       |> halt()
     end
@@ -121,7 +122,7 @@ defmodule SvcWeb.UserAuth do
     else
       socket =
         socket
-        |> Phoenix.LiveView.put_flash(:error, "Требуется вход в систему.")
+        |> Phoenix.LiveView.put_flash(:error, gettext("Требуется вход в систему."))
         |> Phoenix.LiveView.redirect(to: ~p"/login")
 
       {:halt, socket}

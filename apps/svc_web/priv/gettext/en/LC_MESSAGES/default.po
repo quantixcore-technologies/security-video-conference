@@ -1,0 +1,70 @@
+msgid ""
+msgstr ""
+"Language: en\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "Actions"
+msgstr "Actions"
+
+msgid "Attempting to reconnect"
+msgstr "Attempting to reconnect"
+
+msgid "Something went wrong!"
+msgstr "Something went wrong!"
+
+msgid "We can't find the internet"
+msgstr "We can't find the internet"
+
+msgid "close"
+msgstr "close"
+
+msgid "Админ / HR"
+msgstr "Admin / HR"
+
+msgid "Безопасность"
+msgstr "Security"
+
+msgid "Встречи"
+msgstr "Meetings"
+
+msgid "Выйти"
+msgstr "Log out"
+
+msgid "Календарь"
+msgstr "Calendar"
+
+msgid "Меню"
+msgstr "Menu"
+
+msgid "Офицер безоп."
+msgstr "Security Officer"
+
+msgid "Панель"
+msgstr "Dashboard"
+
+msgid "Поручения"
+msgstr "Tasks"
+
+msgid "Профиль"
+msgstr "Profile"
+
+msgid "Руководитель"
+msgstr "Manager"
+
+msgid "Сотрудник"
+msgstr "Employee"
+
+msgid "Сотрудники"
+msgstr "Employees"
+
+msgid "Суперадмин"
+msgstr "Superadmin"
+
+msgid "Требуется вход в систему."
+msgstr "Please sign in."
+
+msgid "Уведомления"
+msgstr "Notifications"
+
+msgid "Язык"
+msgstr "Language"

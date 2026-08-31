@@ -49,6 +49,14 @@
 - **CI** (`.github/workflows/ci.yml`): compile(warnings-as-errors)/format/credo/sobelow/test. `mix precommit` расширен теми же гейтами.
 - Компиляция **без warnings**; **193 теста, 0 failures**. Коммит `3b3f891`.
 
+## 🌐 Сессия 2026-09-01 — i18n foundation (S29) ✅
+- **Gettext (uz/ru/en):** `config :svc_web, SvcWeb.Gettext, default_locale: "ru", locales: ~w(en ru uz)`.
+- **`SvcWeb.Locale`** — плаг (HTTP) + `on_mount :default` (LiveView): локаль из сессии → `Gettext.put_locale` + assign `@locale`. **`SvcWeb.LocaleController`** (`GET /locale/:locale`) кладёт выбор в сессию + safe-redirect (защита от open-redirect).
+- **UI:** переключатель языка (`locale_switcher` в шапке) · динамический `<html lang={@locale}>` · навигация (сайдбар + мобильное меню), шапка, роли, флеш «Требуется вход» обёрнуты `gettext()`.
+- **Переводы:** `priv/gettext/{uz,ru,en}/LC_MESSAGES/default.po` — 22 строки навигации/auth (uz полностью, en полностью, ru = источник).
+- `mix precommit` зелёный: format · credo 0 · sobelow 0 High/Med · **202 теста, 0 failures** (+9 i18n-тестов `SvcWeb.LocaleTest`, без БД).
+- ⬜ Остаток: обернуть контент страниц (meetings/tasks/users/security/profile — ~210 строк). Инфра готова — механическая работа.
+
 ## ⏭️ СЛЕДУЮЩИЙ КВЕСТ (Tauri-каркас + звонок готовы ✅ S26/S27)
 - 🔴 **Tauri видео на Windows** — проверить реальное WebRTC-медиа в WebView2 + `setContentProtected` enforce (Linux webkit2gtk WebRTC ненадёжен; D-002 Windows-first).
 - **2-сторонний тест** — desktop ↔ web-call (`/admin/meetings/1/call`) / mobile: встречное видео.

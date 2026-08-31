@@ -6,6 +6,7 @@ defmodule SvcWeb.Router do
   pipeline :browser do
     plug :accepts, ["html"]
     plug :fetch_session
+    plug SvcWeb.Locale
     plug :fetch_live_flash
     plug :put_root_layout, html: {SvcWeb.Layouts, :root}
     plug :protect_from_forgery
@@ -80,6 +81,7 @@ defmodule SvcWeb.Router do
   scope "/", SvcWeb do
     pipe_through :browser
     delete "/logout", SessionController, :delete
+    get "/locale/:locale", LocaleController, :set
   end
 
   ## Админка — требует аутентификации (RBAC scoping внутри LiveView)
@@ -92,6 +94,7 @@ defmodule SvcWeb.Router do
 
     live_session :admin,
       on_mount: [
+        {SvcWeb.Locale, :default},
         {SvcWeb.UserAuth, :require_authenticated},
         {SvcWeb.UserAuth, :mount_notifications}
       ] do

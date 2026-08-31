@@ -58,38 +58,38 @@ defmodule SvcWeb.Layouts do
           <.nav_item
             navigate={~p"/admin"}
             icon="hero-squares-2x2"
-            label="Панель"
+            label={gettext("Панель")}
             on={@active == "dashboard"}
           />
           <.nav_item
             navigate={~p"/admin/calendar"}
             icon="hero-calendar-days"
-            label="Календарь"
+            label={gettext("Календарь")}
             on={@active == "calendar"}
           />
           <.nav_item
             navigate={~p"/admin/users"}
             icon="hero-users"
-            label="Сотрудники"
+            label={gettext("Сотрудники")}
             on={@active == "users"}
           />
           <.nav_item
             navigate={~p"/admin/meetings"}
             icon="hero-video-camera"
-            label="Встречи"
+            label={gettext("Встречи")}
             on={@active == "meetings"}
           />
           <.nav_item
             navigate={~p"/admin/tasks"}
             icon="hero-clipboard-document-list"
-            label="Поручения"
+            label={gettext("Поручения")}
             on={@active == "tasks"}
           />
           <.nav_item
             :if={@current_user && @current_user.role in [:super_admin, :security_officer]}
             navigate={~p"/admin/security"}
             icon="hero-shield-exclamation"
-            label="Безопасность"
+            label={gettext("Безопасность")}
             on={@active == "security"}
           />
         </nav>
@@ -107,7 +107,7 @@ defmodule SvcWeb.Layouts do
                 tabindex="0"
                 role="button"
                 class="btn btn-ghost btn-sm btn-square"
-                aria-label="Меню"
+                aria-label={gettext("Меню")}
               >
                 <.icon name="hero-bars-3" class="size-5" />
               </div>
@@ -123,7 +123,7 @@ defmodule SvcWeb.Layouts do
                       @active == "dashboard" && "bg-primary/10 text-primary"
                     ]}
                   >
-                    <.icon name="hero-squares-2x2" class="size-4" /> Панель
+                    <.icon name="hero-squares-2x2" class="size-4" /> {gettext("Панель")}
                   </.link>
                 </li>
                 <li>
@@ -134,7 +134,7 @@ defmodule SvcWeb.Layouts do
                       @active == "calendar" && "bg-primary/10 text-primary"
                     ]}
                   >
-                    <.icon name="hero-calendar-days" class="size-4" /> Календарь
+                    <.icon name="hero-calendar-days" class="size-4" /> {gettext("Календарь")}
                   </.link>
                 </li>
                 <li>
@@ -142,7 +142,7 @@ defmodule SvcWeb.Layouts do
                     navigate={~p"/admin/users"}
                     class={["gap-2.5 rounded-lg", @active == "users" && "bg-primary/10 text-primary"]}
                   >
-                    <.icon name="hero-users" class="size-4" /> Сотрудники
+                    <.icon name="hero-users" class="size-4" /> {gettext("Сотрудники")}
                   </.link>
                 </li>
                 <li>
@@ -153,7 +153,7 @@ defmodule SvcWeb.Layouts do
                       @active == "meetings" && "bg-primary/10 text-primary"
                     ]}
                   >
-                    <.icon name="hero-video-camera" class="size-4" /> Встречи
+                    <.icon name="hero-video-camera" class="size-4" /> {gettext("Встречи")}
                   </.link>
                 </li>
                 <li>
@@ -161,7 +161,7 @@ defmodule SvcWeb.Layouts do
                     navigate={~p"/admin/tasks"}
                     class={["gap-2.5 rounded-lg", @active == "tasks" && "bg-primary/10 text-primary"]}
                   >
-                    <.icon name="hero-clipboard-document-list" class="size-4" /> Поручения
+                    <.icon name="hero-clipboard-document-list" class="size-4" /> {gettext("Поручения")}
                   </.link>
                 </li>
               </ul>
@@ -174,11 +174,13 @@ defmodule SvcWeb.Layouts do
           <span class="hidden lg:block"></span>
 
           <div class="flex items-center gap-1.5">
+            <.locale_switcher />
+
             <.link
               :if={@current_user}
               navigate={~p"/admin/notifications"}
               class="relative grid place-items-center size-9 rounded-lg hover:bg-base-200 transition"
-              aria-label="Уведомления"
+              aria-label={gettext("Уведомления")}
             >
               <.icon name="hero-bell" class="size-5 text-base-content/70" />
               <span
@@ -223,7 +225,7 @@ defmodule SvcWeb.Layouts do
                 </li>
                 <li>
                   <.link navigate={~p"/admin/profile"} class="gap-2.5 rounded-lg">
-                    <.icon name="hero-user-circle" class="size-4" /> Профиль
+                    <.icon name="hero-user-circle" class="size-4" /> {gettext("Профиль")}
                   </.link>
                 </li>
                 <li>
@@ -232,7 +234,9 @@ defmodule SvcWeb.Layouts do
                     method="delete"
                     class="gap-2.5 rounded-lg text-error hover:bg-error/10"
                   >
-                    <.icon name="hero-arrow-right-start-on-rectangle" class="size-4" /> Выйти
+                    <.icon name="hero-arrow-right-start-on-rectangle" class="size-4" /> {gettext(
+                      "Выйти"
+                    )}
                   </.link>
                 </li>
               </ul>
@@ -280,14 +284,45 @@ defmodule SvcWeb.Layouts do
     """
   end
 
+  @doc "Переключатель языка интерфейса (uz/ru/en) — ставит локаль в сессию через контроллер."
+  def locale_switcher(assigns) do
+    assigns = assign(assigns, :current, Gettext.get_locale(SvcWeb.Gettext))
+
+    ~H"""
+    <div class="dropdown dropdown-end">
+      <div
+        tabindex="0"
+        role="button"
+        class="grid place-items-center h-9 px-2.5 rounded-lg hover:bg-base-200 transition text-xs font-semibold uppercase text-base-content/70"
+        aria-label={gettext("Язык")}
+      >
+        {@current}
+      </div>
+      <ul
+        tabindex="0"
+        class="dropdown-content menu mt-2 w-40 rounded-xl border border-base-300 bg-base-100 shadow-xl z-30 p-1.5 gap-0.5"
+      >
+        <li :for={loc <- SvcWeb.Locale.supported()}>
+          <.link
+            href={~p"/locale/#{loc}"}
+            class={["gap-2.5 rounded-lg", loc == @current && "bg-primary/10 text-primary"]}
+          >
+            {SvcWeb.Locale.label(loc)}
+          </.link>
+        </li>
+      </ul>
+    </div>
+    """
+  end
+
   defp user_initials(name),
     do: name |> String.split() |> Enum.take(2) |> Enum.map_join(&String.first/1)
 
-  defp role_short(:super_admin), do: "Суперадмин"
-  defp role_short(:admin_hr), do: "Админ / HR"
-  defp role_short(:manager), do: "Руководитель"
-  defp role_short(:employee), do: "Сотрудник"
-  defp role_short(:security_officer), do: "Офицер безоп."
+  defp role_short(:super_admin), do: gettext("Суперадмин")
+  defp role_short(:admin_hr), do: gettext("Админ / HR")
+  defp role_short(:manager), do: gettext("Руководитель")
+  defp role_short(:employee), do: gettext("Сотрудник")
+  defp role_short(:security_officer), do: gettext("Офицер безоп.")
 
   @doc """
   Shows the flash group with standard titles and content.

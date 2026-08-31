@@ -1,0 +1,70 @@
+msgid ""
+msgstr ""
+"Language: uz\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "Actions"
+msgstr "Amallar"
+
+msgid "Attempting to reconnect"
+msgstr "Qayta ulanmoqda"
+
+msgid "Something went wrong!"
+msgstr "Xatolik yuz berdi!"
+
+msgid "We can't find the internet"
+msgstr "Internet aloqasi topilmadi"
+
+msgid "close"
+msgstr "yopish"
+
+msgid "Админ / HR"
+msgstr "Admin / HR"
+
+msgid "Безопасность"
+msgstr "Xavfsizlik"
+
+msgid "Встречи"
+msgstr "Uchrashuvlar"
+
+msgid "Выйти"
+msgstr "Chiqish"
+
+msgid "Календарь"
+msgstr "Kalendar"
+
+msgid "Меню"
+msgstr "Menyu"
+
+msgid "Офицер безоп."
+msgstr "Xavfsizlik ofitseri"
+
+msgid "Панель"
+msgstr "Boshqaruv paneli"
+
+msgid "Поручения"
+msgstr "Topshiriqlar"
+
+msgid "Профиль"
+msgstr "Profil"
+
+msgid "Руководитель"
+msgstr "Rahbar"
+
+msgid "Сотрудник"
+msgstr "Xodim"
+
+msgid "Сотрудники"
+msgstr "Xodimlar"
+
+msgid "Суперадмин"
+msgstr "Superadmin"
+
+msgid "Требуется вход в систему."
+msgstr "Tizimga kirish talab qilinadi."
+
+msgid "Уведомления"
+msgstr "Bildirishnomalar"
+
+msgid "Язык"
+msgstr "Til"

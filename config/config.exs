@@ -44,6 +44,11 @@ config :svc_web,
   ecto_repos: [Svc.Repo],
   generators: [context_app: :svc]
 
+# i18n: локали интерфейса (uz/ru/en), по умолчанию — русский (исходный язык строк)
+config :svc_web, SvcWeb.Gettext,
+  default_locale: "ru",
+  locales: ~w(en ru uz)
+
 # Configures the endpoint
 config :svc_web, SvcWeb.Endpoint,
   url: [host: "localhost"],

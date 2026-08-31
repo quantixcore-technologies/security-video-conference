@@ -4,7 +4,7 @@
 > Статус: ✅ done · 🔵 in progress · ⬜ planned · 🔒 blocked (заказчик/лицензия/R&D).
 > Обновлять при закрытии каждого слайса. Источник истины по прогрессу проекта.
 
-## 📊 Прогресс: 28 ✅ · 12 ⬜ · 5 🔒 — **28 из ~40** (+ Android: PoC, 2FA, GPS, чат/screen-share · + Tauri desktop)
+## 📊 Прогресс: 29 ✅ · 12 ⬜ · 5 🔒 — **29 из ~40** (+ Android: PoC, 2FA, GPS, чат/screen-share · + Tauri desktop · + i18n)
 
 ---
 
@@ -82,7 +82,8 @@
 ## Кросс-функциональные ⬜
 | S28 | **Kod-sifat + xavfsizlik qatlami** — Credo (0 issue) · Sobelow (0 High/Med, CSP qo'shildi) · CI (GitHub Actions) · 0 compile-warning · 193 test | ✅ 2026-08-30 |
 
-| —   | i18n RU/UZ/EN (Gettext + переключатель) | ⬜ |
+| S29 | **i18n foundation** — Gettext (uz/ru/en) · локаль-плаг + on_mount · переключатель языка · `/locale/:locale` · динамический `<html lang>` · навигация/сайдбар/шапка/auth переведены (uz/ru/en .po) | ✅ 2026-09-01 |
+| —   | i18n — полное покрытие страниц (LiveView-контент: meetings/tasks/users/security/profile…) | ⬜ инфра готова (S29), осталось обернуть ~210 строк |
 | —   | Реальный LiveKit Egress (серверная запись) | ⬜ сущность-заглушка есть |
 
 > **Не планируется:** OneID/E-IMZO интеграция (гос-SSO) — исключено из роадмапа (решение 2026-06-05). Внутренние учётки + 2FA достаточно.
