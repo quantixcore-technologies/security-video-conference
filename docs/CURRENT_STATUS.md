@@ -63,6 +63,13 @@
 - **UI:** в редакторе встречи — чекбокс watermark + селект реакции; в звонке watermark (SVG + tile) рендерится только при `@meeting.watermark_enabled`.
 - `mix precommit` зелёный: **209 тестов, 0 failures** (+7 `AntiCapturePolicyTest`).
 
+## 🎥 Сессия 2026-09-01 — LiveKit Egress оркестрация (S31) ✅
+- **`Svc.LiveKit`:** `start_room_egress/1` + `stop_egress/1` через общий `twirp_admin` (Twirp Egress API, admin-JWT roomRecord, best-effort с таймаутами); `remove_participant` отрефакторен на тот же путь.
+- **`Svc.Recordings`:** `auto_start/1` — system-запись (requested_by nil) по политике встречи + best-effort старт egress · `pending_for_meeting/1` · `get_by_egress_id/1` · `stop_for_meeting/1`.
+- **Webhook:** room_started → `auto_start` (если policy≠off) · room_finished → `stop_for_meeting` · **egress_started** → `mark_active` (egress_id) · **egress_ended** → `mark_completed`.
+- `mix precommit` зелёный: **216 тестов, 0 failures** (+7 `RecordingsEgressTest`).
+- ⚠️ Реальный захват видео требует запущенного **LiveKit Egress-сервиса + storage** (S3/local) в deploy — оркестрация/жизненный цикл готовы.
+
 ## ⏭️ СЛЕДУЮЩИЙ КВЕСТ (Tauri-каркас + звонок готовы ✅ S26/S27)
 - 🔴 **Tauri видео на Windows** — проверить реальное WebRTC-медиа в WebView2 + `setContentProtected` enforce (Linux webkit2gtk WebRTC ненадёжен; D-002 Windows-first).
 - **2-сторонний тест** — desktop ↔ web-call (`/admin/meetings/1/call`) / mobile: встречное видео.

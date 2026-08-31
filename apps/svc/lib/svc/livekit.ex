@@ -77,15 +77,48 @@ defmodule Svc.LiveKit do
 
   @doc """
   E5-C: удаляет участника из комнаты LiveKit (реакция :eject). Best-effort.
-  Возвращает {:ok, :removed} | {:error, reason}. Требует admin-грант (roomAdmin).
+  Возвращает {:ok, map} | {:error, reason}. Требует admin-грант (roomAdmin).
   """
   def remove_participant(room_name, identity)
       when is_binary(room_name) and is_binary(identity) do
+    twirp_admin(
+      "RoomService/RemoveParticipant",
+      VideoGrant.new(room_admin: true, room: room_name),
+      %{room: room_name, identity: identity}
+    )
+  end
+
+  @doc """
+  Egress: запуск серверной записи комнаты (RoomCompositeEgress, D-009). Best-effort.
+  egress_id приходит из вебхука egress_started. {:ok, egress_id} | {:error, reason}.
+  ⚠️ Требует запущенного LiveKit Egress-сервиса + storage-конфига (deploy).
+  """
+  def start_room_egress(room_name) when is_binary(room_name) do
+    filepath = "recordings/#{room_name}-#{System.system_time(:second)}.mp4"
+
+    case twirp_admin(
+           "Egress/StartRoomCompositeEgress",
+           VideoGrant.new(room_record: true),
+           %{room_name: room_name, file_outputs: [%{filepath: filepath}]}
+         ) do
+      {:ok, %{"egressId" => id}} -> {:ok, id}
+      {:ok, _} -> {:ok, nil}
+      other -> other
+    end
+  end
+
+  @doc "Egress: остановка записи (StopEgress). Best-effort. {:ok, map} | {:error, reason}."
+  def stop_egress(egress_id) when is_binary(egress_id) do
+    twirp_admin("Egress/StopEgress", VideoGrant.new(room_record: true), %{egress_id: egress_id})
+  end
+
+  # Общий admin-вызов Twirp API LiveKit (best-effort). {:ok, map} | {:error, reason}.
+  defp twirp_admin(path, grant, body_map) do
     with key when is_binary(key) <- config(:api_key),
          secret when is_binary(secret) <- config(:api_secret),
          ws_url when is_binary(ws_url) <- config(:url),
-         {:ok, jwt, _} <- admin_jwt(key, secret, room_name) do
-      http_post_remove(ws_url, jwt, room_name, identity)
+         {:ok, jwt, _} <- admin_jwt(key, secret, grant) do
+      http_twirp(ws_url, path, jwt, body_map)
     else
       _ -> {:error, :not_configured}
     end
@@ -93,29 +126,41 @@ defmodule Svc.LiveKit do
     e -> {:error, e}
   end
 
-  defp admin_jwt(key, secret, room_name) do
-    grant = VideoGrant.new(room_admin: true, room: room_name)
-
+  defp admin_jwt(key, secret, grant) do
     key
     |> AccessToken.create(secret, identity: "svc-admin", ttl: 60)
     |> AccessToken.set_video_grant(grant)
     |> AccessToken.to_jwt()
   end
 
-  defp http_post_remove(ws_url, jwt, room, identity) do
+  defp http_twirp(ws_url, path, jwt, body_map) do
     http =
       ws_url
       |> String.replace_prefix("wss://", "https://")
       |> String.replace_prefix("ws://", "http://")
 
-    url = String.to_charlist(http <> "/twirp/livekit.RoomService/RemoveParticipant")
-    body = Jason.encode!(%{room: room, identity: identity})
+    url = String.to_charlist(http <> "/twirp/livekit." <> path)
+    body = Jason.encode!(body_map)
     headers = [{~c"authorization", String.to_charlist("Bearer " <> jwt)}]
 
-    case :httpc.request(:post, {url, headers, ~c"application/json", body}, [], []) do
-      {:ok, {{_, status, _}, _, _}} when status in 200..299 -> {:ok, :removed}
-      {:ok, {{_, status, _}, _, resp}} -> {:error, {:http, status, to_string(resp)}}
-      {:error, reason} -> {:error, reason}
+    http_opts = [timeout: 3000, connect_timeout: 1500]
+
+    case :httpc.request(:post, {url, headers, ~c"application/json", body}, http_opts, []) do
+      {:ok, {{_, status, _}, _, resp}} when status in 200..299 ->
+        {:ok, resp |> to_string() |> safe_json()}
+
+      {:ok, {{_, status, _}, _, resp}} ->
+        {:error, {:http, status, to_string(resp)}}
+
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
+
+  defp safe_json(body) do
+    case Jason.decode(body) do
+      {:ok, map} -> map
+      _ -> %{}
     end
   end
 

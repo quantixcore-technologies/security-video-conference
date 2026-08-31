@@ -16,16 +16,31 @@ defmodule Svc.Recordings do
   def recording_enabled?(%Meeting{recording_policy: policy}), do: policy in [:optional, :required]
 
   @doc """
-  Начинает запись, если политика разрешает. Фиксирует намерение (status: :starting).
+  Начинает запись (ручной триггер), если политика разрешает. status: :starting.
   Возвращает {:ok, recording} | {:error, :recording_disabled}.
   """
-  def start_recording(%Meeting{} = meeting, %User{} = requester) do
+  def start_recording(%Meeting{} = meeting, %User{} = requester),
+    do: do_start(meeting, requester.id)
+
+  @doc """
+  Авто-старт записи (webhook room_started, без человека-инициатора).
+  Если политика разрешает — создаёт запись и best-effort запускает LiveKit Egress.
+  egress_id придёт из вебхука egress_started. {:ok, recording} | {:error, :recording_disabled}.
+  """
+  def auto_start(%Meeting{} = meeting) do
+    with {:ok, recording} <- do_start(meeting, nil) do
+      Svc.LiveKit.start_room_egress(meeting.livekit_room_name)
+      {:ok, recording}
+    end
+  end
+
+  defp do_start(%Meeting{} = meeting, requested_by) do
     if recording_enabled?(meeting) do
       %Recording{}
       |> Recording.changeset(%{
         org_id: meeting.org_id,
         meeting_id: meeting.id,
-        requested_by: requester.id,
+        requested_by: requested_by,
         status: :starting,
         encrypted: true,
         started_at: DateTime.utc_now()
@@ -56,6 +71,27 @@ defmodule Svc.Recordings do
     Repo.all(
       from r in Recording, where: r.meeting_id == ^meeting_id, order_by: [desc: r.inserted_at]
     )
+  end
+
+  @doc "Незавершённая (starting|active) запись встречи — для привязки egress-вебхука."
+  def pending_for_meeting(meeting_id) do
+    Repo.one(
+      from r in Recording,
+        where: r.meeting_id == ^meeting_id and r.status in [:starting, :active],
+        order_by: [desc: r.id],
+        limit: 1
+    )
+  end
+
+  @doc "Запись по egress_id (webhook egress_ended)."
+  def get_by_egress_id(egress_id), do: Repo.get_by(Recording, egress_id: egress_id)
+
+  @doc "Останавливает активную запись встречи (webhook room_finished): best-effort stop egress."
+  def stop_for_meeting(%Meeting{} = meeting) do
+    case pending_for_meeting(meeting.id) do
+      %Recording{egress_id: eid} when is_binary(eid) -> Svc.LiveKit.stop_egress(eid)
+      _ -> :ok
+    end
   end
 
   @doc "Доступ к записи — только org-wide роли той же организации (RBAC, D-007). Аудит — у вызывающего."

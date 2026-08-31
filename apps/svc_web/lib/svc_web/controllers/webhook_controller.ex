@@ -3,7 +3,7 @@ defmodule SvcWeb.WebhookController do
   use SvcWeb, :controller
   require Logger
 
-  alias Svc.{LiveKit, Audit, Meetings, Attendance}
+  alias Svc.{LiveKit, Audit, Meetings, Attendance, Recordings}
   alias Svc.Meetings.Meeting
 
   def livekit(conn, _params) do
@@ -41,7 +41,13 @@ defmodule SvcWeb.WebhookController do
   end
 
   defp handle_event(%{event: "room_started" = type} = event) do
-    with %Meeting{} = meeting <- meeting_from(event), do: Meetings.start_meeting(meeting)
+    with %Meeting{} = meeting <- meeting_from(event) do
+      Meetings.start_meeting(meeting)
+
+      # E: авто-запись по политике встречи (D-009) + запуск LiveKit Egress (best-effort)
+      if Recordings.recording_enabled?(meeting), do: Recordings.auto_start(meeting)
+    end
+
     audit(type, event)
   end
 
@@ -49,9 +55,33 @@ defmodule SvcWeb.WebhookController do
     with %Meeting{} = meeting <- meeting_from(event) do
       Meetings.end_meeting(meeting)
 
+      # E: останавливаем egress активной записи (финализация — из вебхука egress_ended)
+      Recordings.stop_for_meeting(meeting)
+
       %{meeting_id: meeting.id, org_id: meeting.org_id}
       |> Svc.Attendance.FinalizeWorker.new()
       |> Oban.insert()
+    end
+
+    audit(type, event)
+  end
+
+  # E: egress запущен → привязываем egress_id к :starting-записи встречи
+  defp handle_event(%{event: "egress_started" = type, egress_info: %{} = ei} = event) do
+    with %Meeting{} = meeting <- Meetings.get_meeting_by_room(ei[:room_name] || ""),
+         rec when not is_nil(rec) <- Recordings.pending_for_meeting(meeting.id),
+         eid when is_binary(eid) <- ei[:egress_id] do
+      Recordings.mark_active(rec, eid)
+    end
+
+    audit(type, event)
+  end
+
+  # E: egress завершён → финализируем запись (status: :completed)
+  defp handle_event(%{event: "egress_ended" = type, egress_info: %{} = ei} = event) do
+    with eid when is_binary(eid) <- ei[:egress_id],
+         rec when not is_nil(rec) <- Recordings.get_by_egress_id(eid) do
+      Recordings.mark_completed(rec, ei[:room_name])
     end
 
     audit(type, event)

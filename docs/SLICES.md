@@ -4,7 +4,7 @@
 > Статус: ✅ done · 🔵 in progress · ⬜ planned · 🔒 blocked (заказчик/лицензия/R&D).
 > Обновлять при закрытии каждого слайса. Источник истины по прогрессу проекта.
 
-## 📊 Прогресс: 30 ✅ · 11 ⬜ · 5 🔒 — **30 из ~40** (+ Android: PoC, 2FA, GPS, чат/screen-share · + Tauri desktop · + i18n)
+## 📊 Прогресс: 31 ✅ · 10 ⬜ · 5 🔒 — **31 из ~40** (+ Android: PoC, 2FA, GPS, чат/screen-share · + Tauri desktop · + i18n)
 
 ---
 
@@ -84,7 +84,7 @@
 
 | S29 | **i18n foundation** — Gettext (uz/ru/en) · локаль-плаг + on_mount · переключатель языка · `/locale/:locale` · динамический `<html lang>` · навигация/сайдбар/шапка/auth переведены (uz/ru/en .po) | ✅ 2026-09-01 |
 | —   | i18n — полное покрытие страниц (LiveView-контент: meetings/tasks/users/security/profile…) | ⬜ инфра готова (S29), осталось обернуть ~210 строк |
-| —   | Реальный LiveKit Egress (серверная запись) | ⬜ сущность-заглушка есть |
+| S31 | **LiveKit Egress оркестрация** — `LiveKit.start_room_egress`/`stop_egress` (Twirp Egress API, best-effort) · `Recordings.auto_start` (system-запись по политике) + `pending_for_meeting`/`get_by_egress_id`/`stop_for_meeting` · webhook `egress_started`→mark_active, `egress_ended`→mark_completed, room_started→auto_start, room_finished→stop | ✅ 2026-09-01 (⚠️ реальный захват видео требует Egress-сервиса + storage-конфига в deploy) |
 
 > **Не планируется:** OneID/E-IMZO интеграция (гос-SSO) — исключено из роадмапа (решение 2026-06-05). Внутренние учётки + 2FA достаточно.
 
