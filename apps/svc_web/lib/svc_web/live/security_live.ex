@@ -13,7 +13,7 @@ defmodule SvcWeb.SecurityLive do
     if user.role in @viewers do
       {:ok,
        assign(socket,
-         page_title: "Безопасность",
+         page_title: gettext("Безопасность"),
          events: AntiCapture.list_events(user.org_id, limit: 100),
          critical: AntiCapture.critical_count(user.org_id),
          geo_checks: Geo.list_checks(user.org_id, limit: 50),
@@ -23,7 +23,7 @@ defmodule SvcWeb.SecurityLive do
     else
       {:ok,
        socket
-       |> put_flash(:error, "Недостаточно прав для просмотра журнала захвата.")
+       |> put_flash(:error, gettext("Недостаточно прав для просмотра журнала захвата."))
        |> push_navigate(to: ~p"/admin")}
     end
   end
@@ -41,11 +41,11 @@ defmodule SvcWeb.SecurityLive do
       {:ok, _} ->
         {:noreply,
          socket
-         |> put_flash(:info, "Гео-политика сохранена.")
+         |> put_flash(:info, gettext("Гео-политика сохранена."))
          |> assign(:policy, Geo.get_policy(user.org_id))}
 
       {:error, _} ->
-        {:noreply, put_flash(socket, :error, "Не удалось сохранить политику.")}
+        {:noreply, put_flash(socket, :error, gettext("Не удалось сохранить политику."))}
     end
   end
 
@@ -63,35 +63,35 @@ defmodule SvcWeb.SecurityLive do
     >
       <div class="flex items-start justify-between gap-4 mb-6">
         <div>
-          <h1 class="text-2xl font-semibold tracking-tight">Безопасность</h1>
-          <p class="text-sm text-base-content/55 mt-1">Журнал попыток захвата контента (E5)</p>
+          <h1 class="text-2xl font-semibold tracking-tight">{gettext("Безопасность")}</h1>
+          <p class="text-sm text-base-content/55 mt-1">{gettext("Журнал попыток захвата контента (E5)")}</p>
         </div>
         <div
           :if={@critical > 0}
           class="inline-flex items-center gap-2 rounded-lg border border-error/25 bg-error/10 px-3 py-1.5 text-sm text-error"
         >
-          <.icon name="hero-exclamation-triangle" class="size-4" /> Критических: {@critical}
+          <.icon name="hero-exclamation-triangle" class="size-4" /> {gettext("Критических:")} {@critical}
         </div>
       </div>
 
       <div class="rounded-xl border border-base-300 bg-base-100/50 p-5 mb-6">
         <h2 class="text-sm font-medium mb-4 flex items-center gap-2">
           <.icon name="hero-adjustments-horizontal" class="size-4 text-base-content/45" />
-          Гео-политика (pre-join gate)
+          {gettext("Гео-политика (pre-join gate)")}
         </h2>
         <form phx-submit="save_policy" class="space-y-3">
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <label class="block">
-              <span class="text-xs font-medium text-base-content/60 mb-1 block">Режим</span>
+              <span class="text-xs font-medium text-base-content/60 mb-1 block">{gettext("Режим")}</span>
               <select name="policy[mode]" class="select select-sm select-bordered w-full bg-base-100">
-                <option value="off" selected={@policy.mode == :off}>Выключен</option>
-                <option value="flag_only" selected={@policy.mode == :flag_only}>Только флаг</option>
-                <option value="enforce" selected={@policy.mode == :enforce}>Блокировка</option>
+                <option value="off" selected={@policy.mode == :off}>{gettext("Выключен")}</option>
+                <option value="flag_only" selected={@policy.mode == :flag_only}>{gettext("Только флаг")}</option>
+                <option value="enforce" selected={@policy.mode == :enforce}>{gettext("Блокировка")}</option>
               </select>
             </label>
             <label class="block">
               <span class="text-xs font-medium text-base-content/60 mb-1 block">
-                Разрешённые страны (ISO)
+                {gettext("Разрешённые страны (ISO)")}
               </span>
               <input
                 type="text"
@@ -103,13 +103,13 @@ defmodule SvcWeb.SecurityLive do
           </div>
           <label class="block">
             <span class="text-xs font-medium text-base-content/60 mb-1 block">
-              Whitelist IP (через запятую)
+              {gettext("Whitelist IP (через запятую)")}
             </span>
             <input
               type="text"
               name="policy[whitelist_ips]"
               value={Enum.join(@policy.whitelist_ips, ", ")}
-              placeholder="напр. 195.158.1.1"
+              placeholder={gettext("напр. 195.158.1.1")}
               class="input input-sm input-bordered w-full bg-base-100 tabular"
             />
           </label>
@@ -122,7 +122,7 @@ defmodule SvcWeb.SecurityLive do
                 value="true"
                 checked={@policy.block_vpn}
                 class="checkbox checkbox-sm"
-              /> Блокировать VPN
+              /> {gettext("Блокировать VPN")}
             </label>
             <label class="flex items-center gap-2 text-sm">
               <input type="hidden" name="policy[block_proxy]" value="false" />
@@ -132,17 +132,17 @@ defmodule SvcWeb.SecurityLive do
                 value="true"
                 checked={@policy.block_proxy}
                 class="checkbox checkbox-sm"
-              /> Блокировать proxy
+              /> {gettext("Блокировать proxy")}
             </label>
             <button type="submit" class="btn btn-primary btn-sm ml-auto gap-1.5">
-              <.icon name="hero-check" class="size-4" /> Сохранить
+              <.icon name="hero-check" class="size-4" /> {gettext("Сохранить")}
             </button>
           </div>
         </form>
       </div>
 
       <h2 class="text-sm font-medium mb-3 flex items-center gap-2">
-        <.icon name="hero-film" class="size-4 text-base-content/45" /> Журнал захвата контента
+        <.icon name="hero-film" class="size-4 text-base-content/45" /> {gettext("Журнал захвата контента")}
       </h2>
 
       <div
@@ -150,9 +150,9 @@ defmodule SvcWeb.SecurityLive do
         class="rounded-xl border border-base-300 bg-base-100/50 px-5 py-14 text-center text-sm text-base-content/40"
       >
         <.icon name="hero-shield-check" class="size-10 mx-auto mb-3 opacity-40 text-success" />
-        Событий захвата не зафиксировано
+        {gettext("Событий захвата не зафиксировано")}
         <div class="text-xs text-base-content/35 mt-2">
-          Детекты приходят от нативного клиента (Tauri/mobile). Web-слой защищён watermark.
+          {gettext("Детекты приходят от нативного клиента (Tauri/mobile). Web-слой защищён watermark.")}
         </div>
       </div>
 
@@ -163,10 +163,10 @@ defmodule SvcWeb.SecurityLive do
         <table class="w-full text-sm">
           <thead>
             <tr class="text-left text-xs uppercase tracking-wider text-base-content/40 border-b border-base-300">
-              <th class="font-medium px-5 py-2.5">Событие</th>
-              <th class="font-medium px-5 py-2.5">Платформа</th>
-              <th class="font-medium px-5 py-2.5">Важность</th>
-              <th class="font-medium px-5 py-2.5 tabular">Время</th>
+              <th class="font-medium px-5 py-2.5">{gettext("Событие")}</th>
+              <th class="font-medium px-5 py-2.5">{gettext("Платформа")}</th>
+              <th class="font-medium px-5 py-2.5">{gettext("Важность")}</th>
+              <th class="font-medium px-5 py-2.5 tabular">{gettext("Время")}</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-base-300/50">
@@ -194,15 +194,15 @@ defmodule SvcWeb.SecurityLive do
 
       <div class="flex items-center gap-2 mt-8 mb-3">
         <.icon name="hero-globe-alt" class="size-4 text-base-content/45" />
-        <h2 class="text-sm font-medium">Сетевые / гео-проверки (pre-join)</h2>
-        <span :if={@flagged > 0} class="text-xs text-warning">· флагнуто: {@flagged}</span>
+        <h2 class="text-sm font-medium">{gettext("Сетевые / гео-проверки (pre-join)")}</h2>
+        <span :if={@flagged > 0} class="text-xs text-warning">{gettext("· флагнуто:")} {@flagged}</span>
       </div>
 
       <div
         :if={@geo_checks == []}
         class="rounded-xl border border-base-300 bg-base-100/50 px-5 py-8 text-center text-sm text-base-content/40"
       >
-        Проверок ещё не было
+        {gettext("Проверок ещё не было")}
       </div>
 
       <div
@@ -213,9 +213,9 @@ defmodule SvcWeb.SecurityLive do
           <thead>
             <tr class="text-left text-xs uppercase tracking-wider text-base-content/40 border-b border-base-300">
               <th class="font-medium px-5 py-2.5 tabular">IP</th>
-              <th class="font-medium px-5 py-2.5">Страна</th>
-              <th class="font-medium px-5 py-2.5">Решение</th>
-              <th class="font-medium px-5 py-2.5 tabular">Время</th>
+              <th class="font-medium px-5 py-2.5">{gettext("Страна")}</th>
+              <th class="font-medium px-5 py-2.5">{gettext("Решение")}</th>
+              <th class="font-medium px-5 py-2.5 tabular">{gettext("Время")}</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-base-300/50">
@@ -232,7 +232,7 @@ defmodule SvcWeb.SecurityLive do
                   title={c.spoofing_reason}
                   class="ml-1.5 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-error/15 text-error"
                 >
-                  <.icon name="hero-map-pin" class="size-3" /> спуф
+                  <.icon name="hero-map-pin" class="size-3" /> {gettext("спуф")}
                 </span>
               </td>
               <td class="px-5 py-3 tabular text-base-content/60">
@@ -246,9 +246,9 @@ defmodule SvcWeb.SecurityLive do
     """
   end
 
-  defp dec_label(:allow), do: "Разрешён"
-  defp dec_label(:block), do: "Заблокирован"
-  defp dec_label(:flag), do: "Флаг"
+  defp dec_label(:allow), do: gettext("Разрешён")
+  defp dec_label(:block), do: gettext("Заблокирован")
+  defp dec_label(:flag), do: gettext("Флаг")
 
   defp dec_class(:allow), do: "bg-success/10 text-success"
   defp dec_class(:block), do: "bg-error/10 text-error"
@@ -263,14 +263,14 @@ defmodule SvcWeb.SecurityLive do
   defp kind_icon(:screen_record_detected), do: "hero-video-camera"
   defp kind_icon(:protection_failed), do: "hero-shield-exclamation"
 
-  defp kind_label(:screenshot_detected), do: "Скриншот"
-  defp kind_label(:recorder_detected), do: "Обнаружен рекордер"
-  defp kind_label(:screen_record_detected), do: "Запись экрана"
-  defp kind_label(:protection_failed), do: "Сбой защиты"
+  defp kind_label(:screenshot_detected), do: gettext("Скриншот")
+  defp kind_label(:recorder_detected), do: gettext("Обнаружен рекордер")
+  defp kind_label(:screen_record_detected), do: gettext("Запись экрана")
+  defp kind_label(:protection_failed), do: gettext("Сбой защиты")
 
-  defp sev_label(:info), do: "Инфо"
-  defp sev_label(:warning), do: "Предупреждение"
-  defp sev_label(:critical), do: "Критично"
+  defp sev_label(:info), do: gettext("Инфо")
+  defp sev_label(:warning), do: gettext("Предупреждение")
+  defp sev_label(:critical), do: gettext("Критично")
 
   defp sev_class(:info), do: "bg-base-200 text-base-content/60"
   defp sev_class(:warning), do: "bg-warning/10 text-warning"

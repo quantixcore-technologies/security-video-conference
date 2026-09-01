@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>{@meeting.title} — звонок · SVC</title>
+    <title>{@meeting.title} — {gettext("звонок")} · SVC</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -51,7 +51,7 @@
         </span>
         <span class="inline-flex items-center gap-1.5 text-xs text-base-content/55">
           <span id="status-dot" class="size-2 rounded-full bg-warning animate-pulse"></span>
-          <span id="status-text">Подключение…</span>
+          <span id="status-text">{gettext("Подключение…")}</span>
         </span>
       </div>
     </header>
@@ -68,7 +68,7 @@
             class="col-span-full flex flex-col items-center justify-center text-center text-base-content/40 gap-3"
           >
             <.icon name="hero-users" class="size-10 opacity-40" />
-            <span class="text-sm">Подключение к комнате…</span>
+            <span class="text-sm">{gettext("Подключение к комнате…")}</span>
           </div>
         </div>
       </main>
@@ -80,20 +80,20 @@
             onclick="showTab('people')"
             class="flex-1 px-3 py-3 text-sm font-medium border-b-2 border-primary text-primary inline-flex items-center justify-center gap-1.5"
           >
-            <.icon name="hero-users" class="size-4" /> Участники
+            <.icon name="hero-users" class="size-4" /> {gettext("Участники")}
           </button>
           <button
             id="tab-btn-chat"
             onclick="showTab('chat')"
             class="flex-1 px-3 py-3 text-sm font-medium border-b-2 border-transparent text-base-content/55 inline-flex items-center justify-center gap-1.5"
           >
-            <.icon name="hero-chat-bubble-left-right" class="size-4" /> Чат
+            <.icon name="hero-chat-bubble-left-right" class="size-4" /> {gettext("Чат")}
           </button>
           <button
             id="tab-btn-settings"
             onclick="showTab('settings')"
             class="px-3 py-3 text-base-content/55 inline-flex items-center justify-center"
-            title="Устройства"
+            title={gettext("Устройства")}
           >
             <.icon name="hero-cog-6-tooth" class="size-4" />
           </button>
@@ -107,7 +107,7 @@
             <input
               id="chat-input"
               type="text"
-              placeholder="Сообщение…"
+              placeholder={gettext("Сообщение…")}
               autocomplete="off"
               class="input input-sm input-bordered flex-1 bg-base-200/40"
             />
@@ -119,7 +119,7 @@
 
         <div id="tab-settings" class="hidden flex-1 overflow-auto p-4 space-y-4 text-sm">
           <label class="block">
-            <span class="text-xs font-medium text-base-content/60 mb-1.5 block">Камера</span>
+            <span class="text-xs font-medium text-base-content/60 mb-1.5 block">{gettext("Камера")}</span>
             <select
               id="sel-cam"
               onchange="switchDevice('videoinput', this.value)"
@@ -128,7 +128,7 @@
             </select>
           </label>
           <label class="block">
-            <span class="text-xs font-medium text-base-content/60 mb-1.5 block">Микрофон</span>
+            <span class="text-xs font-medium text-base-content/60 mb-1.5 block">{gettext("Микрофон")}</span>
             <select
               id="sel-mic"
               onchange="switchDevice('audioinput', this.value)"
@@ -142,12 +142,12 @@
 
     <footer class="relative flex items-center justify-center gap-2.5 h-20 border-t border-base-300 bg-base-100 shrink-0 px-4">
       <span class="hidden md:inline-flex absolute left-4 items-center gap-1.5 text-xs text-base-content/40">
-        <.icon name="hero-lock-closed" class="size-3.5" /> Запись запрещена · контент watermarked
+        <.icon name="hero-lock-closed" class="size-3.5" /> {gettext("Запись запрещена · контент watermarked")}
       </span>
       <button
         id="btn-mic"
         onclick="toggleMic()"
-        title="Микрофон"
+        title={gettext("Микрофон")}
         class="grid place-items-center size-12 rounded-full bg-base-200 hover:bg-base-300 transition"
       >
         <.icon name="hero-microphone" class="size-5" />
@@ -155,7 +155,7 @@
       <button
         id="btn-cam"
         onclick="toggleCam()"
-        title="Камера"
+        title={gettext("Камера")}
         class="grid place-items-center size-12 rounded-full bg-base-200 hover:bg-base-300 transition"
       >
         <.icon name="hero-video-camera" class="size-5" />
@@ -163,7 +163,7 @@
       <button
         id="btn-screen"
         onclick="toggleScreen()"
-        title="Демонстрация экрана"
+        title={gettext("Демонстрация экрана")}
         class="grid place-items-center size-12 rounded-full bg-base-200 hover:bg-base-300 transition"
       >
         <.icon name="hero-computer-desktop" class="size-5" />
@@ -174,7 +174,7 @@
       <button
         id="btn-people"
         onclick="togglePanel('people')"
-        title="Участники"
+        title={gettext("Участники")}
         class="relative grid place-items-center size-12 rounded-full bg-base-200 hover:bg-base-300 transition"
       >
         <.icon name="hero-users" class="size-5" />
@@ -188,7 +188,7 @@
       <button
         id="btn-chat"
         onclick="togglePanel('chat')"
-        title="Чат"
+        title={gettext("Чат")}
         class="relative grid place-items-center size-12 rounded-full bg-base-200 hover:bg-base-300 transition"
       >
         <.icon name="hero-chat-bubble-left-right" class="size-5" />
@@ -202,7 +202,7 @@
       <button
         id="btn-full"
         onclick="toggleFull()"
-        title="На весь экран"
+        title={gettext("На весь экран")}
         class="grid place-items-center size-12 rounded-full bg-base-200 hover:bg-base-300 transition"
       >
         <.icon name="hero-arrows-pointing-out" class="size-5" />
@@ -212,7 +212,7 @@
 
       <button
         onclick="leave()"
-        title="Покинуть звонок"
+        title={gettext("Покинуть звонок")}
         class="grid place-items-center size-12 rounded-full bg-error/90 hover:bg-error transition text-error-content"
       >
         <.icon name="hero-phone-x-mark" class="size-5" />
@@ -263,7 +263,7 @@
         const tile = document.createElement("div");
         tile.dataset.identity = p.identity;
         tile.className = "tile relative rounded-2xl overflow-hidden bg-base-200 grid place-items-center aspect-video ring-1 ring-base-300 transition-all";
-        const label = (isLocal ? "Вы · " : "") + (p.name || p.identity) + (source === "screen" ? " · экран" : "");
+        const label = (isLocal ? "<%= gettext("Вы") %> · " : "") + (p.name || p.identity) + (source === "screen" ? " · <%= gettext("экран") %>" : "");
         tile.innerHTML =
           '<div class="ph grid place-items-center size-20 rounded-full bg-primary/15 text-primary text-2xl font-semibold">' + initials(p.name || p.identity) + '</div>' +
           '<div class="absolute bottom-2.5 left-2.5 flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-black/55 text-white text-xs">' +
@@ -325,15 +325,15 @@
         const all = [room.localParticipant, ...room.remoteParticipants.values()];
         document.getElementById("people-badge").textContent = all.length;
         document.getElementById("participants-info").textContent =
-          "Участников: " + all.length + " — " + all.map(p => p.name || p.identity).join(" · ");
+          "<%= gettext("Участников:") %> " + all.length + " — " + all.map(p => p.name || p.identity).join(" · ");
         box.innerHTML = all.map(p => {
           const speaking = p.isSpeaking;
-          const name = (p === room.localParticipant ? "Вы · " : "") + (p.name || p.identity);
+          const name = (p === room.localParticipant ? "<%= gettext("Вы") %> · " : "") + (p.name || p.identity);
           return '<div class="flex items-center gap-2.5 px-2 py-2 rounded-lg ' + (speaking ? "bg-primary/10" : "hover:bg-base-200/50") + '">' +
             '<span class="grid place-items-center size-8 rounded-full bg-primary/15 text-primary text-xs font-semibold shrink-0 ' + (speaking ? "ring-2 ring-primary" : "") + '">' + initials(p.name || p.identity) + '</span>' +
             '<span class="flex-1 min-w-0 text-sm truncate">' + name + '</span>' +
-            '<span class="' + (p.isMicrophoneEnabled ? "text-base-content/30" : "text-error") + '" title="микрофон">' + (p.isMicrophoneEnabled ? "🎤" : "🔇") + '</span>' +
-            '<span class="' + (p.isCameraEnabled ? "text-base-content/30" : "text-base-content/20") + '" title="камера">' + (p.isCameraEnabled ? "📹" : "🚫") + '</span>' +
+            '<span class="' + (p.isMicrophoneEnabled ? "text-base-content/30" : "text-error") + '" title="<%= gettext("микрофон") %>">' + (p.isMicrophoneEnabled ? "🎤" : "🔇") + '</span>' +
+            '<span class="' + (p.isCameraEnabled ? "text-base-content/30" : "text-base-content/20") + '" title="<%= gettext("камера") %>">' + (p.isCameraEnabled ? "📹" : "🚫") + '</span>' +
             '</div>';
         }).join("");
       }
@@ -362,7 +362,7 @@
         const text = input.value.trim();
         if (!text) return;
         room.localParticipant.publishData(enc.encode(JSON.stringify({ t: "chat", m: text })), { reliable: true });
-        addChat("Вы", text, true);
+        addChat("<%= gettext("Вы") %>", text, true);
         input.value = "";
       });
 
@@ -377,7 +377,7 @@
       }
       function fillSelect(id, devices) {
         document.getElementById(id).innerHTML = devices
-          .map((d, i) => '<option value="' + d.deviceId + '">' + (d.label || ("Устройство " + (i + 1))) + '</option>').join("");
+          .map((d, i) => '<option value="' + d.deviceId + '">' + (d.label || ("<%= gettext("Устройство") %> " + (i + 1))) + '</option>').join("");
       }
       window.switchDevice = async (kind, deviceId) => {
         try { await room.switchActiveDevice(kind, deviceId); } catch (e) { console.error("switch:", e); }
@@ -417,7 +417,7 @@
         if (document.fullscreenElement) document.exitFullscreen();
         else document.documentElement.requestFullscreen().catch(e => console.error("fullscreen:", e));
       };
-      window.leave = () => { room.disconnect(); statusText.textContent = "Вы вышли"; statusDot.className = "size-2 rounded-full bg-base-content/30"; };
+      window.leave = () => { room.disconnect(); statusText.textContent = "<%= gettext("Вы вышли") %>"; statusDot.className = "size-2 rounded-full bg-base-content/30"; };
 
       // ---------- события комнаты ----------
       room.on(LK.RoomEvent.TrackSubscribed, (t, pub, p) => {
@@ -453,14 +453,14 @@
       (async () => {
         try {
           await room.connect(url, token);
-          statusText.textContent = "В эфире";
+          statusText.textContent = "<%= gettext("В эфире") %>";
           statusDot.className = "size-2 rounded-full bg-success";
           tileFor(room.localParticipant, true, "cam");
           room.remoteParticipants.forEach(p => tileFor(p, false, "cam"));
           renderPeople();
           loadDevices();
         } catch (e) {
-          statusText.textContent = "Ошибка: " + e.message;
+          statusText.textContent = "<%= gettext("Ошибка:") %> " + e.message;
           statusDot.className = "size-2 rounded-full bg-error";
           return;
         }
@@ -470,7 +470,7 @@
           loadDevices();
         } catch (camErr) {
           camOn = false; setBtn("btn-cam", true, "bg-error/90 text-error-content");
-          statusText.textContent = "В эфире · без камеры";
+          statusText.textContent = "<%= gettext("В эфире · без камеры") %>";
           console.error("camera:", camErr);
         }
         renderPeople();

@@ -4,10 +4,6 @@ defmodule SvcWeb.CalendarLive do
 
   alias Svc.Meetings
 
-  @weekdays ~w(Пн Вт Ср Чт Пт Сб Вс)
-  @months {"", "Январь", "Февраль", "Март", "Апрель", "Май", "Июнь", "Июль", "Август", "Сентябрь",
-           "Октябрь", "Ноябрь", "Декабрь"}
-
   @impl true
   def mount(_params, _session, socket), do: {:ok, socket}
 
@@ -38,7 +34,7 @@ defmodule SvcWeb.CalendarLive do
     {ny, nm} = next_month(year, month)
 
     assign(socket,
-      page_title: "Календарь",
+      page_title: gettext("Календарь"),
       year: year,
       month: month,
       today: today,
@@ -63,7 +59,7 @@ defmodule SvcWeb.CalendarLive do
           <h1 class="text-2xl font-semibold tracking-tight">
             {month_name(@month)} {@year}
           </h1>
-          <p class="text-sm text-base-content/55 mt-1">Календарь встреч организации</p>
+          <p class="text-sm text-base-content/55 mt-1">{gettext("Календарь встреч организации")}</p>
         </div>
         <div class="flex items-center gap-1.5">
           <.link
@@ -72,7 +68,7 @@ defmodule SvcWeb.CalendarLive do
           >
             <.icon name="hero-chevron-left" class="size-4" />
           </.link>
-          <.link patch={~p"/admin/calendar"} class="btn btn-ghost btn-sm">Сегодня</.link>
+          <.link patch={~p"/admin/calendar"} class="btn btn-ghost btn-sm">{gettext("Сегодня")}</.link>
           <.link
             patch={~p"/admin/calendar?#{%{year: @next.year, month: @next.month}}"}
             class="btn btn-ghost btn-sm btn-square"
@@ -126,8 +122,37 @@ defmodule SvcWeb.CalendarLive do
   defp chip_class(:ended), do: "bg-base-200 text-base-content/45"
   defp chip_class(_), do: "bg-primary/15 text-primary"
 
-  defp weekdays, do: @weekdays
-  defp month_name(m), do: elem(@months, m)
+  defp weekdays do
+    [
+      gettext("Пн"),
+      gettext("Вт"),
+      gettext("Ср"),
+      gettext("Чт"),
+      gettext("Пт"),
+      gettext("Сб"),
+      gettext("Вс")
+    ]
+  end
+
+  defp month_name(m), do: elem(month_names(), m)
+
+  defp month_names do
+    {
+      "",
+      gettext("Январь"),
+      gettext("Февраль"),
+      gettext("Март"),
+      gettext("Апрель"),
+      gettext("Май"),
+      gettext("Июнь"),
+      gettext("Июль"),
+      gettext("Август"),
+      gettext("Сентябрь"),
+      gettext("Октябрь"),
+      gettext("Ноябрь"),
+      gettext("Декабрь")
+    }
+  end
 
   defp prev_month(y, 1), do: {y - 1, 12}
   defp prev_month(y, m), do: {y, m - 1}

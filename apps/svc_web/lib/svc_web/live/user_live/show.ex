@@ -21,14 +21,14 @@ defmodule SvcWeb.UserLive.Show do
     else
       {:noreply,
        socket
-       |> put_flash(:error, "Нет доступа к этому сотруднику.")
+       |> put_flash(:error, gettext("Нет доступа к этому сотруднику."))
        |> push_navigate(to: ~p"/admin/users")}
     end
   rescue
     Ecto.NoResultsError ->
       {:noreply,
        socket
-       |> put_flash(:error, "Сотрудник не найден.")
+       |> put_flash(:error, gettext("Сотрудник не найден."))
        |> push_navigate(to: ~p"/admin/users")}
   end
 
@@ -43,12 +43,12 @@ defmodule SvcWeb.UserLive.Show do
 
     if socket.assigns.can_manage do
       socket
-      |> assign(:page_title, "Редактирование")
+      |> assign(:page_title, gettext("Редактирование"))
       |> assign(:departments, Orgs.list_departments(actor.org_id))
       |> assign(:form, to_form(Accounts.change_user(socket.assigns.user)))
     else
       socket
-      |> put_flash(:error, "Недостаточно прав.")
+      |> put_flash(:error, gettext("Недостаточно прав."))
       |> push_navigate(to: ~p"/admin/users/#{socket.assigns.user.id}")
     end
   end
@@ -64,7 +64,7 @@ defmodule SvcWeb.UserLive.Show do
 
         {:noreply,
          socket
-         |> put_flash(:info, "Данные сотрудника обновлены.")
+         |> put_flash(:info, gettext("Данные сотрудника обновлены."))
          |> push_navigate(to: ~p"/admin/users/#{updated.id}")}
 
       {:error, changeset} ->
@@ -86,7 +86,9 @@ defmodule SvcWeb.UserLive.Show do
     )
 
     msg =
-      if new_status == :disabled, do: "Сотрудник деактивирован.", else: "Сотрудник активирован."
+      if new_status == :disabled,
+        do: gettext("Сотрудник деактивирован."),
+        else: gettext("Сотрудник активирован.")
 
     {:noreply, socket |> assign(:user, updated) |> put_flash(:info, msg)}
   end
@@ -99,10 +101,16 @@ defmodule SvcWeb.UserLive.Show do
     case Accounts.admin_reset_password(user, temp) do
       {:ok, _} ->
         Audit.log_action(actor, :user_reset_password, resource_type: :user, resource_id: user.id)
-        {:noreply, put_flash(socket, :info, "Временный пароль: #{temp} — передайте сотруднику.")}
+
+        {:noreply,
+         put_flash(
+           socket,
+           :info,
+           gettext("Временный пароль: %{password} — передайте сотруднику.", password: temp)
+         )}
 
       {:error, _} ->
-        {:noreply, put_flash(socket, :error, "Не удалось сбросить пароль.")}
+        {:noreply, put_flash(socket, :error, gettext("Не удалось сбросить пароль."))}
     end
   end
 
@@ -114,11 +122,11 @@ defmodule SvcWeb.UserLive.Show do
   defp role_options, do: Enum.map(Accounts.User.roles(), &{role_label(&1), &1})
   defp dept_options(depts), do: Enum.map(depts, &{&1.name, &1.id})
 
-  defp role_label(:super_admin), do: "Суперадмин"
-  defp role_label(:admin_hr), do: "Админ/HR"
-  defp role_label(:manager), do: "Руководитель"
-  defp role_label(:employee), do: "Сотрудник"
-  defp role_label(:security_officer), do: "Офицер безопасности"
+  defp role_label(:super_admin), do: gettext("Суперадмин")
+  defp role_label(:admin_hr), do: gettext("Админ/HR")
+  defp role_label(:manager), do: gettext("Руководитель")
+  defp role_label(:employee), do: gettext("Сотрудник")
+  defp role_label(:security_officer), do: gettext("Офицер безопасности")
 
   defp initials(name),
     do: name |> String.split() |> Enum.take(2) |> Enum.map_join(&String.first/1)
@@ -139,7 +147,7 @@ defmodule SvcWeb.UserLive.Show do
         navigate={~p"/admin/users"}
         class="inline-flex items-center gap-1.5 text-sm text-base-content/55 hover:text-base-content transition mb-5"
       >
-        <.icon name="hero-arrow-left" class="size-4" /> Все сотрудники
+        <.icon name="hero-arrow-left" class="size-4" /> {gettext("Все сотрудники")}
       </.link>
 
       <div class="rounded-xl border border-base-300 bg-base-100/50 p-6 flex items-center gap-5 mb-5">
@@ -164,27 +172,27 @@ defmodule SvcWeb.UserLive.Show do
               @user.status != :active && "text-base-content/45"
             ]}>
               <span class="size-1.5 rounded-full bg-current"></span>
-              {if @user.status == :active, do: "Активен", else: "Отключён"}
+              {if @user.status == :active, do: gettext("Активен"), else: gettext("Отключён")}
             </span>
           </div>
         </div>
         <div :if={@can_manage and @live_action == :show} class="flex items-center gap-2 shrink-0">
           <.link navigate={~p"/admin/users/#{@user.id}/edit"} class="btn btn-sm btn-ghost gap-1.5">
-            <.icon name="hero-pencil-square" class="size-4" /> Изменить
+            <.icon name="hero-pencil-square" class="size-4" /> {gettext("Изменить")}
           </.link>
           <button
             phx-click="reset_password"
-            data-confirm="Сбросить пароль сотрудника?"
+            data-confirm={gettext("Сбросить пароль сотрудника?")}
             class="btn btn-sm btn-ghost gap-1.5"
           >
-            <.icon name="hero-key" class="size-4" /> Сброс пароля
+            <.icon name="hero-key" class="size-4" /> {gettext("Сброс пароля")}
           </button>
           <button
             phx-click="toggle_status"
             data-confirm={
               if @user.status == :active,
-                do: "Деактивировать сотрудника?",
-                else: "Активировать сотрудника?"
+                do: gettext("Деактивировать сотрудника?"),
+                else: gettext("Активировать сотрудника?")
             }
             class={[
               "btn btn-sm gap-1.5",
@@ -196,35 +204,41 @@ defmodule SvcWeb.UserLive.Show do
               name={if @user.status == :active, do: "hero-no-symbol", else: "hero-check-circle"}
               class="size-4"
             />
-            {if @user.status == :active, do: "Деактивировать", else: "Активировать"}
+            {if @user.status == :active, do: gettext("Деактивировать"), else: gettext("Активировать")}
           </button>
         </div>
       </div>
 
       <div :if={@live_action == :edit} class="rounded-xl border border-base-300 bg-base-100/50 p-5">
         <h3 class="font-medium mb-4 flex items-center gap-2">
-          <.icon name="hero-pencil-square" class="size-4 text-primary" /> Редактирование сотрудника
+          <.icon name="hero-pencil-square" class="size-4 text-primary" /> {gettext(
+            "Редактирование сотрудника"
+          )}
         </h3>
         <.form for={@form} phx-submit="save" class="space-y-3">
-          <.input field={@form[:full_name]} type="text" label="ФИО" required />
-          <.input field={@form[:phone]} type="text" label="Телефон" />
-          <.input field={@form[:role]} type="select" label="Роль" options={role_options()} />
+          <.input field={@form[:full_name]} type="text" label={gettext("ФИО")} required />
+          <.input field={@form[:phone]} type="text" label={gettext("Телефон")} />
+          <.input field={@form[:role]} type="select" label={gettext("Роль")} options={role_options()} />
           <.input
             field={@form[:department_id]}
             type="select"
-            label="Отдел"
+            label={gettext("Отдел")}
             options={dept_options(@departments)}
-            prompt="— не выбран —"
+            prompt={gettext("— не выбран —")}
           />
           <.input
             field={@form[:status]}
             type="select"
-            label="Статус"
-            options={[{"Активен", :active}, {"Отключён", :disabled}]}
+            label={gettext("Статус")}
+            options={[{gettext("Активен"), :active}, {gettext("Отключён"), :disabled}]}
           />
           <div class="flex gap-2 pt-2">
-            <.button type="submit" phx-disable-with="Сохраняем...">Сохранить</.button>
-            <.link navigate={~p"/admin/users/#{@user.id}"} class="btn btn-ghost">Отмена</.link>
+            <.button type="submit" phx-disable-with={gettext("Сохраняем...")}>
+              {gettext("Сохранить")}
+            </.button>
+            <.link navigate={~p"/admin/users/#{@user.id}"} class="btn btn-ghost">
+              {gettext("Отмена")}
+            </.link>
           </div>
         </.form>
       </div>
@@ -235,21 +249,21 @@ defmodule SvcWeb.UserLive.Show do
       >
         <div class="px-5 py-3 border-b border-base-300 flex items-center gap-2">
           <.icon name="hero-identification" class="size-4 text-base-content/45" />
-          <span class="text-sm font-medium">Учётные данные</span>
+          <span class="text-sm font-medium">{gettext("Учётные данные")}</span>
         </div>
         <dl class="divide-y divide-base-300/50 text-sm">
-          <.row label="Логин"><span class="tabular">{@user.username}</span></.row>
-          <.row label="Телефон">{@user.phone || "—"}</.row>
-          <.row label="2FA">
+          <.row label={gettext("Логин")}><span class="tabular">{@user.username}</span></.row>
+          <.row label={gettext("Телефон")}>{@user.phone || "—"}</.row>
+          <.row label={gettext("2FA")}>
             <span :if={@user.totp_enabled} class="inline-flex items-center gap-1 text-success">
-              <.icon name="hero-shield-check" class="size-4" /> включена
+              <.icon name="hero-shield-check" class="size-4" /> {gettext("включена")}
             </span>
-            <span :if={!@user.totp_enabled} class="text-base-content/45">выключена</span>
+            <span :if={!@user.totp_enabled} class="text-base-content/45">{gettext("выключена")}</span>
           </.row>
-          <.row label="Последний вход">
+          <.row label={gettext("Последний вход")}>
             <span class="tabular text-base-content/70">{fmt(@user.last_login_at)}</span>
           </.row>
-          <.row label="Создан">
+          <.row label={gettext("Создан")}>
             <span class="tabular text-base-content/70">{fmt(@user.inserted_at)}</span>
           </.row>
         </dl>

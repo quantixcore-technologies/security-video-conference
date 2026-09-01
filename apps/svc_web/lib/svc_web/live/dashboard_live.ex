@@ -11,7 +11,7 @@ defmodule SvcWeb.DashboardLive do
 
     {:ok,
      assign(socket,
-       page_title: "Панель управления",
+       page_title: gettext("Панель управления"),
        visible_users: length(Authz.visible_user_ids(user)),
        meetings_count: length(Meetings.list_meetings(user.org_id)),
        my_open_tasks: Tasks.open_count_for(user.id),
@@ -30,29 +30,29 @@ defmodule SvcWeb.DashboardLive do
       unread_count={@unread_count}
     >
       <h1 class="text-2xl font-semibold tracking-tight">
-        Здравствуйте, {first_name(@current_user.full_name)}
+        {gettext("Здравствуйте, %{name}", name: first_name(@current_user.full_name))}
       </h1>
-      <p class="text-sm text-base-content/55 mt-1 mb-6">Обзор организации и активности</p>
+      <p class="text-sm text-base-content/55 mt-1 mb-6">{gettext("Обзор организации и активности")}</p>
 
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
         <.metric
           icon="hero-users"
-          label="Сотрудники"
+          label={gettext("Сотрудники")}
           value={@visible_users}
-          hint="видимых по вашей роли"
+          hint={gettext("видимых по вашей роли")}
         />
         <.metric
           icon="hero-video-camera"
-          label="Встречи"
+          label={gettext("Встречи")}
           value={@meetings_count}
-          hint="всего в организации"
+          hint={gettext("всего в организации")}
         />
         <.link
           navigate={~p"/admin/tasks"}
           class="group rounded-xl border border-base-300 bg-base-100/50 p-5 hover:border-primary/30 transition"
         >
           <div class="flex items-center justify-between">
-            <span class="text-xs uppercase tracking-wider text-base-content/45">Мои поручения</span>
+            <span class="text-xs uppercase tracking-wider text-base-content/45">{gettext("Мои поручения")}</span>
             <.icon
               name="hero-clipboard-document-list"
               class="size-4 text-base-content/35 group-hover:text-primary transition"
@@ -61,10 +61,10 @@ defmodule SvcWeb.DashboardLive do
           <div class="mt-2 text-3xl font-semibold tabular">{@my_open_tasks}</div>
           <div class="text-xs mt-1">
             <span :if={@my_overdue_tasks > 0} class="text-error font-medium">
-              {@my_overdue_tasks} просрочено
+              {gettext("%{count} просрочено", count: @my_overdue_tasks)}
             </span>
             <span :if={@my_overdue_tasks == 0} class="text-base-content/45">
-              открытых · всё в срок
+              {gettext("открытых · всё в срок")}
             </span>
           </div>
         </.link>
@@ -74,7 +74,7 @@ defmodule SvcWeb.DashboardLive do
         >
           <.icon name="hero-plus-circle" class="size-5 text-primary" />
           <span class="mt-3 text-sm font-medium text-primary flex items-center gap-1">
-            К встречам
+            {gettext("К встречам")}
             <.icon name="hero-arrow-right" class="size-4 group-hover:translate-x-0.5 transition" />
           </span>
         </.link>
@@ -86,8 +86,8 @@ defmodule SvcWeb.DashboardLive do
       >
         <div class="px-5 py-3 border-b border-base-300 flex items-center gap-2">
           <.icon name="hero-clock" class="size-4 text-base-content/45" />
-          <span class="text-sm font-medium">Журнал аудита</span>
-          <span class="text-xs text-base-content/40">· последние события</span>
+          <span class="text-sm font-medium">{gettext("Журнал аудита")}</span>
+          <span class="text-xs text-base-content/40">{gettext("· последние события")}</span>
         </div>
         <ul class="divide-y divide-base-300/50">
           <li
@@ -134,23 +134,23 @@ defmodule SvcWeb.DashboardLive do
     end
   end
 
-  defp action_label("login_success"), do: "Вход в систему"
-  defp action_label("login_failed"), do: "Неудачный вход"
-  defp action_label("logout"), do: "Выход из системы"
-  defp action_label("user_create"), do: "Создан сотрудник"
-  defp action_label("user_update"), do: "Изменён сотрудник"
-  defp action_label("user_set_status"), do: "Смена статуса сотрудника"
-  defp action_label("user_reset_password"), do: "Сброс пароля сотрудника"
-  defp action_label("password_changed"), do: "Смена пароля"
-  defp action_label("totp_enabled"), do: "Включена 2FA"
-  defp action_label("totp_disabled"), do: "Отключена 2FA"
-  defp action_label("journal_view"), do: "Просмотр журнала"
-  defp action_label("meeting_join"), do: "Вход во встречу"
-  defp action_label("meeting_update"), do: "Изменена встреча"
-  defp action_label("meeting_end"), do: "Завершена встреча"
-  defp action_label("livekit.room_started"), do: "Звонок начат"
-  defp action_label("livekit.room_finished"), do: "Звонок завершён"
-  defp action_label("livekit.participant_joined"), do: "Участник вошёл в звонок"
-  defp action_label("livekit.participant_left"), do: "Участник вышел из звонка"
+  defp action_label("login_success"), do: gettext("Вход в систему")
+  defp action_label("login_failed"), do: gettext("Неудачный вход")
+  defp action_label("logout"), do: gettext("Выход из системы")
+  defp action_label("user_create"), do: gettext("Создан сотрудник")
+  defp action_label("user_update"), do: gettext("Изменён сотрудник")
+  defp action_label("user_set_status"), do: gettext("Смена статуса сотрудника")
+  defp action_label("user_reset_password"), do: gettext("Сброс пароля сотрудника")
+  defp action_label("password_changed"), do: gettext("Смена пароля")
+  defp action_label("totp_enabled"), do: gettext("Включена 2FA")
+  defp action_label("totp_disabled"), do: gettext("Отключена 2FA")
+  defp action_label("journal_view"), do: gettext("Просмотр журнала")
+  defp action_label("meeting_join"), do: gettext("Вход во встречу")
+  defp action_label("meeting_update"), do: gettext("Изменена встреча")
+  defp action_label("meeting_end"), do: gettext("Завершена встреча")
+  defp action_label("livekit.room_started"), do: gettext("Звонок начат")
+  defp action_label("livekit.room_finished"), do: gettext("Звонок завершён")
+  defp action_label("livekit.participant_joined"), do: gettext("Участник вошёл в звонок")
+  defp action_label("livekit.participant_left"), do: gettext("Участник вышел из звонка")
   defp action_label(other), do: other
 end

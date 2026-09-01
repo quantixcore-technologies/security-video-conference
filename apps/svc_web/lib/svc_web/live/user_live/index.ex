@@ -45,7 +45,7 @@ defmodule SvcWeb.UserLive.Index do
     actor = socket.assigns.current_user
 
     socket
-    |> assign(:page_title, "Сотрудники")
+    |> assign(:page_title, gettext("Сотрудники"))
     |> assign(:can_manage, can_manage?(actor))
     |> assign(:departments, [])
     |> assign(:form, nil)
@@ -57,14 +57,14 @@ defmodule SvcWeb.UserLive.Index do
 
     if can_manage?(actor) do
       socket
-      |> assign(:page_title, "Новый сотрудник")
+      |> assign(:page_title, gettext("Новый сотрудник"))
       |> assign(:can_manage, true)
       |> assign(:departments, Orgs.list_departments(actor.org_id))
       |> assign(:form, to_form(Accounts.change_user_creation()))
       |> load_users()
     else
       socket
-      |> put_flash(:error, "Недостаточно прав для создания сотрудников.")
+      |> put_flash(:error, gettext("Недостаточно прав для создания сотрудников."))
       |> push_navigate(to: ~p"/admin/users")
     end
   end
@@ -95,7 +95,7 @@ defmodule SvcWeb.UserLive.Index do
 
         {:noreply,
          socket
-         |> put_flash(:info, "Сотрудник #{user.full_name} создан.")
+         |> put_flash(:info, gettext("Сотрудник %{name} создан.", name: user.full_name))
          |> push_navigate(to: ~p"/admin/users")}
 
       {:error, changeset} ->
@@ -177,11 +177,11 @@ defmodule SvcWeb.UserLive.Index do
   defp role_options, do: Enum.map(Accounts.User.roles(), &{role_label(&1), &1})
   defp dept_options(depts), do: Enum.map(depts, &{&1.name, &1.id})
 
-  defp role_label(:super_admin), do: "Суперадмин"
-  defp role_label(:admin_hr), do: "Админ/HR"
-  defp role_label(:manager), do: "Руководитель"
-  defp role_label(:employee), do: "Сотрудник"
-  defp role_label(:security_officer), do: "Офицер безопасности"
+  defp role_label(:super_admin), do: gettext("Суперадмин")
+  defp role_label(:admin_hr), do: gettext("Админ/HR")
+  defp role_label(:manager), do: gettext("Руководитель")
+  defp role_label(:employee), do: gettext("Сотрудник")
+  defp role_label(:security_officer), do: gettext("Офицер безопасности")
 
   @impl true
   def render(assigns) do
@@ -194,9 +194,9 @@ defmodule SvcWeb.UserLive.Index do
     >
       <div class="flex items-start justify-between gap-4 mb-6">
         <div>
-          <h1 class="text-2xl font-semibold tracking-tight">Сотрудники</h1>
+          <h1 class="text-2xl font-semibold tracking-tight">{gettext("Сотрудники")}</h1>
           <p class="text-sm text-base-content/55 mt-1">
-            Список ограничен вашей ролью · department-scoping
+            {gettext("Список ограничен вашей ролью")} · department-scoping
           </p>
         </div>
         <.link
@@ -204,7 +204,7 @@ defmodule SvcWeb.UserLive.Index do
           navigate={~p"/admin/users/new"}
           class="btn btn-primary gap-2"
         >
-          <.icon name="hero-plus" class="size-4" /> Сотрудник
+          <.icon name="hero-plus" class="size-4" /> {gettext("Сотрудник")}
         </.link>
       </div>
 
@@ -213,14 +213,14 @@ defmodule SvcWeb.UserLive.Index do
         class="rounded-xl border border-base-300 bg-base-100/50 p-5 mb-5"
       >
         <h3 class="font-medium mb-4 flex items-center gap-2">
-          <.icon name="hero-user-plus" class="size-4 text-primary" /> Новый сотрудник
+          <.icon name="hero-user-plus" class="size-4 text-primary" /> {gettext("Новый сотрудник")}
         </h3>
         <.form for={@form} phx-change="validate" phx-submit="save" class="space-y-3">
-          <.input field={@form[:full_name]} type="text" label="ФИО" required />
-          <.input field={@form[:username]} type="text" label="Логин" required />
-          <.input field={@form[:phone]} type="text" label="Телефон (Номер)" />
+          <.input field={@form[:full_name]} type="text" label={gettext("ФИО")} required />
+          <.input field={@form[:username]} type="text" label={gettext("Логин")} required />
+          <.input field={@form[:phone]} type="text" label={gettext("Телефон (Номер)")} />
           <div>
-            <label class="block text-sm font-medium mb-1">Фото (jpg/png, до 5 МБ)</label>
+            <label class="block text-sm font-medium mb-1">{gettext("Фото (jpg/png, до 5 МБ)")}</label>
             <.live_file_input
               upload={@uploads.photo}
               class="file-input file-input-sm file-input-bordered w-full"
@@ -235,20 +235,22 @@ defmodule SvcWeb.UserLive.Index do
           <.input
             field={@form[:password]}
             type="password"
-            label="Временный пароль (мин. 12 символов)"
+            label={gettext("Временный пароль (мин. 12 символов)")}
             required
           />
-          <.input field={@form[:role]} type="select" label="Роль" options={role_options()} />
+          <.input field={@form[:role]} type="select" label={gettext("Роль")} options={role_options()} />
           <.input
             field={@form[:department_id]}
             type="select"
-            label="Отдел"
+            label={gettext("Отдел")}
             options={dept_options(@departments)}
-            prompt="— не выбран —"
+            prompt={gettext("— не выбран —")}
           />
           <div class="flex gap-2 pt-2">
-            <.button type="submit" phx-disable-with="Создаём...">Создать</.button>
-            <.link navigate={~p"/admin/users"} class="btn btn-ghost">Отмена</.link>
+            <.button type="submit" phx-disable-with={gettext("Создаём...")}>
+              {gettext("Создать")}
+            </.button>
+            <.link navigate={~p"/admin/users"} class="btn btn-ghost">{gettext("Отмена")}</.link>
           </div>
         </.form>
       </div>
@@ -264,13 +266,13 @@ defmodule SvcWeb.UserLive.Index do
               type="text"
               name="q"
               value={@filters.q}
-              placeholder="Поиск по ФИО или логину"
+              placeholder={gettext("Поиск по ФИО или логину")}
               phx-debounce="300"
               class="input input-sm input-bordered w-full pl-9 bg-base-100"
             />
           </div>
           <select name="role" class="select select-sm select-bordered bg-base-100">
-            <option value="">Все роли</option>
+            <option value="">{gettext("Все роли")}</option>
             <option
               :for={{label, val} <- role_options()}
               value={val}
@@ -280,9 +282,13 @@ defmodule SvcWeb.UserLive.Index do
             </option>
           </select>
           <select name="status" class="select select-sm select-bordered bg-base-100">
-            <option value="">Любой статус</option>
-            <option value="active" selected={@filters.status == "active"}>Активен</option>
-            <option value="disabled" selected={@filters.status == "disabled"}>Отключён</option>
+            <option value="">{gettext("Любой статус")}</option>
+            <option value="active" selected={@filters.status == "active"}>
+              {gettext("Активен")}
+            </option>
+            <option value="disabled" selected={@filters.status == "disabled"}>
+              {gettext("Отключён")}
+            </option>
           </select>
         </form>
       </div>
@@ -290,16 +296,16 @@ defmodule SvcWeb.UserLive.Index do
       <div class="rounded-xl border border-base-300 bg-base-100/50 overflow-hidden">
         <div :if={@users == []} class="px-5 py-10 text-center text-sm text-base-content/40">
           <.icon name="hero-magnifying-glass" class="size-8 mx-auto mb-2 opacity-40" />
-          Ничего не найдено
+          {gettext("Ничего не найдено")}
         </div>
         <table :if={@users != []} class="w-full text-sm">
           <thead>
             <tr class="text-left text-xs uppercase tracking-wider text-base-content/40 border-b border-base-300">
-              <th class="font-medium px-5 py-2.5">Сотрудник</th>
-              <th class="font-medium px-5 py-2.5">Логин</th>
-              <th class="font-medium px-5 py-2.5">Роль</th>
+              <th class="font-medium px-5 py-2.5">{gettext("Сотрудник")}</th>
+              <th class="font-medium px-5 py-2.5">{gettext("Логин")}</th>
+              <th class="font-medium px-5 py-2.5">{gettext("Роль")}</th>
               <th class="font-medium px-5 py-2.5">2FA</th>
-              <th class="font-medium px-5 py-2.5">Статус</th>
+              <th class="font-medium px-5 py-2.5">{gettext("Статус")}</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-base-300/50">
@@ -318,7 +324,7 @@ defmodule SvcWeb.UserLive.Index do
               </td>
               <td class="px-5 py-3">
                 <span :if={u.totp_enabled} class="inline-flex items-center gap-1 text-xs text-success">
-                  <.icon name="hero-shield-check" class="size-3.5" /> вкл
+                  <.icon name="hero-shield-check" class="size-3.5" /> {gettext("вкл")}
                 </span>
                 <span :if={!u.totp_enabled} class="text-xs text-base-content/30">—</span>
               </td>
@@ -342,7 +348,11 @@ defmodule SvcWeb.UserLive.Index do
         class="flex items-center justify-between mt-4 text-sm"
       >
         <span class="text-base-content/55 tabular">
-          {@total} сотрудников · стр. {@page} из {@pages}
+          {gettext("%{total} сотрудников · стр. %{page} из %{pages}",
+            total: @total,
+            page: @page,
+            pages: @pages
+          )}
         </span>
         <div class="flex items-center gap-1">
           <.link
@@ -396,6 +406,6 @@ defmodule SvcWeb.UserLive.Index do
     name |> String.split() |> Enum.take(2) |> Enum.map_join(&String.first/1)
   end
 
-  defp status_label(:active), do: "Активен"
-  defp status_label(:disabled), do: "Отключён"
+  defp status_label(:active), do: gettext("Активен")
+  defp status_label(:disabled), do: gettext("Отключён")
 end

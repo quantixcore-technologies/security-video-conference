@@ -11,7 +11,7 @@ defmodule SvcWeb.NotificationLive do
     user = socket.assigns.current_user
 
     assign(socket,
-      page_title: "Уведомления",
+      page_title: gettext("Уведомления"),
       notifications: Notifications.list_for_user(user.id, limit: 50),
       unread_count: Notifications.unread_count(user.id)
     )
@@ -34,13 +34,15 @@ defmodule SvcWeb.NotificationLive do
     <Layouts.app flash={@flash} current_user={@current_user} unread_count={@unread_count}>
       <div class="flex items-start justify-between gap-4 mb-6">
         <div>
-          <h1 class="text-2xl font-semibold tracking-tight">Уведомления</h1>
+          <h1 class="text-2xl font-semibold tracking-tight">{gettext("Уведомления")}</h1>
           <p class="text-sm text-base-content/55 mt-1">
-            {if @unread_count > 0, do: "Непрочитанных: #{@unread_count}", else: "Все прочитаны"}
+            {if @unread_count > 0,
+              do: gettext("Непрочитанных: %{count}", count: @unread_count),
+              else: gettext("Все прочитаны")}
           </p>
         </div>
         <button :if={@unread_count > 0} phx-click="read_all" class="btn btn-ghost btn-sm gap-1.5">
-          <.icon name="hero-check" class="size-4" /> Прочитать все
+          <.icon name="hero-check" class="size-4" /> {gettext("Прочитать все")}
         </button>
       </div>
 
@@ -48,7 +50,9 @@ defmodule SvcWeb.NotificationLive do
         :if={@notifications == []}
         class="rounded-xl border border-base-300 bg-base-100/50 px-5 py-14 text-center text-sm text-base-content/40"
       >
-        <.icon name="hero-bell-slash" class="size-10 mx-auto mb-3 opacity-40" /> Уведомлений пока нет
+        <.icon name="hero-bell-slash" class="size-10 mx-auto mb-3 opacity-40" /> {gettext(
+          "Уведомлений пока нет"
+        )}
       </div>
 
       <div class="space-y-2">
@@ -85,14 +89,14 @@ defmodule SvcWeb.NotificationLive do
               navigate={~p"/admin/meetings/#{n.meeting_id}"}
               class="btn btn-ghost btn-xs gap-1"
             >
-              К встрече <.icon name="hero-arrow-right" class="size-3.5" />
+              {gettext("К встрече")} <.icon name="hero-arrow-right" class="size-3.5" />
             </.link>
             <button
               :if={is_nil(n.read_at)}
               phx-click="read"
               phx-value-id={n.id}
               class="btn btn-ghost btn-xs btn-square"
-              aria-label="Отметить прочитанным"
+              aria-label={gettext("Отметить прочитанным")}
             >
               <.icon name="hero-check" class="size-4" />
             </button>
@@ -109,11 +113,11 @@ defmodule SvcWeb.NotificationLive do
   defp kind_icon(:cancel), do: "hero-x-circle"
   defp kind_icon(_), do: "hero-bell"
 
-  defp kind_label(:invite), do: "Приглашение"
-  defp kind_label(:reminder), do: "Напоминание"
-  defp kind_label(:update), do: "Изменение"
-  defp kind_label(:cancel), do: "Отмена"
-  defp kind_label(_), do: "Уведомление"
+  defp kind_label(:invite), do: gettext("Приглашение")
+  defp kind_label(:reminder), do: gettext("Напоминание")
+  defp kind_label(:update), do: gettext("Изменение")
+  defp kind_label(:cancel), do: gettext("Отмена")
+  defp kind_label(_), do: gettext("Уведомление")
 
   defp kind_tone(:invite), do: "bg-primary/15 text-primary"
   defp kind_tone(:reminder), do: "bg-warning/15 text-warning"

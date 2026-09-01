@@ -34,7 +34,7 @@ defmodule SvcWeb.MeetingLive.Index do
     actor = socket.assigns.current_user
 
     socket
-    |> assign(:page_title, "Встречи")
+    |> assign(:page_title, gettext("Встречи"))
     |> assign(:can_organize, Meetings.can_organize?(actor))
     |> assign(:roster, [])
     |> assign(:form, nil)
@@ -46,14 +46,14 @@ defmodule SvcWeb.MeetingLive.Index do
 
     if Meetings.can_organize?(actor) do
       socket
-      |> assign(:page_title, "Новая встреча")
+      |> assign(:page_title, gettext("Новая встреча"))
       |> assign(:can_organize, true)
       |> assign(:roster, Accounts.list_users(actor.org_id))
       |> assign(:form, to_form(%{"title" => "", "recording_policy" => "off"}, as: :meeting))
       |> load_meetings()
     else
       socket
-      |> put_flash(:error, "Недостаточно прав для создания встреч.")
+      |> put_flash(:error, gettext("Недостаточно прав для создания встреч."))
       |> push_navigate(to: ~p"/admin/meetings")
     end
   end
@@ -91,14 +91,14 @@ defmodule SvcWeb.MeetingLive.Index do
 
         {:noreply,
          socket
-         |> put_flash(:info, "Встреча «#{meeting.title}» создана.")
+         |> put_flash(:info, gettext("Встреча «%{title}» создана.", title: meeting.title))
          |> push_navigate(to: ~p"/admin/meetings/#{meeting.id}")}
 
       {:error, %Ecto.Changeset{} = cs} ->
         {:noreply, assign(socket, :form, to_form(Map.put(cs, :action, :insert)))}
 
       {:error, :unauthorized} ->
-        {:noreply, put_flash(socket, :error, "Недостаточно прав.")}
+        {:noreply, put_flash(socket, :error, gettext("Недостаточно прав."))}
     end
   end
 
@@ -112,11 +112,14 @@ defmodule SvcWeb.MeetingLive.Index do
 
         {:noreply,
          socket
-         |> put_flash(:info, "Создана серия из #{length(meetings)} встреч.")
+         |> put_flash(
+           :info,
+           gettext("Создана серия из %{count} встреч.", count: length(meetings))
+         )
          |> push_navigate(to: ~p"/admin/meetings")}
 
       {:error, _} ->
-        {:noreply, put_flash(socket, :error, "Не удалось создать серию встреч.")}
+        {:noreply, put_flash(socket, :error, gettext("Не удалось создать серию встреч."))}
     end
   end
 
@@ -154,8 +157,8 @@ defmodule SvcWeb.MeetingLive.Index do
     Svc.Notifications.notify_many(
       invited,
       :invite,
-      "Приглашение на встречу: #{meeting.title}",
-      body: "Организатор: #{actor.full_name}",
+      gettext("Приглашение на встречу: %{title}", title: meeting.title),
+      body: gettext("Организатор: %{name}", name: actor.full_name),
       meeting_id: meeting.id
     )
   end
@@ -216,11 +219,15 @@ defmodule SvcWeb.MeetingLive.Index do
   end
 
   defp policy_options,
-    do: [{"Без записи", "off"}, {"Опционально", "optional"}, {"Обязательно", "required"}]
+    do: [
+      {gettext("Без записи"), "off"},
+      {gettext("Опционально"), "optional"},
+      {gettext("Обязательно"), "required"}
+    ]
 
-  defp status_label(:planned), do: "Запланирована"
-  defp status_label(:live), do: "Идёт"
-  defp status_label(:ended), do: "Завершена"
+  defp status_label(:planned), do: gettext("Запланирована")
+  defp status_label(:live), do: gettext("Идёт")
+  defp status_label(:ended), do: gettext("Завершена")
 
   @impl true
   def render(assigns) do
@@ -233,15 +240,15 @@ defmodule SvcWeb.MeetingLive.Index do
     >
       <div class="flex items-start justify-between gap-4 mb-6">
         <div>
-          <h1 class="text-2xl font-semibold tracking-tight">Встречи</h1>
-          <p class="text-sm text-base-content/55 mt-1">Видеоконференции организации</p>
+          <h1 class="text-2xl font-semibold tracking-tight">{gettext("Встречи")}</h1>
+          <p class="text-sm text-base-content/55 mt-1">{gettext("Видеоконференции организации")}</p>
         </div>
         <.link
           :if={@can_organize and @live_action == :index}
           navigate={~p"/admin/meetings/new"}
           class="btn btn-primary gap-2"
         >
-          <.icon name="hero-plus" class="size-4" /> Встреча
+          <.icon name="hero-plus" class="size-4" /> {gettext("Встреча")}
         </.link>
       </div>
 
@@ -250,32 +257,32 @@ defmodule SvcWeb.MeetingLive.Index do
         class="rounded-xl border border-base-300 bg-base-100/50 p-5 mb-5"
       >
         <h3 class="font-medium mb-4 flex items-center gap-2">
-          <.icon name="hero-video-camera" class="size-4 text-primary" /> Новая встреча
+          <.icon name="hero-video-camera" class="size-4 text-primary" /> {gettext("Новая встреча")}
         </h3>
         <.form for={@form} phx-submit="save" class="space-y-3">
-          <.input field={@form[:title]} type="text" label="Название" required />
+          <.input field={@form[:title]} type="text" label={gettext("Название")} required />
           <div class="grid grid-cols-2 gap-3">
-            <.input field={@form[:scheduled_start]} type="datetime-local" label="Начало" />
-            <.input field={@form[:scheduled_end]} type="datetime-local" label="Конец" />
+            <.input field={@form[:scheduled_start]} type="datetime-local" label={gettext("Начало")} />
+            <.input field={@form[:scheduled_end]} type="datetime-local" label={gettext("Конец")} />
           </div>
           <.input
             field={@form[:recording_policy]}
             type="select"
-            label="Запись"
+            label={gettext("Запись")}
             options={policy_options()}
           />
 
           <div class="grid grid-cols-2 gap-3">
             <label class="block">
-              <span class="text-sm font-medium mb-1 block">Повтор</span>
+              <span class="text-sm font-medium mb-1 block">{gettext("Повтор")}</span>
               <select name="meeting[repeat]" class="select select-bordered w-full">
-                <option value="none">Не повторять</option>
-                <option value="daily">Ежедневно</option>
-                <option value="weekly">Еженедельно</option>
+                <option value="none">{gettext("Не повторять")}</option>
+                <option value="daily">{gettext("Ежедневно")}</option>
+                <option value="weekly">{gettext("Еженедельно")}</option>
               </select>
             </label>
             <label class="block">
-              <span class="text-sm font-medium mb-1 block">Повторений</span>
+              <span class="text-sm font-medium mb-1 block">{gettext("Повторений")}</span>
               <input
                 type="number"
                 name="meeting[repeat_count]"
@@ -288,7 +295,9 @@ defmodule SvcWeb.MeetingLive.Index do
           </div>
 
           <fieldset class="border border-base-300 rounded p-3">
-            <legend class="text-sm font-medium px-1">Ростер (ожидаемые участники)</legend>
+            <legend class="text-sm font-medium px-1">
+              {gettext("Ростер (ожидаемые участники)")}
+            </legend>
             <div class="grid grid-cols-2 gap-1 max-h-48 overflow-y-auto">
               <label :for={u <- @roster} class="flex items-center gap-2 text-sm">
                 <input
@@ -303,8 +312,10 @@ defmodule SvcWeb.MeetingLive.Index do
           </fieldset>
 
           <div class="flex gap-2 pt-2">
-            <.button type="submit" phx-disable-with="Создаём...">Создать</.button>
-            <.link navigate={~p"/admin/meetings"} class="btn btn-ghost">Отмена</.link>
+            <.button type="submit" phx-disable-with={gettext("Создаём...")}>
+              {gettext("Создать")}
+            </.button>
+            <.link navigate={~p"/admin/meetings"} class="btn btn-ghost">{gettext("Отмена")}</.link>
           </div>
         </.form>
       </div>
@@ -320,16 +331,20 @@ defmodule SvcWeb.MeetingLive.Index do
               type="text"
               name="q"
               value={@filters.q}
-              placeholder="Поиск по названию"
+              placeholder={gettext("Поиск по названию")}
               phx-debounce="300"
               class="input input-sm input-bordered w-full pl-9 bg-base-100"
             />
           </div>
           <select name="status" class="select select-sm select-bordered bg-base-100">
-            <option value="">Любой статус</option>
-            <option value="planned" selected={@filters.status == "planned"}>Запланирована</option>
-            <option value="live" selected={@filters.status == "live"}>Идёт</option>
-            <option value="ended" selected={@filters.status == "ended"}>Завершена</option>
+            <option value="">{gettext("Любой статус")}</option>
+            <option value="planned" selected={@filters.status == "planned"}>
+              {gettext("Запланирована")}
+            </option>
+            <option value="live" selected={@filters.status == "live"}>{gettext("Идёт")}</option>
+            <option value="ended" selected={@filters.status == "ended"}>
+              {gettext("Завершена")}
+            </option>
           </select>
         </form>
       </div>
@@ -337,15 +352,15 @@ defmodule SvcWeb.MeetingLive.Index do
       <div class="rounded-xl border border-base-300 bg-base-100/50 overflow-hidden">
         <div :if={@meetings == []} class="px-5 py-10 text-center text-sm text-base-content/40">
           <.icon name="hero-video-camera-slash" class="size-8 mx-auto mb-2 opacity-40" />
-          Ничего не найдено
+          {gettext("Ничего не найдено")}
         </div>
         <table :if={@meetings != []} class="w-full text-sm">
           <thead>
             <tr class="text-left text-xs uppercase tracking-wider text-base-content/40 border-b border-base-300">
-              <th class="font-medium px-5 py-2.5">Название</th>
-              <th class="font-medium px-5 py-2.5">Тип</th>
-              <th class="font-medium px-5 py-2.5">Статус</th>
-              <th class="font-medium px-5 py-2.5">Запись</th>
+              <th class="font-medium px-5 py-2.5">{gettext("Название")}</th>
+              <th class="font-medium px-5 py-2.5">{gettext("Тип")}</th>
+              <th class="font-medium px-5 py-2.5">{gettext("Статус")}</th>
+              <th class="font-medium px-5 py-2.5">{gettext("Запись")}</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-base-300/50">
@@ -360,7 +375,7 @@ defmodule SvcWeb.MeetingLive.Index do
                 </.link>
               </td>
               <td class="px-5 py-3 text-base-content/60">
-                {if m.type == :ad_hoc, do: "Ad-hoc", else: "План"}
+                {if m.type == :ad_hoc, do: "Ad-hoc", else: gettext("План")}
               </td>
               <td class="px-5 py-3">
                 <span class={"inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium #{status_class(m.status)}"}>
@@ -385,7 +400,13 @@ defmodule SvcWeb.MeetingLive.Index do
         :if={@live_action == :index and @pages > 1}
         class="flex items-center justify-between mt-4 text-sm"
       >
-        <span class="text-base-content/55 tabular">{@total} встреч · стр. {@page} из {@pages}</span>
+        <span class="text-base-content/55 tabular">
+          {gettext("%{total} встреч · стр. %{page} из %{pages}",
+            total: @total,
+            page: @page,
+            pages: @pages
+          )}
+        </span>
         <div class="flex items-center gap-1">
           <.link
             patch={page_path(@filters, @page - 1)}

@@ -30,10 +30,10 @@ defmodule SvcWeb.CallController do
       {:error, reason} ->
         conn
         |> put_status(:service_unavailable)
-        |> text("LiveKit недоступен: #{inspect(reason)}")
+        |> text(gettext("LiveKit недоступен: %{reason}", reason: inspect(reason)))
     end
   rescue
     Ecto.NoResultsError ->
-      conn |> put_status(:not_found) |> text("Встреча не найдена")
+      conn |> put_status(:not_found) |> text(gettext("Встреча не найдена"))
   end
 end

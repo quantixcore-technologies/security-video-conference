@@ -55,7 +55,7 @@
 - **UI:** переключатель языка (`locale_switcher` в шапке) · динамический `<html lang={@locale}>` · навигация (сайдбар + мобильное меню), шапка, роли, флеш «Требуется вход» обёрнуты `gettext()`.
 - **Переводы:** `priv/gettext/{uz,ru,en}/LC_MESSAGES/default.po` — 22 строки навигации/auth (uz полностью, en полностью, ru = источник).
 - `mix precommit` зелёный: format · credo 0 · sobelow 0 High/Med · **202 теста, 0 failures** (+9 i18n-тестов `SvcWeb.LocaleTest`, без БД).
-- ⬜ Остаток: обернуть контент страниц (meetings/tasks/users/security/profile — ~210 строк). Инфра готова — механическая работа.
+- ✅ **Полное покрытие закрыто (S33, 2026-09-01):** весь UI-контент (13 LiveView/шаблонов + 3 контроллера — flash/ошибки логина/2FA) обёрнут в `gettext()`. default-домен **334 msgid** (uz+en 0 пустых, ru=источник-fallback), errors-домен **24 msgid** (uz/ru переведены, en=источник). Runtime-проверка uz/ru/en — OK. Компиляция `--warnings-as-errors` чистая, **224 теста 0 failures**.
 
 ## 🛡 Сессия 2026-09-01 — E5-C пер-встречная анти-захват политика (S30) ✅
 - **Схема:** +`watermark_enabled` (bool, default true) +`capture_reaction` (enum none/warn/eject, default none) на `meetings` (миграция `20260901120000`); оба поля в create/update-changeset.

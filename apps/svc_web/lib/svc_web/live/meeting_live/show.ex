@@ -35,7 +35,7 @@ defmodule SvcWeb.MeetingLive.Show do
     Ecto.NoResultsError ->
       {:noreply,
        socket
-       |> put_flash(:error, "Встреча не найдена.")
+       |> put_flash(:error, gettext("Встреча не найдена."))
        |> push_navigate(to: ~p"/admin/meetings")}
   end
 
@@ -54,7 +54,7 @@ defmodule SvcWeb.MeetingLive.Show do
       )
     else
       socket
-      |> put_flash(:error, "Недостаточно прав для постановки поручений.")
+      |> put_flash(:error, gettext("Недостаточно прав для постановки поручений."))
       |> push_navigate(to: ~p"/admin/meetings/#{meeting.id}")
     end
   end
@@ -71,7 +71,7 @@ defmodule SvcWeb.MeetingLive.Show do
 
         {:noreply,
          socket
-         |> put_flash(:info, "Встреча обновлена.")
+         |> put_flash(:info, gettext("Встреча обновлена."))
          |> push_navigate(to: ~p"/admin/meetings/#{updated.id}")}
 
       {:error, changeset} ->
@@ -83,7 +83,9 @@ defmodule SvcWeb.MeetingLive.Show do
     actor = socket.assigns.current_user
     {:ok, updated} = Meetings.end_meeting(socket.assigns.meeting)
     Audit.log_action(actor, :meeting_end, resource_type: :meeting, resource_id: updated.id)
-    {:noreply, socket |> assign(:meeting, updated) |> put_flash(:info, "Встреча завершена.")}
+
+    {:noreply,
+     socket |> assign(:meeting, updated) |> put_flash(:info, gettext("Встреча завершена."))}
   end
 
   def handle_event("rsvp", %{"status" => status}, socket) do
@@ -103,12 +105,12 @@ defmodule SvcWeb.MeetingLive.Show do
 
         {:noreply,
          socket
-         |> put_flash(:info, "Ваш ответ записан.")
+         |> put_flash(:info, gettext("Ваш ответ записан."))
          |> assign(:my_invitee, Attendance.get_invitee(meeting.id, actor.id))
          |> assign(:roster, Attendance.list_invitees_with_users(meeting.id))}
 
       {:error, :not_invited} ->
-        {:noreply, put_flash(socket, :error, "Вы не в списке приглашённых.")}
+        {:noreply, put_flash(socket, :error, gettext("Вы не в списке приглашённых."))}
     end
   end
 
@@ -125,12 +127,15 @@ defmodule SvcWeb.MeetingLive.Show do
       {:ok, task} ->
         {:noreply,
          socket
-         |> put_flash(:info, "Поручение «#{task.title}» создано по итогам встречи.")
+         |> put_flash(
+           :info,
+           gettext("Поручение «%{title}» создано по итогам встречи.", title: task.title)
+         )
          |> push_navigate(to: ~p"/admin/tasks")}
 
       {:error, %Ecto.Changeset{}} ->
         {:noreply,
-         put_flash(socket, :error, "Не удалось создать поручение — проверьте название.")}
+         put_flash(socket, :error, gettext("Не удалось создать поручение — проверьте название."))}
     end
   end
 
@@ -145,7 +150,7 @@ defmodule SvcWeb.MeetingLive.Show do
         organizer,
         :update,
         "#{actor.full_name}: #{rsvp_label(status)}",
-        body: "Встреча: #{meeting.title}",
+        body: gettext("Встреча: %{title}", title: meeting.title),
         meeting_id: meeting.id
       )
     end
@@ -154,10 +159,18 @@ defmodule SvcWeb.MeetingLive.Show do
   end
 
   defp policy_options,
-    do: [{"Нет", :off}, {"Опционально", :optional}, {"Обязательно", :required}]
+    do: [
+      {gettext("Нет"), :off},
+      {gettext("Опционально"), :optional},
+      {gettext("Обязательно"), :required}
+    ]
 
   defp reaction_options,
-    do: [{"Ничего", :none}, {"Предупредить", :warn}, {"Выгнать", :eject}]
+    do: [
+      {gettext("Ничего"), :none},
+      {gettext("Предупредить"), :warn},
+      {gettext("Выгнать"), :eject}
+    ]
 
   @impl true
   def render(assigns) do
@@ -172,7 +185,7 @@ defmodule SvcWeb.MeetingLive.Show do
         navigate={~p"/admin/meetings"}
         class="inline-flex items-center gap-1.5 text-sm text-base-content/55 hover:text-base-content transition mb-5"
       >
-        <.icon name="hero-arrow-left" class="size-4" /> Все встречи
+        <.icon name="hero-arrow-left" class="size-4" /> {gettext("Все встречи")}
       </.link>
 
       <div class="flex items-start justify-between gap-4 flex-wrap">
@@ -199,7 +212,9 @@ defmodule SvcWeb.MeetingLive.Show do
                     else: "hero-video-camera"
                 }
                 class="size-4"
-              /> запись: {if @meeting.recording_policy == :off, do: "нет", else: "да"}
+              /> {gettext("запись:")} {if @meeting.recording_policy == :off,
+                do: gettext("нет"),
+                else: gettext("да")}
             </span>
           </div>
         </div>
@@ -207,7 +222,7 @@ defmodule SvcWeb.MeetingLive.Show do
           <.link
             href={~p"/admin/meetings/#{@meeting.id}/ics"}
             class="btn btn-ghost btn-sm gap-1.5"
-            title="Экспорт в календарь (.ics)"
+            title={gettext("Экспорт в календарь (.ics)")}
           >
             <.icon name="hero-arrow-down-tray" class="size-4" /> .ics
           </.link>
@@ -215,27 +230,27 @@ defmodule SvcWeb.MeetingLive.Show do
             :if={@can_organize}
             navigate={~p"/admin/meetings/#{@meeting.id}/assign-task"}
             class="btn btn-ghost btn-sm gap-1.5"
-            title="Поставить поручение по итогам встречи"
+            title={gettext("Поставить поручение по итогам встречи")}
           >
-            <.icon name="hero-clipboard-document-list" class="size-4" /> Поручение
+            <.icon name="hero-clipboard-document-list" class="size-4" /> {gettext("Поручение")}
           </.link>
           <.link
             :if={@can_organize}
             navigate={~p"/admin/meetings/#{@meeting.id}/edit"}
             class="btn btn-ghost btn-sm gap-1.5"
           >
-            <.icon name="hero-pencil-square" class="size-4" /> Изменить
+            <.icon name="hero-pencil-square" class="size-4" /> {gettext("Изменить")}
           </.link>
           <button
             :if={@can_organize and @meeting.status != :ended}
             phx-click="end_meeting"
-            data-confirm="Завершить встречу? Будет рассчитана посещаемость."
+            data-confirm={gettext("Завершить встречу? Будет рассчитана посещаемость.")}
             class="btn btn-ghost btn-sm gap-1.5 text-error"
           >
-            <.icon name="hero-stop-circle" class="size-4" /> Завершить
+            <.icon name="hero-stop-circle" class="size-4" /> {gettext("Завершить")}
           </button>
           <.link href={~p"/admin/meetings/#{@meeting.id}/call"} class="btn btn-primary btn-sm gap-2">
-            <.icon name="hero-video-camera" class="size-4" /> Войти в звонок
+            <.icon name="hero-video-camera" class="size-4" /> {gettext("Войти в звонок")}
           </.link>
         </div>
       </div>
@@ -245,41 +260,47 @@ defmodule SvcWeb.MeetingLive.Show do
         class="rounded-xl border border-base-300 bg-base-100/50 p-5 mt-6"
       >
         <h3 class="font-medium mb-4 flex items-center gap-2">
-          <.icon name="hero-pencil-square" class="size-4 text-primary" /> Редактирование встречи
+          <.icon name="hero-pencil-square" class="size-4 text-primary" /> {gettext(
+            "Редактирование встречи"
+          )}
         </h3>
         <.form for={@form} phx-submit="save" class="space-y-3">
-          <.input field={@form[:title]} type="text" label="Название" required />
+          <.input field={@form[:title]} type="text" label={gettext("Название")} required />
           <div class="grid grid-cols-2 gap-3">
-            <.input field={@form[:scheduled_start]} type="datetime-local" label="Начало" />
-            <.input field={@form[:scheduled_end]} type="datetime-local" label="Конец" />
+            <.input field={@form[:scheduled_start]} type="datetime-local" label={gettext("Начало")} />
+            <.input field={@form[:scheduled_end]} type="datetime-local" label={gettext("Конец")} />
           </div>
           <.input
             field={@form[:recording_policy]}
             type="select"
-            label="Запись"
+            label={gettext("Запись")}
             options={policy_options()}
           />
           <div class="grid grid-cols-2 gap-3">
             <.input
               field={@form[:watermark_enabled]}
               type="checkbox"
-              label="Водяной знак (watermark)"
+              label={gettext("Водяной знак (watermark)")}
             />
             <.input
               field={@form[:capture_reaction]}
               type="select"
-              label="Реакция на захват"
+              label={gettext("Реакция на захват")}
               options={reaction_options()}
             />
           </div>
           <.input
             field={@form[:late_threshold_seconds]}
             type="number"
-            label="Порог опоздания (сек)"
+            label={gettext("Порог опоздания (сек)")}
           />
           <div class="flex gap-2 pt-2">
-            <.button type="submit" phx-disable-with="Сохраняем...">Сохранить</.button>
-            <.link navigate={~p"/admin/meetings/#{@meeting.id}"} class="btn btn-ghost">Отмена</.link>
+            <.button type="submit" phx-disable-with={gettext("Сохраняем...")}>
+              {gettext("Сохранить")}
+            </.button>
+            <.link navigate={~p"/admin/meetings/#{@meeting.id}"} class="btn btn-ghost">
+              {gettext("Отмена")}
+            </.link>
           </div>
         </.form>
       </div>
@@ -290,43 +311,47 @@ defmodule SvcWeb.MeetingLive.Show do
       >
         <h3 class="font-medium mb-1 flex items-center gap-2">
           <.icon name="hero-clipboard-document-list" class="size-4 text-primary" />
-          Поручение по итогам встречи
+          {gettext("Поручение по итогам встречи")}
         </h3>
         <p class="text-sm text-base-content/55 mb-4">
-          Будет привязано к «{@meeting.title}» и появится на Kanban-доске.
+          {gettext("Будет привязано к «%{title}» и появится на Kanban-доске.", title: @meeting.title)}
         </p>
         <.form for={@form} phx-submit="create_task" class="space-y-3">
-          <.input field={@form[:title]} type="text" label="Что нужно сделать" required />
+          <.input field={@form[:title]} type="text" label={gettext("Что нужно сделать")} required />
           <.input
             field={@form[:description]}
             type="textarea"
-            label="Описание (необязательно)"
+            label={gettext("Описание (необязательно)")}
             rows="2"
           />
           <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <.input
               field={@form[:assignee_id]}
               type="select"
-              label="Исполнитель"
-              prompt="Не назначено"
+              label={gettext("Исполнитель")}
+              prompt={gettext("Не назначено")}
               options={Enum.map(@assignees, &{&1.full_name, &1.id})}
             />
             <.input
               field={@form[:priority]}
               type="select"
-              label="Приоритет"
+              label={gettext("Приоритет")}
               options={[
-                {"Низкий", "low"},
-                {"Обычный", "normal"},
-                {"Высокий", "high"},
-                {"Срочный", "urgent"}
+                {gettext("Низкий"), "low"},
+                {gettext("Обычный"), "normal"},
+                {gettext("Высокий"), "high"},
+                {gettext("Срочный"), "urgent"}
               ]}
             />
-            <.input field={@form[:due_at]} type="datetime-local" label="Срок" />
+            <.input field={@form[:due_at]} type="datetime-local" label={gettext("Срок")} />
           </div>
           <div class="flex gap-2 pt-2">
-            <.button type="submit" phx-disable-with="Создаём...">Создать поручение</.button>
-            <.link navigate={~p"/admin/meetings/#{@meeting.id}"} class="btn btn-ghost">Отмена</.link>
+            <.button type="submit" phx-disable-with={gettext("Создаём...")}>
+              {gettext("Создать поручение")}
+            </.button>
+            <.link navigate={~p"/admin/meetings/#{@meeting.id}"} class="btn btn-ghost">
+              {gettext("Отмена")}
+            </.link>
           </div>
         </.form>
       </div>
@@ -337,7 +362,7 @@ defmodule SvcWeb.MeetingLive.Show do
       >
         <div class="flex items-center gap-2 text-sm">
           <.icon name="hero-envelope" class="size-4 text-base-content/50" />
-          Вы приглашены · ваш ответ:
+          {gettext("Вы приглашены · ваш ответ:")}
           <span class={"px-2 py-0.5 rounded-full text-xs font-medium #{rsvp_class(@my_invitee.rsvp_status)}"}>
             {rsvp_label(@my_invitee.rsvp_status)}
           </span>
@@ -352,7 +377,7 @@ defmodule SvcWeb.MeetingLive.Show do
               @my_invitee.rsvp_status != :accepted && "btn-ghost"
             ]}
           >
-            <.icon name="hero-check" class="size-4" /> Приду
+            <.icon name="hero-check" class="size-4" /> {gettext("Приду")}
           </button>
           <button
             phx-click="rsvp"
@@ -363,7 +388,7 @@ defmodule SvcWeb.MeetingLive.Show do
               @my_invitee.rsvp_status != :tentative && "btn-ghost"
             ]}
           >
-            <.icon name="hero-question-mark-circle" class="size-4" /> Возможно
+            <.icon name="hero-question-mark-circle" class="size-4" /> {gettext("Возможно")}
           </button>
           <button
             phx-click="rsvp"
@@ -374,16 +399,16 @@ defmodule SvcWeb.MeetingLive.Show do
               @my_invitee.rsvp_status != :declined && "btn-ghost"
             ]}
           >
-            <.icon name="hero-x-mark" class="size-4" /> Не приду
+            <.icon name="hero-x-mark" class="size-4" /> {gettext("Не приду")}
           </button>
         </div>
       </div>
 
       <div :if={@live_action == :show} class="flex flex-wrap gap-2 mt-6">
-        <.stat label="Присутствовали" value={@summary[:present] || 0} tone="success" />
-        <.stat label="Опоздали" value={@summary[:late] || 0} tone="warning" />
-        <.stat label="Ушли раньше" value={@summary[:left_early] || 0} tone="info" />
-        <.stat label="Отсутствовали" value={@summary[:absent] || 0} tone="error" />
+        <.stat label={gettext("Присутствовали")} value={@summary[:present] || 0} tone="success" />
+        <.stat label={gettext("Опоздали")} value={@summary[:late] || 0} tone="warning" />
+        <.stat label={gettext("Ушли раньше")} value={@summary[:left_early] || 0} tone="info" />
+        <.stat label={gettext("Отсутствовали")} value={@summary[:absent] || 0} tone="error" />
       </div>
 
       <div
@@ -392,21 +417,23 @@ defmodule SvcWeb.MeetingLive.Show do
       >
         <div class="px-5 py-3 border-b border-base-300 flex items-center gap-2">
           <.icon name="hero-clipboard-document-check" class="size-4 text-base-content/45" />
-          <span class="text-sm font-medium">Журнал посещаемости</span>
+          <span class="text-sm font-medium">{gettext("Журнал посещаемости")}</span>
         </div>
 
         <div :if={@records == []} class="px-5 py-10 text-center text-sm text-base-content/40">
-          <.icon name="hero-inbox" class="size-8 mx-auto mb-2 opacity-40" /> Записей пока нет
+          <.icon name="hero-inbox" class="size-8 mx-auto mb-2 opacity-40" /> {gettext(
+            "Записей пока нет"
+          )}
         </div>
 
         <table :if={@records != []} class="w-full text-sm">
           <thead>
             <tr class="text-left text-xs uppercase tracking-wider text-base-content/40 border-b border-base-300">
-              <th class="font-medium px-5 py-2.5">Сотрудник</th>
-              <th class="font-medium px-5 py-2.5">Статус</th>
-              <th class="font-medium px-5 py-2.5 tabular">Вход</th>
-              <th class="font-medium px-5 py-2.5 tabular">Выход</th>
-              <th class="font-medium px-5 py-2.5">Длит.</th>
+              <th class="font-medium px-5 py-2.5">{gettext("Сотрудник")}</th>
+              <th class="font-medium px-5 py-2.5">{gettext("Статус")}</th>
+              <th class="font-medium px-5 py-2.5 tabular">{gettext("Вход")}</th>
+              <th class="font-medium px-5 py-2.5 tabular">{gettext("Выход")}</th>
+              <th class="font-medium px-5 py-2.5">{gettext("Длит.")}</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-base-300/50">
@@ -427,7 +454,7 @@ defmodule SvcWeb.MeetingLive.Show do
       >
         <div class="px-5 py-3 border-b border-base-300 flex items-center gap-2">
           <.icon name="hero-user-group" class="size-4 text-base-content/45" />
-          <span class="text-sm font-medium">Приглашённые · ответы (RSVP)</span>
+          <span class="text-sm font-medium">{gettext("Приглашённые · ответы (RSVP)")}</span>
         </div>
         <ul class="divide-y divide-base-300/50 text-sm">
           <li
@@ -480,10 +507,10 @@ defmodule SvcWeb.MeetingLive.Show do
   defp st_class(:left_early), do: "bg-info/10 text-info"
   defp st_class(:absent), do: "bg-error/10 text-error"
 
-  defp st_label(:present), do: "Присутствовал"
-  defp st_label(:late), do: "Опоздал"
-  defp st_label(:left_early), do: "Ушёл раньше"
-  defp st_label(:absent), do: "Отсутствовал"
+  defp st_label(:present), do: gettext("Присутствовал")
+  defp st_label(:late), do: gettext("Опоздал")
+  defp st_label(:left_early), do: gettext("Ушёл раньше")
+  defp st_label(:absent), do: gettext("Отсутствовал")
 
   defp tone_border("success"), do: "border-success/25"
   defp tone_border("warning"), do: "border-warning/25"
@@ -499,11 +526,11 @@ defmodule SvcWeb.MeetingLive.Show do
   defp fmt(dt), do: Calendar.strftime(dt, "%d.%m %H:%M")
 
   defp dur(0), do: "—"
-  defp dur(s), do: "#{div(s, 60)} мин"
+  defp dur(s), do: gettext("%{count} мин", count: div(s, 60))
 
-  defp mst_label(:planned), do: "Запланирована"
-  defp mst_label(:live), do: "Идёт"
-  defp mst_label(:ended), do: "Завершена"
+  defp mst_label(:planned), do: gettext("Запланирована")
+  defp mst_label(:live), do: gettext("Идёт")
+  defp mst_label(:ended), do: gettext("Завершена")
 
   defp mst_class(:planned), do: "bg-base-200 text-base-content/70"
   defp mst_class(:live), do: "bg-success/10 text-success"
@@ -513,10 +540,10 @@ defmodule SvcWeb.MeetingLive.Show do
   defp mst_dot(:live), do: "bg-success animate-pulse"
   defp mst_dot(:ended), do: "bg-base-content/30"
 
-  defp rsvp_label(:accepted), do: "Приду"
-  defp rsvp_label(:declined), do: "Не приду"
-  defp rsvp_label(:tentative), do: "Возможно"
-  defp rsvp_label(:pending), do: "Без ответа"
+  defp rsvp_label(:accepted), do: gettext("Приду")
+  defp rsvp_label(:declined), do: gettext("Не приду")
+  defp rsvp_label(:tentative), do: gettext("Возможно")
+  defp rsvp_label(:pending), do: gettext("Без ответа")
 
   defp rsvp_class(:accepted), do: "bg-success/10 text-success"
   defp rsvp_class(:declined), do: "bg-error/10 text-error"

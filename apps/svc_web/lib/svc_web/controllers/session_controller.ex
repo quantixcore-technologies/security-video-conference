@@ -34,7 +34,7 @@ defmodule SvcWeb.SessionController do
         render(conn, :new, error_message: error_text(reason))
 
       nil ->
-        render(conn, :new, error_message: "Система не инициализирована.")
+        render(conn, :new, error_message: gettext("Система не инициализирована."))
     end
   end
 
@@ -58,19 +58,21 @@ defmodule SvcWeb.SessionController do
       |> delete_session(:pending_org_id)
       |> UserAuth.log_in_user(user)
     else
-      _ -> render(conn, :totp, error_message: "Неверный код 2FA.")
+      _ -> render(conn, :totp, error_message: gettext("Неверный код 2FA."))
     end
   end
 
   def delete(conn, _params) do
     conn
-    |> put_flash(:info, "Вы вышли из системы.")
+    |> put_flash(:info, gettext("Вы вышли из системы."))
     |> UserAuth.log_out_user()
   end
 
   defp remote_ip(conn), do: conn.remote_ip |> :inet.ntoa() |> to_string()
 
-  defp error_text(:locked), do: "Аккаунт временно заблокирован (превышены попытки входа)."
-  defp error_text(:disabled), do: "Аккаунт отключён."
-  defp error_text(_), do: "Неверный логин или пароль."
+  defp error_text(:locked),
+    do: gettext("Аккаунт временно заблокирован (превышены попытки входа).")
+
+  defp error_text(:disabled), do: gettext("Аккаунт отключён.")
+  defp error_text(_), do: gettext("Неверный логин или пароль.")
 end

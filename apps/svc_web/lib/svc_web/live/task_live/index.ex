@@ -27,7 +27,7 @@ defmodule SvcWeb.TaskLive.Index do
 
   defp apply_action(socket, :index) do
     socket
-    |> assign(:page_title, "Поручения")
+    |> assign(:page_title, gettext("Поручения"))
     |> assign(:form, nil)
     |> load_board()
   end
@@ -37,7 +37,7 @@ defmodule SvcWeb.TaskLive.Index do
 
     if Tasks.can_manage?(actor) do
       socket
-      |> assign(:page_title, "Новое поручение")
+      |> assign(:page_title, gettext("Новое поручение"))
       |> assign(:assignees, Accounts.list_users(actor.org_id))
       |> assign(
         :form,
@@ -46,7 +46,7 @@ defmodule SvcWeb.TaskLive.Index do
       |> load_board()
     else
       socket
-      |> put_flash(:error, "Недостаточно прав для создания поручений.")
+      |> put_flash(:error, gettext("Недостаточно прав для создания поручений."))
       |> push_navigate(to: ~p"/admin/tasks")
     end
   end
@@ -60,14 +60,14 @@ defmodule SvcWeb.TaskLive.Index do
         {:ok, task} ->
           {:noreply,
            socket
-           |> put_flash(:info, "Поручение «#{task.title}» создано.")
+           |> put_flash(:info, gettext("Поручение «%{title}» создано.", title: task.title))
            |> push_navigate(to: ~p"/admin/tasks")}
 
         {:error, %Ecto.Changeset{} = cs} ->
           {:noreply, assign(socket, :form, to_form(Map.put(cs, :action, :insert), as: :task))}
       end
     else
-      {:noreply, put_flash(socket, :error, "Недостаточно прав.")}
+      {:noreply, put_flash(socket, :error, gettext("Недостаточно прав."))}
     end
   end
 
@@ -127,11 +127,11 @@ defmodule SvcWeb.TaskLive.Index do
     >
       <div class="flex items-start justify-between gap-4 mb-6">
         <div>
-          <h1 class="text-2xl font-semibold tracking-tight">Поручения</h1>
+          <h1 class="text-2xl font-semibold tracking-tight">{gettext("Поручения")}</h1>
           <p class="text-sm text-base-content/55 mt-1">
             {if @can_manage,
-              do: "Доска задач отдела — перетаскивайте карточки между колонками",
-              else: "Мои задачи"}
+              do: gettext("Доска задач отдела — перетаскивайте карточки между колонками"),
+              else: gettext("Мои задачи")}
           </p>
         </div>
         <.link
@@ -139,7 +139,7 @@ defmodule SvcWeb.TaskLive.Index do
           navigate={~p"/admin/tasks/new"}
           class="btn btn-primary gap-2"
         >
-          <.icon name="hero-plus" class="size-4" /> Поручение
+          <.icon name="hero-plus" class="size-4" /> {gettext("Поручение")}
         </.link>
       </div>
 
@@ -148,50 +148,54 @@ defmodule SvcWeb.TaskLive.Index do
         class="rounded-xl border border-base-300 bg-base-100/50 p-5 mb-5"
       >
         <h3 class="font-medium mb-4 flex items-center gap-2">
-          <.icon name="hero-clipboard-document-list" class="size-4 text-primary" /> Новое поручение
+          <.icon name="hero-clipboard-document-list" class="size-4 text-primary" /> {gettext(
+            "Новое поручение"
+          )}
         </h3>
         <.form for={@form} phx-submit="save" class="space-y-3">
-          <.input field={@form[:title]} type="text" label="Что нужно сделать" required />
+          <.input field={@form[:title]} type="text" label={gettext("Что нужно сделать")} required />
           <.input
             field={@form[:description]}
             type="textarea"
-            label="Описание (необязательно)"
+            label={gettext("Описание (необязательно)")}
             rows="2"
           />
           <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <.input
               field={@form[:assignee_id]}
               type="select"
-              label="Исполнитель"
-              prompt="Не назначено"
+              label={gettext("Исполнитель")}
+              prompt={gettext("Не назначено")}
               options={Enum.map(@assignees, &{&1.full_name, &1.id})}
             />
             <.input
               field={@form[:priority]}
               type="select"
-              label="Приоритет"
+              label={gettext("Приоритет")}
               options={priority_options()}
             />
-            <.input field={@form[:due_at]} type="datetime-local" label="Срок" />
+            <.input field={@form[:due_at]} type="datetime-local" label={gettext("Срок")} />
           </div>
           <div class="flex gap-2 pt-2">
-            <.button type="submit" phx-disable-with="Создаём...">Создать поручение</.button>
-            <.link navigate={~p"/admin/tasks"} class="btn btn-ghost">Отмена</.link>
+            <.button type="submit" phx-disable-with={gettext("Создаём...")}>
+              {gettext("Создать поручение")}
+            </.button>
+            <.link navigate={~p"/admin/tasks"} class="btn btn-ghost">{gettext("Отмена")}</.link>
           </div>
         </.form>
       </div>
 
       <div :if={@can_manage and @stats} class="flex flex-wrap items-center gap-2 mb-5 text-sm">
         <span class="inline-flex items-center gap-1.5 rounded-lg border border-base-300 px-3 py-1.5">
-          <span class="text-base-content/55">Всего</span>
+          <span class="text-base-content/55">{gettext("Всего")}</span>
           <span class="tabular font-semibold">{@stats.total}</span>
         </span>
         <span class="inline-flex items-center gap-1.5 rounded-lg border border-info/25 px-3 py-1.5">
-          <span class="text-base-content/55">В работе</span>
+          <span class="text-base-content/55">{gettext("В работе")}</span>
           <span class="tabular font-semibold text-info">{@stats.in_progress}</span>
         </span>
         <span class="inline-flex items-center gap-1.5 rounded-lg border border-success/25 px-3 py-1.5">
-          <span class="text-base-content/55">Выполнено</span>
+          <span class="text-base-content/55">{gettext("Выполнено")}</span>
           <span class="tabular font-semibold text-success">{@stats.done}</span>
         </span>
         <span
@@ -199,7 +203,7 @@ defmodule SvcWeb.TaskLive.Index do
           class="inline-flex items-center gap-1.5 rounded-lg border border-error/25 bg-error/5 px-3 py-1.5"
         >
           <.icon name="hero-exclamation-triangle" class="size-3.5 text-error" />
-          <span class="text-base-content/55">Просрочено</span>
+          <span class="text-base-content/55">{gettext("Просрочено")}</span>
           <span class="tabular font-semibold text-error">{@stats.overdue}</span>
         </span>
       </div>
@@ -210,14 +214,14 @@ defmodule SvcWeb.TaskLive.Index do
         class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 items-start"
       >
         <div
-          :for={{status, title} <- @columns}
+          :for={{status, _title} <- @columns}
           data-status={status}
           class="rounded-xl border border-base-300 bg-base-200/30 flex flex-col min-h-40 transition"
         >
           <div class="flex items-center justify-between px-4 py-3 border-b border-base-300">
             <span class="flex items-center gap-2 text-sm font-medium">
               <span class={"size-2 rounded-full #{column_dot(status)}"}></span>
-              {title}
+              {col_label(status)}
             </span>
             <span class="text-xs text-base-content/40 tabular">
               {length(tasks_for(@board, status))}
@@ -253,7 +257,7 @@ defmodule SvcWeb.TaskLive.Index do
                 :if={t.meeting}
                 navigate={~p"/admin/meetings/#{t.meeting_id}"}
                 class="mt-2 inline-flex items-center gap-1 text-[11px] text-base-content/45 hover:text-primary transition"
-                title="Поручение по итогам встречи"
+                title={gettext("Поручение по итогам встречи")}
               >
                 <.icon name="hero-video-camera" class="size-3" /> {t.meeting.title}
               </.link>
@@ -266,7 +270,7 @@ defmodule SvcWeb.TaskLive.Index do
                   <span class="truncate max-w-24">{t.assignee.full_name}</span>
                 </span>
                 <span :if={is_nil(t.assignee)} class="text-xs text-base-content/30">
-                  Не назначено
+                  {gettext("Не назначено")}
                 </span>
 
                 <span
@@ -283,7 +287,7 @@ defmodule SvcWeb.TaskLive.Index do
               :if={tasks_for(@board, status) == []}
               class="grid place-items-center py-6 text-xs text-base-content/25"
             >
-              Пусто
+              {gettext("Пусто")}
             </div>
           </div>
         </div>
@@ -295,15 +299,15 @@ defmodule SvcWeb.TaskLive.Index do
       >
         <div class="px-5 py-3 border-b border-base-300 flex items-center gap-2">
           <.icon name="hero-chart-bar" class="size-4 text-base-content/45" />
-          <span class="text-sm font-medium">Отчёт по исполнителям</span>
+          <span class="text-sm font-medium">{gettext("Отчёт по исполнителям")}</span>
         </div>
         <table class="w-full text-sm">
           <thead>
             <tr class="text-left text-xs uppercase tracking-wider text-base-content/40 border-b border-base-300">
-              <th class="font-medium px-5 py-2.5">Исполнитель</th>
-              <th class="font-medium px-5 py-2.5 text-center">Открыто</th>
-              <th class="font-medium px-5 py-2.5 text-center">Выполнено</th>
-              <th class="font-medium px-5 py-2.5 text-center">Просрочено</th>
+              <th class="font-medium px-5 py-2.5">{gettext("Исполнитель")}</th>
+              <th class="font-medium px-5 py-2.5 text-center">{gettext("Открыто")}</th>
+              <th class="font-medium px-5 py-2.5 text-center">{gettext("Выполнено")}</th>
+              <th class="font-medium px-5 py-2.5 text-center">{gettext("Просрочено")}</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-base-300/50">
@@ -331,17 +335,27 @@ defmodule SvcWeb.TaskLive.Index do
   end
 
   defp priority_options,
-    do: [{"Низкий", "low"}, {"Обычный", "normal"}, {"Высокий", "high"}, {"Срочный", "urgent"}]
+    do: [
+      {gettext("Низкий"), "low"},
+      {gettext("Обычный"), "normal"},
+      {gettext("Высокий"), "high"},
+      {gettext("Срочный"), "urgent"}
+    ]
 
-  defp priority_label(:low), do: "Низкий"
-  defp priority_label(:normal), do: "Обычный"
-  defp priority_label(:high), do: "Высокий"
-  defp priority_label(:urgent), do: "Срочный"
+  defp priority_label(:low), do: gettext("Низкий")
+  defp priority_label(:normal), do: gettext("Обычный")
+  defp priority_label(:high), do: gettext("Высокий")
+  defp priority_label(:urgent), do: gettext("Срочный")
 
   defp priority_class(:urgent), do: "bg-error/10 text-error"
   defp priority_class(:high), do: "bg-warning/15 text-warning"
   defp priority_class(:normal), do: "bg-base-200 text-base-content/55"
   defp priority_class(:low), do: "bg-base-200 text-base-content/40"
+
+  defp col_label(:todo), do: gettext("Новые")
+  defp col_label(:in_progress), do: gettext("В работе")
+  defp col_label(:review), do: gettext("Проверка")
+  defp col_label(:done), do: gettext("Выполнено")
 
   defp column_dot(:todo), do: "bg-base-content/30"
   defp column_dot(:in_progress), do: "bg-info"

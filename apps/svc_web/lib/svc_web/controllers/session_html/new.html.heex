@@ -5,7 +5,7 @@
         <.icon name="hero-shield-check" class="size-7" />
       </div>
       <h1 class="text-xl font-semibold tracking-tight text-center">Security Video Conference</h1>
-      <p class="text-sm text-base-content/50 mt-1">Защищённый вход в систему</p>
+      <p class="text-sm text-base-content/50 mt-1">{gettext("Защищённый вход в систему")}</p>
     </div>
 
     <div class="rounded-2xl border border-base-300 bg-base-100/60 p-6">
@@ -19,7 +19,7 @@
 
       <.form for={to_form(%{}, as: :user)} action={~p"/login"} class="space-y-4">
         <label class="block">
-          <span class="text-xs font-medium text-base-content/60 mb-1.5 block">Логин</span>
+          <span class="text-xs font-medium text-base-content/60 mb-1.5 block">{gettext("Логин")}</span>
           <input
             type="text"
             name="user[username]"
@@ -30,7 +30,7 @@
           />
         </label>
         <label class="block">
-          <span class="text-xs font-medium text-base-content/60 mb-1.5 block">Пароль</span>
+          <span class="text-xs font-medium text-base-content/60 mb-1.5 block">{gettext("Пароль")}</span>
           <input
             type="password"
             name="user[password]"
@@ -41,13 +41,13 @@
           />
         </label>
         <button type="submit" class="btn btn-primary w-full gap-2">
-          <.icon name="hero-arrow-right-end-on-rectangle" class="size-4" /> Войти
+          <.icon name="hero-arrow-right-end-on-rectangle" class="size-4" /> {gettext("Войти")}
         </button>
       </.form>
     </div>
 
     <p class="text-center text-xs text-base-content/35 mt-6 flex items-center justify-center gap-1.5">
-      <.icon name="hero-lock-closed" class="size-3" /> Соединение защищено · B2G
+      <.icon name="hero-lock-closed" class="size-3" /> {gettext("Соединение защищено · B2G")}
     </p>
   </div>
 </div>

@@ -19,7 +19,7 @@ defmodule SvcWeb.MeetingController do
   rescue
     Ecto.NoResultsError ->
       conn
-      |> put_flash(:error, "Встреча не найдена.")
+      |> put_flash(:error, gettext("Встреча не найдена."))
       |> redirect(to: ~p"/admin/meetings")
   end
 end

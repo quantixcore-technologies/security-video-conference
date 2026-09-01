@@ -1,0 +1,102 @@
+#  "msgid"s in this file come from POT (.pot) files.
+# #
+# # Do not add, change, or remove "msgid"s manually here as
+# # they're tied to the ones in the corresponding POT file
+# # (with the same domain).
+# #
+# # Use "mix gettext.extract --merge" or "mix gettext.merge"
+# # to merge POT files into PO files.
+msgid ""
+msgstr ""
+"Language: uz\n"
+"Plural-Forms: nplurals=2; plural=(n>1);\n"
+
+msgid "can't be blank"
+msgstr "Majburiy maydon"
+
+msgid "has already been taken"
+msgstr "Allaqachon band"
+
+msgid "is invalid"
+msgstr "Yaroqsiz"
+
+msgid "must be accepted"
+msgstr "Qabul qilinishi shart"
+
+msgid "has invalid format"
+msgstr "Format noto‘g‘ri"
+
+msgid "has an invalid entry"
+msgstr "Yaroqsiz qiymat"
+
+msgid "is reserved"
+msgstr "Band qilingan"
+
+msgid "does not match confirmation"
+msgstr "Tasdiq bilan mos kelmadi"
+
+msgid "is still associated with this entry"
+msgstr "Bu yozuv bilan bog‘liq"
+
+msgid "are still associated with this entry"
+msgstr "Bu yozuv bilan bog‘liq"
+
+msgid "should have %{count} item(s)"
+msgid_plural "should have %{count} item(s)"
+msgstr[0] "%{count} ta element bo‘lishi kerak"
+msgstr[1] "%{count} ta element bo‘lishi kerak"
+
+msgid "should be %{count} character(s)"
+msgid_plural "should be %{count} character(s)"
+msgstr[0] "%{count} ta belgi bo‘lishi kerak"
+msgstr[1] "%{count} ta belgi bo‘lishi kerak"
+
+msgid "should be %{count} byte(s)"
+msgid_plural "should be %{count} byte(s)"
+msgstr[0] "%{count} bayt bo‘lishi kerak"
+msgstr[1] "%{count} bayt bo‘lishi kerak"
+
+msgid "should have at least %{count} item(s)"
+msgid_plural "should have at least %{count} item(s)"
+msgstr[0] "kamida %{count} ta element bo‘lishi kerak"
+msgstr[1] "kamida %{count} ta element bo‘lishi kerak"
+
+msgid "should be at least %{count} character(s)"
+msgid_plural "should be at least %{count} character(s)"
+msgstr[0] "kamida %{count} ta belgi bo‘lishi kerak"
+msgstr[1] "kamida %{count} ta belgi bo‘lishi kerak"
+
+msgid "should be at least %{count} byte(s)"
+msgid_plural "should be at least %{count} byte(s)"
+msgstr[0] "kamida %{count} bayt bo‘lishi kerak"
+msgstr[1] "kamida %{count} bayt bo‘lishi kerak"
+
+msgid "should have at most %{count} item(s)"
+msgid_plural "should have at most %{count} item(s)"
+msgstr[0] "ko‘pi bilan %{count} ta element bo‘lishi kerak"
+msgstr[1] "ko‘pi bilan %{count} ta element bo‘lishi kerak"
+
+msgid "should be at most %{count} character(s)"
+msgid_plural "should be at most %{count} character(s)"
+msgstr[0] "ko‘pi bilan %{count} ta belgi bo‘lishi kerak"
+msgstr[1] "ko‘pi bilan %{count} ta belgi bo‘lishi kerak"
+
+msgid "should be at most %{count} byte(s)"
+msgid_plural "should be at most %{count} byte(s)"
+msgstr[0] "ko‘pi bilan %{count} bayt bo‘lishi kerak"
+msgstr[1] "ko‘pi bilan %{count} bayt bo‘lishi kerak"
+
+msgid "must be less than %{number}"
+msgstr "%{number} dan kichik bo‘lishi kerak"
+
+msgid "must be greater than %{number}"
+msgstr "%{number} dan katta bo‘lishi kerak"
+
+msgid "must be less than or equal to %{number}"
+msgstr "%{number} dan kichik yoki teng bo‘lishi kerak"
+
+msgid "must be greater than or equal to %{number}"
+msgstr "%{number} dan katta yoki teng bo‘lishi kerak"
+
+msgid "must be equal to %{number}"
+msgstr "%{number} ga teng bo‘lishi kerak"
