@@ -65,9 +65,9 @@ class MainActivity : ComponentActivity() {
 
     @Composable
     private fun LoginScreen() {
-        var server by remember { mutableStateOf("http://10.0.2.2:4000") }
-        var username by remember { mutableStateOf("admin") }
-        var password by remember { mutableStateOf("AdminPass12345") }
+        var server by remember { mutableStateOf("https://admin.co1nlist.uz") }
+        var username by remember { mutableStateOf("") }
+        var password by remember { mutableStateOf("") }
         var meetingId by remember { mutableStateOf("1") }
         var busy by remember { mutableStateOf(false) }
         var error by remember { mutableStateOf<String?>(null) }
