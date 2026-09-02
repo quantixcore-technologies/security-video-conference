@@ -96,6 +96,48 @@ class SvcApi(private val baseUrl: String) {
         )
     }
 
+    data class MeetingItem(
+        val id: Long,
+        val title: String,
+        val status: String,
+        val type: String,
+        val scheduledStart: String?
+    )
+
+    /** Список встреч организации пользователя — экран после логина (без ввода ID). */
+    suspend fun meetings(token: String): List<MeetingItem> =
+        withContext(Dispatchers.IO) {
+            val req = Request.Builder()
+                .url("$baseUrl/api/meetings")
+                .addHeader("Authorization", "Bearer $token")
+                .get()
+                .build()
+
+            http.newCall(req).execute().use { resp ->
+                val text = resp.body?.string().orEmpty()
+                if (!resp.isSuccessful) {
+                    error("Uchrashuvlar ro'yxatini olib bo'lmadi (${resp.code})")
+                }
+                val arr = JSONObject(text).getJSONArray("meetings")
+                buildList {
+                    for (i in 0 until arr.length()) {
+                        val m = arr.getJSONObject(i)
+                        add(
+                            MeetingItem(
+                                id = m.getLong("id"),
+                                title = m.optString("title"),
+                                status = m.optString("status"),
+                                type = m.optString("type"),
+                                scheduledStart =
+                                    if (m.isNull("scheduled_start")) null
+                                    else m.getString("scheduled_start")
+                            )
+                        )
+                    }
+                }
+            }
+        }
+
     /** GPS-координаты клиента на момент join (E7). Все поля опциональны. */
     data class GeoPoint(val lat: Double, val lon: Double, val accuracy: Double?)
 

@@ -4,6 +4,24 @@ defmodule SvcWeb.API.MeetingController do
 
   alias Svc.{Meetings, LiveKit, Audit, Geo}
 
+  def index(conn, _params) do
+    user = conn.assigns.current_user
+
+    meetings =
+      for m <- Meetings.list_meetings(user.org_id) do
+        %{
+          id: m.id,
+          title: m.title,
+          status: m.status,
+          type: m.type,
+          scheduled_start: m.scheduled_start,
+          scheduled_end: m.scheduled_end
+        }
+      end
+
+    json(conn, %{meetings: meetings})
+  end
+
   def join(conn, %{"id" => id} = params) do
     user = conn.assigns.current_user
 

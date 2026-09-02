@@ -12,6 +12,8 @@
     <!-- Демонстрация экрана (screen-share, паритет с web): MediaProjection через foreground-сервис -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PROJECTION" />
+    <!-- OTA-обновление вне Play Store: установка скачанного APK через системный installer -->
+    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
 
     <uses-feature android:name="android.hardware.camera" android:required="false" />
 
@@ -39,6 +41,17 @@
             android:exported="false"
             android:configChanges="orientation|screenSize|keyboardHidden|smallestScreenSize"
             android:screenOrientation="fullSensor" />
+
+        <!-- OTA: выдача content:// URI на скачанный APK системному установщику -->
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="uz.svc.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
 
         <!-- Foreground-сервис захвата экрана предоставляет LiveKit SDK (screen-share) -->
         <service

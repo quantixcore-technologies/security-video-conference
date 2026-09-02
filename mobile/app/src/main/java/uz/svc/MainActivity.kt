@@ -12,15 +12,19 @@ import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Password
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Shield
 import androidx.compose.material.icons.filled.Videocam
 import androidx.compose.material.icons.filled.VisibilityOff
@@ -84,17 +88,83 @@ class MainActivity : ComponentActivity() {
         )
     }
 
+    private data class Auth(val api: SvcApi, val session: SvcApi.Session)
+
     @Composable
     private fun App() {
         var showLogin by rememberSaveable { mutableStateOf(false) }
-        if (showLogin) {
-            BackHandler { showLogin = false }
-            LoginScreen(onBack = { showLogin = false })
-        } else {
-            LandingScreen(onLoginClick = {
+        var auth by remember { mutableStateOf<Auth?>(null) }
+
+        when {
+            auth != null -> {
+                BackHandler { auth = null; showLogin = false }
+                MeetingsScreen(auth!!, onLogout = { auth = null; showLogin = false })
+            }
+            showLogin -> {
+                BackHandler { showLogin = false }
+                LoginScreen(onBack = { showLogin = false }, onSuccess = { auth = it })
+            }
+            else -> LandingScreen(onLoginClick = {
                 showLogin = true
                 locationPermission.launch(Manifest.permission.ACCESS_FINE_LOCATION)
             })
+        }
+        UpdateDialog()
+    }
+
+    // ── OTA: serverdagi version.json bilan solishtirib, yangi APK'ni taklif qiladi ──
+
+    @Composable
+    private fun UpdateDialog() {
+        val updater = remember { UpdateManager(applicationContext) }
+        var update by remember { mutableStateOf<UpdateManager.UpdateInfo?>(null) }
+        var downloading by remember { mutableStateOf(false) }
+        var progress by remember { mutableStateOf(0) }
+        var failed by remember { mutableStateOf(false) }
+
+        LaunchedEffect(Unit) { update = updater.checkForUpdate() }
+
+        update?.let { info ->
+            AlertDialog(
+                onDismissRequest = { if (!downloading) update = null },
+                containerColor = Panel,
+                title = { Text("Yangi versiya: v${info.versionName}", color = Color.White) },
+                text = {
+                    when {
+                        downloading -> Column {
+                            Text("Yuklab olinmoqda… $progress%", color = Muted)
+                            Spacer(Modifier.height(10.dp))
+                            LinearProgressIndicator(
+                                progress = { progress / 100f },
+                                color = Accent,
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                        }
+                        failed -> Text("Yuklab olishda xatolik. Qayta urinib ko'ring.", color = MaterialTheme.colorScheme.error)
+                        else -> Text("Ilovaning yangilangan versiyasi chiqdi. Hozir yangilansinmi?", color = Muted)
+                    }
+                },
+                confirmButton = {
+                    TextButton(
+                        enabled = !downloading,
+                        onClick = {
+                            downloading = true
+                            failed = false
+                            lifecycleScope.launch {
+                                runCatching { updater.downloadAndInstall(info) { p -> progress = p } }
+                                    .onSuccess { update = null }
+                                    .onFailure { failed = true }
+                                downloading = false
+                            }
+                        }
+                    ) { Text(if (failed) "Qayta urinish" else "Yangilash", color = Accent) }
+                },
+                dismissButton = {
+                    TextButton(enabled = !downloading, onClick = { update = null }) {
+                        Text("Keyinroq", color = Muted)
+                    }
+                }
+            )
         }
     }
 
@@ -167,7 +237,7 @@ class MainActivity : ComponentActivity() {
                     Spacer(Modifier.height(32.dp))
                     Button(
                         onClick = onLoginClick,
-                        colors = ButtonDefaults.buttonColors(containerColor = Accent),
+                        colors = ButtonDefaults.buttonColors(containerColor = Accent, contentColor = Color.White),
                         modifier = Modifier.fillMaxWidth().height(50.dp)
                     ) { Text("Tizimga kirish") }
                     Spacer(Modifier.height(24.dp))
@@ -200,13 +270,12 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    // ── Kirish ekrani (server maydoni yo'q — manzil ichkarida) ──
+    // ── Kirish ekrani (server maydoni ham, uchrashuv ID ham yo'q) ──
 
     @Composable
-    private fun LoginScreen(onBack: () -> Unit) {
+    private fun LoginScreen(onBack: () -> Unit, onSuccess: (Auth) -> Unit) {
         var username by remember { mutableStateOf("") }
         var password by remember { mutableStateOf("") }
-        var meetingId by remember { mutableStateOf("1") }
         var busy by remember { mutableStateOf(false) }
         var error by remember { mutableStateOf<String?>(null) }
         // null = шаг логина; не-null = ждём TOTP-код (промежуточный токен 2FA).
@@ -236,7 +305,7 @@ class MainActivity : ComponentActivity() {
                 ) {
                     Icon(Icons.Default.Shield, null, tint = Accent, modifier = Modifier.size(56.dp))
                     Spacer(Modifier.height(8.dp))
-                    Text("Security Video Conference", style = MaterialTheme.typography.titleLarge)
+                    Text("Security Video Conference", style = MaterialTheme.typography.titleLarge, color = Color.White)
                     Text("Xavfsiz video-aloqa", color = Muted)
                     Spacer(Modifier.height(28.dp))
 
@@ -246,10 +315,6 @@ class MainActivity : ComponentActivity() {
                         Spacer(Modifier.height(12.dp))
                         OutlinedTextField(password, { password = it }, label = { Text("Parol") },
                             singleLine = true, visualTransformation = PasswordVisualTransformation(),
-                            modifier = Modifier.fillMaxWidth())
-                        Spacer(Modifier.height(12.dp))
-                        OutlinedTextField(meetingId, { meetingId = it }, label = { Text("Uchrashuv ID") },
-                            singleLine = true, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                             modifier = Modifier.fillMaxWidth())
                     } else {
                         Text("Ikki bosqichli tasdiqlash", style = MaterialTheme.typography.titleMedium)
@@ -278,27 +343,26 @@ class MainActivity : ComponentActivity() {
                                     runCatching {
                                         val api = SvcApi(SERVER_URL)
                                         when (val res = api.login(username.trim(), password)) {
-                                            is SvcApi.LoginResult.Success ->
-                                                JoinTarget(api, res.session)
+                                            is SvcApi.LoginResult.Success -> Auth(api, res.session)
                                             is SvcApi.LoginResult.TotpRequired -> {
                                                 totpToken = res.totpToken
                                                 null
                                             }
                                         }
-                                    }.onSuccess { target ->
+                                    }.onSuccess { a ->
                                         busy = false
-                                        target?.let { joinAndGo(it, meetingId.trim()) { msg -> error = msg } }
+                                        a?.let(onSuccess)
                                     }.onFailure {
                                         busy = false
                                         error = it.message ?: "Xatolik yuz berdi"
                                     }
                                 }
                             },
-                            colors = ButtonDefaults.buttonColors(containerColor = Accent),
+                            colors = ButtonDefaults.buttonColors(containerColor = Accent, contentColor = Color.White),
                             modifier = Modifier.fillMaxWidth().height(50.dp)
                         ) {
                             if (busy) CircularProgressIndicator(Modifier.size(22.dp), color = Color.White, strokeWidth = 2.dp)
-                            else Text("Qo'ng'iroqqa kirish")
+                            else Text("Kirish")
                         }
                     } else {
                         Button(
@@ -310,17 +374,17 @@ class MainActivity : ComponentActivity() {
                                     runCatching {
                                         val api = SvcApi(SERVER_URL)
                                         val session = api.verifyTotp(totpToken!!, totpCode)
-                                        JoinTarget(api, session)
-                                    }.onSuccess { target ->
+                                        Auth(api, session)
+                                    }.onSuccess { a ->
                                         busy = false
-                                        joinAndGo(target, meetingId.trim()) { msg -> error = msg }
+                                        onSuccess(a)
                                     }.onFailure {
                                         busy = false
                                         error = it.message ?: "Xatolik yuz berdi"
                                     }
                                 }
                             },
-                            colors = ButtonDefaults.buttonColors(containerColor = Accent),
+                            colors = ButtonDefaults.buttonColors(containerColor = Accent, contentColor = Color.White),
                             modifier = Modifier.fillMaxWidth().height(50.dp)
                         ) {
                             if (busy) CircularProgressIndicator(Modifier.size(22.dp), color = Color.White, strokeWidth = 2.dp)
@@ -336,11 +400,144 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    private data class JoinTarget(val api: SvcApi, val session: SvcApi.Session)
+    // ── Uchrashuvlar ro'yxati: login'dan keyin foydalanuvchi o'zi boshqaradi ──
+
+    @Composable
+    private fun MeetingsScreen(auth: Auth, onLogout: () -> Unit) {
+        var meetings by remember { mutableStateOf<List<SvcApi.MeetingItem>?>(null) }
+        var loadError by remember { mutableStateOf<String?>(null) }
+        var joinError by remember { mutableStateOf<String?>(null) }
+        var busyId by remember { mutableStateOf<Long?>(null) }
+        var reload by remember { mutableStateOf(0) }
+
+        LaunchedEffect(reload) {
+            loadError = null
+            meetings = null
+            runCatching { auth.api.meetings(auth.session.token) }
+                .onSuccess { meetings = it }
+                .onFailure { loadError = it.message ?: "Xatolik yuz berdi" }
+        }
+
+        Surface(color = Bg, modifier = Modifier.fillMaxSize()) {
+            Column(Modifier.fillMaxSize()) {
+                Row(
+                    Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 10.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(Icons.Default.Shield, null, tint = Accent, modifier = Modifier.size(26.dp))
+                    Spacer(Modifier.width(10.dp))
+                    Column(Modifier.weight(1f)) {
+                        Text("Uchrashuvlar", color = Color.White, fontWeight = FontWeight.Bold)
+                        Text(
+                            auth.session.fullName.ifBlank { "Foydalanuvchi" },
+                            color = Muted, style = MaterialTheme.typography.bodySmall
+                        )
+                    }
+                    IconButton(onClick = { reload++ }) {
+                        Icon(Icons.Default.Refresh, "Yangilash", tint = Muted)
+                    }
+                    IconButton(onClick = onLogout) {
+                        Icon(Icons.AutoMirrored.Filled.Logout, "Chiqish", tint = Muted)
+                    }
+                }
+                HorizontalDivider(color = Panel)
+
+                joinError?.let {
+                    Text(
+                        it, color = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp)
+                    )
+                }
+
+                when {
+                    loadError != null -> Column(
+                        Modifier.fillMaxSize(), verticalArrangement = Arrangement.Center,
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(loadError!!, color = MaterialTheme.colorScheme.error)
+                        Spacer(Modifier.height(12.dp))
+                        TextButton(onClick = { reload++ }) { Text("Qayta urinish", color = Accent) }
+                    }
+
+                    meetings == null -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator(color = Accent)
+                    }
+
+                    meetings!!.isEmpty() -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        Text("Hozircha uchrashuvlar yo'q", color = Muted)
+                    }
+
+                    else -> LazyColumn(
+                        Modifier.fillMaxSize(),
+                        contentPadding = PaddingValues(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        items(meetings!!, key = { it.id }) { m ->
+                            MeetingCard(
+                                m,
+                                busy = busyId == m.id,
+                                enabled = busyId == null,
+                                onJoin = {
+                                    joinError = null
+                                    busyId = m.id
+                                    lifecycleScope.launch {
+                                        joinAndGo(auth, m.id.toString()) { msg -> joinError = msg }
+                                        busyId = null
+                                    }
+                                }
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    @Composable
+    private fun MeetingCard(m: SvcApi.MeetingItem, busy: Boolean, enabled: Boolean, onJoin: () -> Unit) {
+        Surface(color = Panel, shape = RoundedCornerShape(14.dp), modifier = Modifier.fillMaxWidth()) {
+            Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+                Column(Modifier.weight(1f)) {
+                    Text(
+                        m.title.ifBlank { "Uchrashuv №${m.id}" },
+                        color = Color.White, fontWeight = FontWeight.SemiBold
+                    )
+                    Spacer(Modifier.height(3.dp))
+                    Text(
+                        listOfNotNull(statusLabel(m.status), prettyDate(m.scheduledStart))
+                            .joinToString(" · "),
+                        color = Muted, style = MaterialTheme.typography.bodySmall
+                    )
+                }
+                Spacer(Modifier.width(12.dp))
+                Button(
+                    onClick = onJoin,
+                    enabled = enabled,
+                    colors = ButtonDefaults.buttonColors(containerColor = Accent, contentColor = Color.White),
+                    contentPadding = PaddingValues(horizontal = 18.dp, vertical = 8.dp)
+                ) {
+                    if (busy) CircularProgressIndicator(Modifier.size(18.dp), color = Color.White, strokeWidth = 2.dp)
+                    else Text("Kirish")
+                }
+            }
+        }
+    }
+
+    private fun statusLabel(status: String): String = when (status) {
+        "planned" -> "Rejalashtirilgan"
+        "active", "started", "in_progress" -> "Davom etmoqda"
+        "finished", "ended", "completed" -> "Yakunlangan"
+        "canceled", "cancelled" -> "Bekor qilingan"
+        else -> status
+    }
+
+    /** "2026-09-02T14:30:00.000000Z" → "2026-09-02 14:30" (ko'rsatish uchun). */
+    private fun prettyDate(iso: String?): String? =
+        iso?.take(16)?.replace("T", " ")?.takeIf { it.isNotBlank() }
 
     /** Подключается к встрече по сессии и открывает экран звонка. */
-    private suspend fun joinAndGo(target: JoinTarget, meetingId: String, onError: (String) -> Unit) {
-        runCatching { target.api.join(target.session.token, meetingId, currentGeo()) }
+    private suspend fun joinAndGo(auth: Auth, meetingId: String, onError: (String) -> Unit) {
+        runCatching { auth.api.join(auth.session.token, meetingId, currentGeo()) }
             .onSuccess { room ->
                 startActivity(
                     Intent(this@MainActivity, CallActivity::class.java).apply {

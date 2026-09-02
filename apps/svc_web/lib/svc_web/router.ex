@@ -57,6 +57,7 @@ defmodule SvcWeb.Router do
   scope "/api", SvcWeb.API do
     pipe_through :api_authenticated
 
+    get "/meetings", MeetingController, :index
     post "/meetings/:id/join", MeetingController, :join
     post "/capture-events", CaptureController, :create
   end
