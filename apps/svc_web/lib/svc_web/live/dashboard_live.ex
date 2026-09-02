@@ -13,7 +13,7 @@ defmodule SvcWeb.DashboardLive do
      assign(socket,
        page_title: gettext("Панель управления"),
        visible_users: length(Authz.visible_user_ids(user)),
-       meetings_count: length(Meetings.list_meetings(user.org_id)),
+       meetings_count: length(Meetings.list_visible_meetings(user)),
        my_open_tasks: Tasks.open_count_for(user.id),
        my_overdue_tasks: Tasks.overdue_count(user.org_id, assignee_id: user.id),
        recent_audit: recent_audit

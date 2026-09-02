@@ -3,8 +3,7 @@ defmodule SvcWeb.MeetingLive.Index do
   use SvcWeb, :live_view
 
   import Ecto.Query
-  alias Svc.{Meetings, Accounts, Attendance, Repo}
-  alias Svc.Meetings.Meeting
+  alias Svc.{Meetings, Attendance, Repo}
 
   @per_page 10
 
@@ -48,7 +47,7 @@ defmodule SvcWeb.MeetingLive.Index do
       socket
       |> assign(:page_title, gettext("Новая встреча"))
       |> assign(:can_organize, true)
-      |> assign(:roster, Accounts.list_users(actor.org_id))
+      |> assign(:roster, Svc.Authz.assignable_users(actor))
       |> assign(:form, to_form(%{"title" => "", "recording_policy" => "off"}, as: :meeting))
       |> load_meetings()
     else
@@ -86,7 +85,7 @@ defmodule SvcWeb.MeetingLive.Index do
   defp save_single(socket, actor, attrs, invitee_ids) do
     case Meetings.create_meeting(actor, attrs) do
       {:ok, meeting} ->
-        add_roster(meeting, invitee_ids)
+        add_roster(meeting, invitee_ids, actor)
         notify_invitees(meeting, invitee_ids, actor)
 
         {:noreply,
@@ -106,7 +105,7 @@ defmodule SvcWeb.MeetingLive.Index do
     case Meetings.create_recurring(actor, attrs, freq, count) do
       {:ok, _group, meetings} ->
         Enum.each(meetings, fn m ->
-          add_roster(m, invitee_ids)
+          add_roster(m, invitee_ids, actor)
           notify_invitees(m, invitee_ids, actor)
         end)
 
@@ -132,26 +131,23 @@ defmodule SvcWeb.MeetingLive.Index do
     end
   end
 
-  defp add_roster(_meeting, nil), do: :ok
+  defp add_roster(_meeting, nil, _actor), do: :ok
 
-  defp add_roster(meeting, ids) when is_list(ids) do
-    users = Accounts.list_users(meeting.org_id)
-
-    Enum.each(ids, fn id ->
-      with %{} = user <- Enum.find(users, &(to_string(&1.id) == id)) do
-        Attendance.add_invitee(meeting, user)
-      end
-    end)
+  defp add_roster(meeting, ids, actor) when is_list(ids) do
+    # D-016: назначить можно только тех, кого актор вправе (равные/младшие).
+    Svc.Authz.assignable_users(actor)
+    |> Enum.filter(&(to_string(&1.id) in ids))
+    |> Enum.each(&Attendance.add_invitee(meeting, &1))
   end
 
-  defp add_roster(_, _), do: :ok
+  defp add_roster(_, _, _), do: :ok
 
   defp notify_invitees(_meeting, nil, _actor), do: :ok
 
   defp notify_invitees(meeting, ids, actor) when is_list(ids) do
     invited =
-      meeting.org_id
-      |> Accounts.list_users()
+      actor
+      |> Svc.Authz.assignable_users()
       |> Enum.filter(&(to_string(&1.id) in ids))
 
     Svc.Notifications.notify_many(
@@ -182,7 +178,7 @@ defmodule SvcWeb.MeetingLive.Index do
     org_id = socket.assigns.current_user.org_id
 
     base =
-      from(m in Meeting, where: m.org_id == ^org_id)
+      Meetings.visible_query(socket.assigns.current_user.id, org_id)
       |> filter_search(f.q)
       |> filter_status(f.status)
 

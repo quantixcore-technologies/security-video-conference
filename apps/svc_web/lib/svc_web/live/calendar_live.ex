@@ -26,7 +26,7 @@ defmodule SvcWeb.CalendarLive do
     to_dt = DateTime.new!(grid_end, ~T[23:59:59], "Etc/UTC")
 
     by_day =
-      socket.assigns.current_user.org_id
+      socket.assigns.current_user
       |> Meetings.list_in_range(from_dt, to_dt)
       |> Enum.group_by(&DateTime.to_date(&1.scheduled_start))
 

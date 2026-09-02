@@ -8,7 +8,7 @@ defmodule SvcWeb.API.MeetingController do
     user = conn.assigns.current_user
 
     meetings =
-      for m <- Meetings.list_meetings(user.org_id) do
+      for m <- Meetings.list_visible_meetings(user) do
         %{
           id: m.id,
           title: m.title,

@@ -17,6 +17,28 @@ defmodule Svc.Authz do
 
   @org_wide_roles [:super_admin, :admin_hr, :security_officer]
 
+  # D-016 (2026-09-02): иерархия должностей — кого можно назначать на встречу.
+  # Руководитель (manager) может назначать равных и ниже; super_admin — любого.
+  @role_rank %{super_admin: 4, admin_hr: 3, manager: 2, security_officer: 1, employee: 1}
+
+  @doc "Числовой ранг должности (для сравнения «выше/ниже»)."
+  def role_rank(role), do: Map.get(@role_rank, role, 0)
+
+  @doc """
+  Пользователи, которых актор вправе назначить на свою встречу (D-016):
+  super_admin — любой сотрудник; иначе — равные и младшие по рангу.
+  """
+  def assignable_users(%User{role: :super_admin, org_id: org_id}) do
+    Repo.all(from u in User, where: u.org_id == ^org_id, order_by: u.full_name)
+  end
+
+  def assignable_users(%User{role: role, org_id: org_id}) do
+    max_rank = role_rank(role)
+
+    Repo.all(from u in User, where: u.org_id == ^org_id, order_by: u.full_name)
+    |> Enum.filter(&(role_rank(&1.role) <= max_rank))
+  end
+
   @doc "Видит ли роль всю организацию."
   def org_wide?(%User{role: role}), do: role in @org_wide_roles
 

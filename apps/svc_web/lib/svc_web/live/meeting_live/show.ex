@@ -12,6 +12,10 @@ defmodule SvcWeb.MeetingLive.Show do
     actor = socket.assigns.current_user
     meeting = Meetings.get_meeting!(actor.org_id, id)
 
+    # D-016: чужую встречу (не свою и куда не назначен) видеть нельзя — даже super_admin.
+    unless Meetings.can_view_meeting?(actor, meeting),
+      do: raise(Ecto.NoResultsError, queryable: Svc.Meetings.Meeting)
+
     Audit.log_action(actor, :journal_view, resource_type: :meeting, resource_id: meeting.id)
 
     visible = MapSet.new(Authz.visible_user_ids(actor))

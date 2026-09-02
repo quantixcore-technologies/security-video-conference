@@ -7,6 +7,7 @@ defmodule Svc.Meetings do
   alias Svc.Repo
   alias Svc.Meetings.Meeting
   alias Svc.Accounts.User
+  alias Svc.Attendance.Invitee
 
   @doc "Создаёт встречу от имени организатора (manager/admin/super_admin)."
   def create_meeting(%User{} = organizer, attrs) do
@@ -108,6 +109,32 @@ defmodule Svc.Meetings do
     Repo.all(from m in Meeting, where: m.org_id == ^org_id, order_by: [desc: m.inserted_at])
   end
 
+  @doc """
+  Встречи, видимые актору (D-016): им организованные ИЛИ куда он назначен.
+  Действует и для super_admin — чужую встречу другого руководителя он не видит,
+  пока не назначен в неё (разделение приватности встреч).
+  """
+  def list_visible_meetings(%User{id: uid, org_id: org_id}) do
+    Repo.all(visible_query(uid, org_id) |> order_by([m], desc: m.inserted_at))
+  end
+
+  @doc "Тот же фильтр видимости как выражение (для пагинации/поиска в LiveView)."
+  def visible_query(user_id, org_id) do
+    invited = from i in Invitee, where: i.user_id == ^user_id, select: i.meeting_id
+
+    from m in Meeting,
+      where:
+        m.org_id == ^org_id and
+          (m.organizer_id == ^user_id or m.id in subquery(invited))
+  end
+
+  @doc "Вправе ли актор видеть конкретную встречу (организатор или назначенный)."
+  def can_view_meeting?(%User{id: uid}, %Meeting{organizer_id: uid}), do: true
+
+  def can_view_meeting?(%User{id: uid}, %Meeting{id: mid}) do
+    Repo.exists?(from i in Invitee, where: i.meeting_id == ^mid and i.user_id == ^uid)
+  end
+
   @doc "Встречи с scheduled_start в диапазоне [from, to] — для календаря (E3)."
   def list_in_range(org_id, %DateTime{} = from, %DateTime{} = to) do
     Repo.all(
@@ -116,6 +143,15 @@ defmodule Svc.Meetings do
           m.org_id == ^org_id and not is_nil(m.scheduled_start) and
             m.scheduled_start >= ^from and m.scheduled_start <= ^to,
         order_by: m.scheduled_start
+    )
+  end
+
+  # list_in_range с фильтром видимости D-016 (для календаря конкретного актора).
+  def list_in_range(%User{} = actor, %DateTime{} = from, %DateTime{} = to) do
+    Repo.all(
+      visible_query(actor.id, actor.org_id)
+      |> where([m], not is_nil(m.scheduled_start) and m.scheduled_start >= ^from and m.scheduled_start <= ^to)
+      |> order_by([m], m.scheduled_start)
     )
   end
 
@@ -144,12 +180,13 @@ defmodule Svc.Meetings do
   @doc """
   Может ли пользователь организовывать/управлять встречами.
 
-  D-015 (2026-09-02, заказчик): организация встреч — ТОЛЬКО роль `:manager`
-  (руководитель). Назначает эту роль сотруднику только `:super_admin` (см.
-  can_manage_users? в user_live). Разделение обязанностей: кто заводит людей ≠
-  кто ведёт встречи.
+  D-015/D-016 (2026-09-02, заказчик): встречи ведут `:super_admin` (главный
+  админ — может всё) и `:manager` (руководитель). Роль `:manager` сотруднику
+  назначает только `:super_admin` (см. can_manage? в user_live).
+  Приватность: встречи одного руководителя не видны другим (в т.ч. super_admin),
+  пока те не назначены — см. list_visible_meetings/1.
   """
-  def can_organize?(%User{role: role}), do: role == :manager
+  def can_organize?(%User{role: role}), do: role in [:super_admin, :manager]
 
   # Уникальное имя LiveKit-комнаты (не угадывается).
   defp generate_room_name do
