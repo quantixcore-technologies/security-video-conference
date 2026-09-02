@@ -68,7 +68,7 @@ class CallActivity : ComponentActivity() {
 
     // Compose-состояние видеодорожек
     private val videoTracks = mutableStateListOf<TrackTile>()
-    private var status by mutableStateOf("Подключение…")
+    private var status by mutableStateOf("Ulanmoqda…")
     private var micOn by mutableStateOf(true)
     private var camOn by mutableStateOf(true)
 
@@ -102,13 +102,13 @@ class CallActivity : ComponentActivity() {
             launch { room.events.collect { onRoomEvent(it) } }
             runCatching {
                 room.connect(url, token)
-                status = "В эфире"
+                status = "Efirda"
                 room.localParticipant.setMicrophoneEnabled(true)
                 room.localParticipant.setCameraEnabled(true)
                 // Локальный трек камеры доступен сразу после публикации (нет LocalTrackPublished в SDK 2.18)
                 room.localParticipant.getTrackPublication(Track.Source.CAMERA)
-                    ?.let { (it.track as? VideoTrack)?.let { t -> addTile(t, "Вы") } }
-            }.onFailure { status = "Ошибка: ${it.message}" }
+                    ?.let { (it.track as? VideoTrack)?.let { t -> addTile(t, "Siz") } }
+            }.onFailure { status = "Xatolik: ${it.message}" }
         }
     }
 
@@ -116,12 +116,12 @@ class CallActivity : ComponentActivity() {
         when (event) {
             is RoomEvent.TrackSubscribed ->
                 (event.track as? VideoTrack)?.let {
-                    addTile(it, event.participant.identity?.value ?: "участник")
+                    addTile(it, event.participant.identity?.value ?: "ishtirokchi")
                 }
             is RoomEvent.TrackUnsubscribed -> removeTile(event.track as? VideoTrack)
             is RoomEvent.DataReceived -> {
                 val text = String(event.data, Charsets.UTF_8)
-                val sender = event.participant?.identity?.value ?: "участник"
+                val sender = event.participant?.identity?.value ?: "ishtirokchi"
                 messages.add(ChatMessage(sender, text, mine = false))
             }
             else -> {}
@@ -145,7 +145,7 @@ class CallActivity : ComponentActivity() {
     private fun sendChat(text: String) {
         val trimmed = text.trim()
         if (trimmed.isEmpty()) return
-        messages.add(ChatMessage("Вы", trimmed, mine = true))
+        messages.add(ChatMessage("Siz", trimmed, mine = true))
         lifecycleScope.launch {
             runCatching {
                 room.localParticipant.publishData(trimmed.toByteArray(Charsets.UTF_8), topic = "chat")
@@ -190,7 +190,7 @@ class CallActivity : ComponentActivity() {
             Box(Modifier.fillMaxSize().padding(pad)) {
                 if (videoTracks.isEmpty()) {
                     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Text("Ожидание видео…", color = Color(0xFF64748B))
+                        Text("Video kutilmoqda…", color = Color(0xFF64748B))
                     }
                 } else {
                     LazyVerticalGrid(
@@ -214,13 +214,13 @@ class CallActivity : ComponentActivity() {
         var input by remember { mutableStateOf("") }
         Surface(color = Color(0xF21E293B), modifier = modifier.fillMaxWidth().fillMaxHeight(0.55f)) {
             Column(Modifier.fillMaxSize().padding(8.dp)) {
-                Text("Чат", color = Color.White, style = MaterialTheme.typography.titleSmall,
+                Text("Chat", color = Color.White, style = MaterialTheme.typography.titleSmall,
                     modifier = Modifier.padding(8.dp))
                 Column(
                     Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState())
                 ) {
                     if (messages.isEmpty()) {
-                        Text("Сообщений пока нет", color = Color(0xFF64748B),
+                        Text("Hozircha xabar yo'q", color = Color(0xFF64748B),
                             modifier = Modifier.padding(8.dp))
                     }
                     messages.forEach { m ->
@@ -237,7 +237,7 @@ class CallActivity : ComponentActivity() {
                 ) {
                     OutlinedTextField(
                         input, { input = it }, modifier = Modifier.weight(1f),
-                        singleLine = true, placeholder = { Text("Сообщение…") }
+                        singleLine = true, placeholder = { Text("Xabar…") }
                     )
                     IconButton(onClick = { sendChat(input); input = "" }) {
                         Icon(Icons.AutoMirrored.Filled.Send, "send", tint = Color(0xFF10B981))

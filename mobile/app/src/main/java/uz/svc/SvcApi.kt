@@ -52,7 +52,7 @@ class SvcApi(private val baseUrl: String) {
                 val text = resp.body?.string().orEmpty()
                 if (!resp.isSuccessful) {
                     val err = runCatching { JSONObject(text).optString("error") }.getOrNull()
-                    error("Вход не удался (${resp.code}): ${err ?: text}")
+                    error("Kirish amalga oshmadi (${resp.code}): ${err ?: text}")
                 }
                 val o = JSONObject(text)
                 if (o.optBoolean("totp_required")) {
@@ -81,7 +81,7 @@ class SvcApi(private val baseUrl: String) {
                 val text = resp.body?.string().orEmpty()
                 if (!resp.isSuccessful) {
                     val err = runCatching { JSONObject(text).optString("error") }.getOrNull()
-                    error("Код 2FA не принят (${resp.code}): ${err ?: text}")
+                    error("2FA kod qabul qilinmadi (${resp.code}): ${err ?: text}")
                 }
                 parseSession(JSONObject(text))
             }
@@ -117,7 +117,7 @@ class SvcApi(private val baseUrl: String) {
                 val text = resp.body?.string().orEmpty()
                 if (!resp.isSuccessful) {
                     val err = runCatching { JSONObject(text).optString("error") }.getOrNull()
-                    error("Подключение к встрече не удалось (${resp.code}): ${err ?: text}")
+                    error("Uchrashuvga ulanib bo'lmadi (${resp.code}): ${err ?: text}")
                 }
                 val o = JSONObject(text)
                 RoomInfo(
