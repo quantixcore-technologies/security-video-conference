@@ -141,8 +141,15 @@ defmodule Svc.Meetings do
     meeting |> Ecto.Changeset.change(status: status) |> Repo.update()
   end
 
-  @doc "Может ли пользователь организовывать встречи (D-007)."
-  def can_organize?(%User{role: role}), do: role in [:super_admin, :admin_hr, :manager]
+  @doc """
+  Может ли пользователь организовывать/управлять встречами.
+
+  D-015 (2026-09-02, заказчик): организация встреч — ТОЛЬКО роль `:manager`
+  (руководитель). Назначает эту роль сотруднику только `:super_admin` (см.
+  can_manage_users? в user_live). Разделение обязанностей: кто заводит людей ≠
+  кто ведёт встречи.
+  """
+  def can_organize?(%User{role: role}), do: role == :manager
 
   # Уникальное имя LiveKit-комнаты (не угадывается).
   defp generate_room_name do

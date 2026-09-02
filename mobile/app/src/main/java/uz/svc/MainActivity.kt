@@ -36,6 +36,7 @@ import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Shield
 import androidx.compose.material.icons.filled.Videocam
+import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -47,6 +48,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.lifecycleScope
@@ -332,6 +334,7 @@ class MainActivity : ComponentActivity() {
     private fun LoginScreen(onBack: () -> Unit, onSuccess: (Auth) -> Unit) {
         var username by remember { mutableStateOf("") }
         var password by remember { mutableStateOf("") }
+        var passwordVisible by remember { mutableStateOf(false) }
         var busy by remember { mutableStateOf(false) }
         var error by remember { mutableStateOf<String?>(null) }
         // null = шаг логина; не-null = ждём TOTP-код (промежуточный токен 2FA).
@@ -369,9 +372,26 @@ class MainActivity : ComponentActivity() {
                         OutlinedTextField(username, { username = it }, label = { Text("Login") },
                             singleLine = true, modifier = Modifier.fillMaxWidth())
                         Spacer(Modifier.height(12.dp))
-                        OutlinedTextField(password, { password = it }, label = { Text("Parol") },
-                            singleLine = true, visualTransformation = PasswordVisualTransformation(),
-                            modifier = Modifier.fillMaxWidth())
+                        OutlinedTextField(
+                            password, { password = it }, label = { Text("Parol") },
+                            singleLine = true,
+                            visualTransformation =
+                                if (passwordVisible) VisualTransformation.None
+                                else PasswordVisualTransformation(),
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                            trailingIcon = {
+                                IconButton(onClick = { passwordVisible = !passwordVisible }) {
+                                    Icon(
+                                        if (passwordVisible) Icons.Default.VisibilityOff
+                                        else Icons.Default.Visibility,
+                                        contentDescription =
+                                            if (passwordVisible) "Parolni yashirish" else "Parolni ko'rsatish",
+                                        tint = Muted
+                                    )
+                                }
+                            },
+                            modifier = Modifier.fillMaxWidth()
+                        )
                     } else {
                         Text("Ikki bosqichli tasdiqlash", style = MaterialTheme.typography.titleMedium, color = Color.White)
                         Text("Autentifikator ilovasidagi 6 xonali kodni kiriting",
@@ -550,6 +570,7 @@ class MainActivity : ComponentActivity() {
                 .onFailure { loadError = it.message ?: "Xatolik yuz berdi" }
         }
 
+        val list = meetings
         Column(Modifier.fillMaxSize()) {
             TabHeader("Uchrashuvlar", auth.session.fullName.ifBlank { null }) { reload++ }
 
@@ -562,14 +583,14 @@ class MainActivity : ComponentActivity() {
 
             when {
                 loadError != null -> CenterMessage(loadError!!) { reload++ }
-                meetings == null -> CenterSpinner()
-                meetings!!.isEmpty() -> CenterMessage("Hozircha uchrashuvlar yo'q", null)
+                list == null -> CenterSpinner()
+                list.isEmpty() -> CenterMessage("Hozircha uchrashuvlar yo'q", null)
                 else -> LazyColumn(
                     Modifier.fillMaxSize(),
                     contentPadding = PaddingValues(16.dp),
                     verticalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
-                    items(meetings!!, key = { it.id }) { m ->
+                    items(list, key = { it.id }) { m ->
                         MeetingCard(
                             m,
                             busy = busyId == m.id,
@@ -638,15 +659,16 @@ class MainActivity : ComponentActivity() {
                 .onFailure { loadError = it.message ?: "Xatolik yuz berdi" }
         }
 
+        val current = page
         Column(Modifier.fillMaxSize()) {
-            TabHeader("Xabarlar", page?.let { "${it.unread} ta o'qilmagan" }) { reload++ }
+            TabHeader("Xabarlar", current?.let { "${it.unread} ta o'qilmagan" }) { reload++ }
 
             when {
                 loadError != null -> CenterMessage(loadError!!) { reload++ }
-                page == null -> CenterSpinner()
-                page!!.items.isEmpty() -> CenterMessage("Hozircha xabarlar yo'q", null)
+                current == null -> CenterSpinner()
+                current.items.isEmpty() -> CenterMessage("Hozircha xabarlar yo'q", null)
                 else -> Column(Modifier.fillMaxSize()) {
-                    if (page!!.unread > 0) {
+                    if (current.unread > 0) {
                         TextButton(
                             onClick = {
                                 lifecycleScope.launch {
@@ -662,7 +684,7 @@ class MainActivity : ComponentActivity() {
                         contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 16.dp),
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        items(page!!.items, key = { it.id }) { n ->
+                        items(current.items, key = { it.id }) { n ->
                             NotificationCard(n) {
                                 if (n.readAt == null) {
                                     lifecycleScope.launch {
@@ -740,18 +762,19 @@ class MainActivity : ComponentActivity() {
                 .onFailure { loadError = it.message ?: "Xatolik yuz berdi" }
         }
 
+        val list = users
         Column(Modifier.fillMaxSize()) {
-            TabHeader("Bo'lim", users?.let { "${it.size} ta xodim" }) { reload++ }
+            TabHeader("Bo'lim", list?.let { "${it.size} ta xodim" }) { reload++ }
 
             when {
                 loadError != null -> CenterMessage(loadError!!) { reload++ }
-                users == null -> CenterSpinner()
+                list == null -> CenterSpinner()
                 else -> LazyColumn(
                     Modifier.fillMaxSize(),
                     contentPadding = PaddingValues(16.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    items(users!!, key = { it.id }) { u -> ColleagueCard(u) }
+                    items(list, key = { it.id }) { u -> ColleagueCard(u) }
                 }
             }
         }
@@ -803,11 +826,11 @@ class MainActivity : ComponentActivity() {
         Column(Modifier.fillMaxSize()) {
             TabHeader("Profil", null, null)
 
+            val p = profile
             when {
                 loadError != null -> CenterMessage(loadError!!) { reload++ }
-                profile == null -> CenterSpinner()
+                p == null -> CenterSpinner()
                 else -> {
-                    val p = profile!!
                     Column(
                         Modifier
                             .fillMaxSize()
@@ -846,7 +869,7 @@ class MainActivity : ComponentActivity() {
                             Text("Chiqish")
                         }
                         Spacer(Modifier.height(16.dp))
-                        Text("SVC v0.4.0 · QuantixCore Technologies", color = Muted,
+                        Text("SVC v0.4.2 · QuantixCore Technologies", color = Muted,
                             style = MaterialTheme.typography.labelSmall)
                     }
                 }

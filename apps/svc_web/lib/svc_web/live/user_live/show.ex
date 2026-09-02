@@ -117,7 +117,8 @@ defmodule SvcWeb.UserLive.Show do
   defp gen_password,
     do: :crypto.strong_rand_bytes(12) |> Base.url_encode64() |> binary_part(0, 16)
 
-  defp can_manage?(%{role: role}), do: role in [:super_admin, :admin_hr]
+  # D-015: сотрудников заводит и роли назначает ТОЛЬКО super_admin (главный админ).
+  defp can_manage?(%{role: role}), do: role == :super_admin
 
   defp role_options, do: Enum.map(Accounts.User.roles(), &{role_label(&1), &1})
   defp dept_options(depts), do: Enum.map(depts, &{&1.name, &1.id})
