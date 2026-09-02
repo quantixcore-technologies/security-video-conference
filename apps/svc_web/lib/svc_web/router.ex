@@ -57,6 +57,11 @@ defmodule SvcWeb.Router do
   scope "/api", SvcWeb.API do
     pipe_through :api_authenticated
 
+    get "/me", ProfileController, :me
+    get "/users", ProfileController, :colleagues
+    get "/notifications", NotificationController, :index
+    post "/notifications/read-all", NotificationController, :mark_all_read
+    post "/notifications/:id/read", NotificationController, :mark_read
     get "/meetings", MeetingController, :index
     post "/meetings/:id/join", MeetingController, :join
     post "/capture-events", CaptureController, :create

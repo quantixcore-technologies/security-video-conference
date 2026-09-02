@@ -96,6 +96,135 @@ class SvcApi(private val baseUrl: String) {
         )
     }
 
+    data class Profile(
+        val id: Long,
+        val username: String,
+        val fullName: String,
+        val role: String,
+        val phone: String?,
+        val department: String?,
+        val organization: String?
+    )
+
+    /** Profil (GET /api/me) — token tekshiruvi uchun ham ishlatiladi (auto-login). */
+    suspend fun me(token: String): Profile =
+        withContext(Dispatchers.IO) {
+            getJson("/api/me", token).getJSONObject("user").let { u ->
+                Profile(
+                    id = u.getLong("id"),
+                    username = u.optString("username"),
+                    fullName = u.optString("full_name"),
+                    role = u.optString("role"),
+                    phone = u.optStringOrNull("phone"),
+                    department = u.optJSONObject("department")?.optString("name"),
+                    organization = u.optJSONObject("organization")?.optString("name")
+                )
+            }
+        }
+
+    data class Colleague(
+        val id: Long,
+        val username: String,
+        val fullName: String,
+        val role: String,
+        val phone: String?,
+        val status: String
+    )
+
+    /** Bo'limdoshlar ro'yxati (GET /api/users). */
+    suspend fun colleagues(token: String): List<Colleague> =
+        withContext(Dispatchers.IO) {
+            val arr = getJson("/api/users", token).getJSONArray("users")
+            buildList {
+                for (i in 0 until arr.length()) {
+                    val u = arr.getJSONObject(i)
+                    add(
+                        Colleague(
+                            id = u.getLong("id"),
+                            username = u.optString("username"),
+                            fullName = u.optString("full_name"),
+                            role = u.optString("role"),
+                            phone = u.optStringOrNull("phone"),
+                            status = u.optString("status")
+                        )
+                    )
+                }
+            }
+        }
+
+    data class NotificationItem(
+        val id: Long,
+        val kind: String,
+        val title: String,
+        val body: String?,
+        val readAt: String?,
+        val insertedAt: String?
+    )
+
+    data class NotificationsPage(val unread: Int, val items: List<NotificationItem>)
+
+    /** Bildirishnomalar lentasi (GET /api/notifications). */
+    suspend fun notifications(token: String): NotificationsPage =
+        withContext(Dispatchers.IO) {
+            val o = getJson("/api/notifications", token)
+            val arr = o.getJSONArray("notifications")
+            val items = buildList {
+                for (i in 0 until arr.length()) {
+                    val n = arr.getJSONObject(i)
+                    add(
+                        NotificationItem(
+                            id = n.getLong("id"),
+                            kind = n.optString("kind"),
+                            title = n.optString("title"),
+                            body = n.optStringOrNull("body"),
+                            readAt = n.optStringOrNull("read_at"),
+                            insertedAt = n.optStringOrNull("inserted_at")
+                        )
+                    )
+                }
+            }
+            NotificationsPage(unread = o.optInt("unread"), items = items)
+        }
+
+    suspend fun markNotificationRead(token: String, id: Long): Unit =
+        withContext(Dispatchers.IO) {
+            postEmpty("/api/notifications/$id/read", token)
+        }
+
+    suspend fun markAllNotificationsRead(token: String): Unit =
+        withContext(Dispatchers.IO) {
+            postEmpty("/api/notifications/read-all", token)
+        }
+
+    private fun getJson(path: String, token: String): JSONObject {
+        val req = Request.Builder()
+            .url("$baseUrl$path")
+            .addHeader("Authorization", "Bearer $token")
+            .get()
+            .build()
+
+        http.newCall(req).execute().use { resp ->
+            val text = resp.body?.string().orEmpty()
+            if (!resp.isSuccessful) error("So'rov bajarilmadi (${resp.code})")
+            return JSONObject(text)
+        }
+    }
+
+    private fun postEmpty(path: String, token: String) {
+        val req = Request.Builder()
+            .url("$baseUrl$path")
+            .addHeader("Authorization", "Bearer $token")
+            .post(JSONObject().toString().toRequestBody(json))
+            .build()
+
+        http.newCall(req).execute().use { resp ->
+            if (!resp.isSuccessful) error("So'rov bajarilmadi (${resp.code})")
+        }
+    }
+
+    private fun JSONObject.optStringOrNull(key: String): String? =
+        if (isNull(key)) null else optString(key).takeIf { it.isNotBlank() }
+
     data class MeetingItem(
         val id: Long,
         val title: String,

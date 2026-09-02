@@ -12,8 +12,8 @@ android {
         applicationId = "uz.svc"
         minSdk = 24
         targetSdk = 35
-        versionCode = 3
-        versionName = "0.3.0"
+        versionCode = 4
+        versionName = "0.4.0"
     }
 
     buildTypes {
@@ -62,4 +62,7 @@ dependencies {
 
     // HTTP-клиент для API (login + join token)
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
+
+    // Фоновая проверка уведомлений (~15 мин) + системные нотификации
+    implementation("androidx.work:work-runtime-ktx:2.9.1")
 }
