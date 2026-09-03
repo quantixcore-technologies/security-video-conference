@@ -6,6 +6,7 @@ import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
+import org.json.JSONArray
 import org.json.JSONObject
 import java.util.concurrent.TimeUnit
 
@@ -134,21 +135,51 @@ class SvcApi(private val baseUrl: String) {
     /** Bo'limdoshlar ro'yxati (GET /api/users). */
     suspend fun colleagues(token: String): List<Colleague> =
         withContext(Dispatchers.IO) {
-            val arr = getJson("/api/users", token).getJSONArray("users")
-            buildList {
-                for (i in 0 until arr.length()) {
-                    val u = arr.getJSONObject(i)
-                    add(
-                        Colleague(
-                            id = u.getLong("id"),
-                            username = u.optString("username"),
-                            fullName = u.optString("full_name"),
-                            role = u.optString("role"),
-                            phone = u.optStringOrNull("phone"),
-                            status = u.optString("status")
-                        )
-                    )
+            parseColleagues(getJson("/api/users", token).getJSONArray("users"))
+        }
+
+    /** Majlisga biriktirish mumkin bo'lgan xodimlar (GET /api/assignable) — teng/past unvon. */
+    suspend fun assignable(token: String): List<Colleague> =
+        withContext(Dispatchers.IO) {
+            parseColleagues(getJson("/api/assignable", token).getJSONArray("users"))
+        }
+
+    private fun parseColleagues(arr: JSONArray): List<Colleague> = buildList {
+        for (i in 0 until arr.length()) {
+            val u = arr.getJSONObject(i)
+            add(
+                Colleague(
+                    id = u.getLong("id"),
+                    username = u.optString("username"),
+                    fullName = u.optString("full_name"),
+                    role = u.optString("role"),
+                    phone = u.optStringOrNull("phone"),
+                    status = u.optString("status").ifBlank { "active" }
+                )
+            )
+        }
+    }
+
+    /** Majlis yaratish (POST /api/meetings) — super_admin/manager. Yaratilgan majlis id. */
+    suspend fun createMeeting(token: String, title: String, inviteeIds: List<Long>): Long =
+        withContext(Dispatchers.IO) {
+            val payload = JSONObject()
+                .put("title", title)
+                .put("invitee_ids", JSONArray(inviteeIds))
+
+            val req = Request.Builder()
+                .url("$baseUrl/api/meetings")
+                .addHeader("Authorization", "Bearer $token")
+                .post(payload.toString().toRequestBody(json))
+                .build()
+
+            http.newCall(req).execute().use { resp ->
+                val text = resp.body?.string().orEmpty()
+                if (!resp.isSuccessful) {
+                    if (resp.code == 403) error("Majlis yaratishga ruxsat yo'q")
+                    error("Majlis yaratilmadi (${resp.code})")
                 }
+                JSONObject(text).getLong("id")
             }
         }
 

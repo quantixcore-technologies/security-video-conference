@@ -25,6 +25,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Assignment
 import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.filled.AccountCircle
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Alarm
 import androidx.compose.material.icons.filled.Cancel
 import androidx.compose.material.icons.filled.Groups
@@ -561,6 +562,10 @@ class MainActivity : ComponentActivity() {
         var joinError by remember { mutableStateOf<String?>(null) }
         var busyId by remember { mutableStateOf<Long?>(null) }
         var reload by remember { mutableStateOf(0) }
+        var showCreate by rememberSaveable { mutableStateOf(false) }
+
+        // Majlis yaratish huquqi: super_admin / manager (D-015).
+        val canOrganize = auth.session.role in listOf("super_admin", "manager")
 
         LaunchedEffect(reload) {
             loadError = null
@@ -570,41 +575,175 @@ class MainActivity : ComponentActivity() {
                 .onFailure { loadError = it.message ?: "Xatolik yuz berdi" }
         }
 
-        val list = meetings
-        Column(Modifier.fillMaxSize()) {
-            TabHeader("Uchrashuvlar", auth.session.fullName.ifBlank { null }) { reload++ }
+        if (showCreate) {
+            BackHandler { showCreate = false }
+            CreateMeetingScreen(
+                auth,
+                onBack = { showCreate = false },
+                onCreated = { showCreate = false; reload++ }
+            )
+            return
+        }
 
-            joinError?.let {
-                Text(
-                    it, color = MaterialTheme.colorScheme.error,
-                    modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp)
-                )
+        val list = meetings
+        Box(Modifier.fillMaxSize()) {
+            Column(Modifier.fillMaxSize()) {
+                TabHeader("Uchrashuvlar", auth.session.fullName.ifBlank { null }) { reload++ }
+
+                joinError?.let {
+                    Text(
+                        it, color = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp)
+                    )
+                }
+
+                when {
+                    loadError != null -> CenterMessage(loadError!!) { reload++ }
+                    list == null -> CenterSpinner()
+                    list.isEmpty() -> CenterMessage("Hozircha uchrashuvlar yo'q", null)
+                    else -> LazyColumn(
+                        Modifier.fillMaxSize(),
+                        contentPadding = PaddingValues(16.dp, 16.dp, 16.dp, 88.dp),
+                        verticalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        items(list, key = { it.id }) { m ->
+                            MeetingCard(
+                                m,
+                                busy = busyId == m.id,
+                                enabled = busyId == null,
+                                onJoin = {
+                                    joinError = null
+                                    busyId = m.id
+                                    lifecycleScope.launch {
+                                        joinAndGo(auth, m.id.toString()) { msg -> joinError = msg }
+                                        busyId = null
+                                    }
+                                }
+                            )
+                        }
+                    }
+                }
             }
 
-            when {
-                loadError != null -> CenterMessage(loadError!!) { reload++ }
-                list == null -> CenterSpinner()
-                list.isEmpty() -> CenterMessage("Hozircha uchrashuvlar yo'q", null)
-                else -> LazyColumn(
-                    Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(10.dp)
+            if (canOrganize) {
+                ExtendedFloatingActionButton(
+                    onClick = { showCreate = true },
+                    containerColor = Accent,
+                    contentColor = Color.White,
+                    icon = { Icon(Icons.Default.Add, null) },
+                    text = { Text("Majlis") },
+                    modifier = Modifier.align(Alignment.BottomEnd).padding(20.dp)
+                )
+            }
+        }
+    }
+
+    // ── Majlis yaratish ekrani (super_admin/manager) ──
+
+    @Composable
+    private fun CreateMeetingScreen(auth: Auth, onBack: () -> Unit, onCreated: () -> Unit) {
+        var title by remember { mutableStateOf("") }
+        var people by remember { mutableStateOf<List<SvcApi.Colleague>?>(null) }
+        var selected by remember { mutableStateOf(setOf<Long>()) }
+        var busy by remember { mutableStateOf(false) }
+        var error by remember { mutableStateOf<String?>(null) }
+
+        LaunchedEffect(Unit) {
+            runCatching { auth.api.assignable(auth.session.token) }
+                .onSuccess { people = it }
+                .onFailure { error = it.message ?: "Xatolik yuz berdi" }
+        }
+
+        Surface(color = Bg, modifier = Modifier.fillMaxSize()) {
+            Column(Modifier.fillMaxSize()) {
+                Row(
+                    Modifier.fillMaxWidth().padding(horizontal = 4.dp, vertical = 6.dp),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    items(list, key = { it.id }) { m ->
-                        MeetingCard(
-                            m,
-                            busy = busyId == m.id,
-                            enabled = busyId == null,
-                            onJoin = {
-                                joinError = null
-                                busyId = m.id
-                                lifecycleScope.launch {
-                                    joinAndGo(auth, m.id.toString()) { msg -> joinError = msg }
-                                    busyId = null
+                    IconButton(onClick = onBack) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, "Orqaga", tint = Color.White)
+                    }
+                    Text("Majlis yaratish", color = Color.White, fontWeight = FontWeight.SemiBold)
+                }
+                HorizontalDivider(color = Panel)
+
+                Column(
+                    Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(20.dp)
+                ) {
+                    OutlinedTextField(
+                        title, { title = it },
+                        label = { Text("Majlis nomi") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    Spacer(Modifier.height(18.dp))
+                    Text("Ishtirokchilar", color = Color.White, fontWeight = FontWeight.SemiBold)
+                    Text(
+                        "Biriktiriladiganlar sizga va bo'lim quyi xodimlariga cheklangan",
+                        color = Muted, style = MaterialTheme.typography.bodySmall
+                    )
+                    Spacer(Modifier.height(10.dp))
+
+                    when (val ppl = people) {
+                        null -> Box(Modifier.fillMaxWidth().padding(24.dp), contentAlignment = Alignment.Center) {
+                            CircularProgressIndicator(color = Accent, modifier = Modifier.size(28.dp))
+                        }
+                        else -> ppl.forEach { u ->
+                            val on = u.id in selected
+                            Surface(
+                                color = if (on) Color(0xFF243449) else Panel,
+                                shape = RoundedCornerShape(12.dp),
+                                onClick = {
+                                    selected = if (on) selected - u.id else selected + u.id
+                                },
+                                modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)
+                            ) {
+                                Row(Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
+                                    Checkbox(
+                                        checked = on,
+                                        onCheckedChange = { selected = if (it) selected + u.id else selected - u.id },
+                                        colors = CheckboxDefaults.colors(checkedColor = Accent)
+                                    )
+                                    Spacer(Modifier.width(6.dp))
+                                    Column(Modifier.weight(1f)) {
+                                        Text(u.fullName.ifBlank { u.username }, color = Color.White)
+                                        Text(roleLabel(u.role), color = Muted, style = MaterialTheme.typography.bodySmall)
+                                    }
                                 }
                             }
-                        )
+                        }
                     }
+
+                    error?.let {
+                        Spacer(Modifier.height(12.dp))
+                        Text(it, color = MaterialTheme.colorScheme.error)
+                    }
+
+                    Spacer(Modifier.height(24.dp))
+                    Button(
+                        enabled = !busy && title.isNotBlank(),
+                        onClick = {
+                            error = null
+                            busy = true
+                            lifecycleScope.launch {
+                                runCatching {
+                                    auth.api.createMeeting(auth.session.token, title.trim(), selected.toList())
+                                }.onSuccess {
+                                    busy = false
+                                    onCreated()
+                                }.onFailure {
+                                    busy = false
+                                    error = it.message ?: "Majlis yaratilmadi"
+                                }
+                            }
+                        },
+                        colors = ButtonDefaults.buttonColors(containerColor = Accent, contentColor = Color.White),
+                        modifier = Modifier.fillMaxWidth().height(50.dp)
+                    ) {
+                        if (busy) CircularProgressIndicator(Modifier.size(22.dp), color = Color.White, strokeWidth = 2.dp)
+                        else Text("Yaratish")
+                    }
+                    Spacer(Modifier.height(16.dp))
                 }
             }
         }
@@ -869,7 +1008,7 @@ class MainActivity : ComponentActivity() {
                             Text("Chiqish")
                         }
                         Spacer(Modifier.height(16.dp))
-                        Text("SVC v0.4.2 · QuantixCore Technologies", color = Muted,
+                        Text("SVC v0.4.3 · QuantixCore Technologies", color = Muted,
                             style = MaterialTheme.typography.labelSmall)
                     }
                 }

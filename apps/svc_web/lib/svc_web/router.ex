@@ -63,6 +63,8 @@ defmodule SvcWeb.Router do
     post "/notifications/read-all", NotificationController, :mark_all_read
     post "/notifications/:id/read", NotificationController, :mark_read
     get "/meetings", MeetingController, :index
+    post "/meetings", MeetingController, :create
+    get "/assignable", MeetingController, :assignable
     post "/meetings/:id/join", MeetingController, :join
     post "/capture-events", CaptureController, :create
   end
