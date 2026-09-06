@@ -1,15 +1,14 @@
 import SwiftUI
 import UIKit
+import AVFoundation
+import LiveKit
 
-/// Qo'ng'iroq ekrani.
+/// Qo'ng'iroq ekrani — nativ LiveKit (WebRTC), webview emas (ADR D-001).
 ///
 /// **Anti-capture (ADR D-013):** iOS'da Android'dagi `FLAG_SECURE` ekvivalenti YO'Q —
-/// skrinshot/ekran-yozuvni bloklab bo'lmaydi, faqat **aniqlash** mumkin. Shuning uchun:
-///   • ekran yozuvi/translyatsiya aniqlansa — kontent yashiriladi va serverga qayd ketadi;
-///   • skrinshot olinsa — hodisa serverga yoziladi (audit + forensika).
-///
-/// **Video (LiveKit):** 2-bosqichda ulanadi — hozir server tomonda LiveKit media
-/// oqimi qurilmalararo o'tmaydi (NAT/tunnel). Cloud yoki statik IP ulangach qo'shiladi.
+/// skrinshot/ekran-yozuvni bloklab bo'lmaydi, faqat **aniqlash** mumkin:
+///   • `UIScreen.isCaptured` → video yashiriladi va hodisa serverga yoziladi;
+///   • skrinshot → `/api/capture-events` ga qayd (audit + forensika).
 struct CallView: View {
     let room: RoomInfo
     var meetingId: Int64? = nil
@@ -17,39 +16,37 @@ struct CallView: View {
     @EnvironmentObject private var state: AppState
     @Environment(\.dismiss) private var dismiss
 
+    @StateObject private var call = CallModel()
     @StateObject private var capture = CaptureMonitor()
 
     var body: some View {
         VStack(spacing: 0) {
             header
-
             Divider().overlay(Theme.panel)
 
-            if capture.isBeingCaptured {
-                // Ekran yozilmoqda — maxfiy kontentni ko'rsatmaymiz.
-                blockedContent
-            } else {
-                content
+            ZStack {
+                if capture.isBeingCaptured {
+                    blockedContent      // ekran yozilmoqda — kontentni ko'rsatmaymiz
+                } else {
+                    videoArea
+                }
             }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
 
             controls
         }
         .svcBackground()
-        .onAppear {
-            capture.start { kind in
-                Task {
-                    guard let token = state.session?.token else { return }
-                    await state.api.reportCapture(
-                        token: token,
-                        meetingId: meetingId,
-                        kind: kind,
-                        severity: kind == "screen_record_detected" ? "critical" : "warning"
-                    )
-                }
-            }
+        .task {
+            startCaptureMonitor()
+            await call.connect(url: room.url, token: room.token)
         }
-        .onDisappear { capture.stop() }
+        .onDisappear {
+            capture.stop()
+            Task { await call.disconnect() }
+        }
     }
+
+    // MARK: Bo'limlar
 
     private var header: some View {
         HStack(spacing: 10) {
@@ -59,88 +56,259 @@ struct CallView: View {
                     .font(.subheadline.weight(.semibold))
                     .foregroundColor(.white)
                     .lineLimit(1)
-                Text(capture.isBeingCaptured ? "Ekran yozilmoqda — himoya faol" : "Ulandi")
+                Text(capture.isBeingCaptured ? "Ekran yozilmoqda — himoya faol" : call.status)
                     .font(.caption)
                     .foregroundColor(capture.isBeingCaptured ? Theme.danger : Theme.muted)
             }
             Spacer()
+            if capture.screenshotCount > 0 {
+                Label("\(capture.screenshotCount)", systemImage: "camera.viewfinder")
+                    .font(.caption)
+                    .foregroundColor(Theme.danger)
+            }
         }
         .padding(16)
         .background(Theme.panel)
     }
 
-    private var content: some View {
-        VStack(spacing: 14) {
-            Spacer()
-
-            Image(systemName: "video.badge.waveform")
-                .font(.system(size: 48))
-                .foregroundColor(Theme.muted)
-
-            Text("Video kutilmoqda…")
-                .font(.headline)
-                .foregroundColor(.white)
-
-            Text("Qurilmalararo video oqimi LiveKit ulangach faollashadi.\nMajlisga ulanish qayd etildi.")
-                .font(.caption)
-                .foregroundColor(Theme.muted)
-                .multilineTextAlignment(.center)
-                .padding(.horizontal, 32)
-
-            if capture.screenshotCount > 0 {
-                Label("\(capture.screenshotCount) ta skrinshot aniqlandi va qayd etildi",
-                      systemImage: "exclamationmark.triangle.fill")
-                    .font(.caption)
-                    .foregroundColor(Theme.danger)
-                    .padding(.top, 8)
+    @ViewBuilder
+    private var videoArea: some View {
+        if call.tiles.isEmpty {
+            VStack(spacing: 10) {
+                ProgressView().tint(Theme.accent)
+                Text("Video kutilmoqda…")
+                    .font(.subheadline)
+                    .foregroundColor(Theme.muted)
             }
+        } else {
+            ScrollView {
+                LazyVGrid(
+                    columns: call.tiles.count == 1
+                        ? [GridItem(.flexible())]
+                        : [GridItem(.flexible()), GridItem(.flexible())],
+                    spacing: 8
+                ) {
+                    ForEach(call.tiles) { tile in
+                        ZStack(alignment: .bottomLeading) {
+                            LKVideoView(track: tile.track)
+                                .frame(height: 240)
+                                .clipShape(RoundedRectangle(cornerRadius: 12))
 
-            Spacer()
+                            Text(tile.label)
+                                .font(.caption)
+                                .foregroundColor(.white)
+                                .padding(.horizontal, 8)
+                                .padding(.vertical, 3)
+                                .background(Color.black.opacity(0.6))
+                                .clipShape(RoundedRectangle(cornerRadius: 6))
+                                .padding(6)
+                        }
+                    }
+                }
+                .padding(8)
+            }
         }
-        .frame(maxWidth: .infinity)
     }
 
     private var blockedContent: some View {
         VStack(spacing: 14) {
-            Spacer()
             Image(systemName: "eye.slash.fill")
                 .font(.system(size: 48))
                 .foregroundColor(Theme.danger)
             Text("Kontent yashirildi")
                 .font(.headline)
                 .foregroundColor(.white)
-            Text("Ekran yozuvi yoki translyatsiya aniqlandi. Hodisa xavfsizlik jurnaliga yozildi.")
+            Text("Ekran yozuvi yoki translyatsiya aniqlandi.\nHodisa xavfsizlik jurnaliga yozildi.")
                 .font(.caption)
                 .foregroundColor(Theme.muted)
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 32)
-            Spacer()
         }
-        .frame(maxWidth: .infinity)
     }
 
     private var controls: some View {
-        HStack {
-            Spacer()
-            Button {
-                dismiss()
-            } label: {
-                Image(systemName: "phone.down.fill")
-                    .font(.title3)
-                    .foregroundColor(.white)
-                    .frame(width: 56, height: 56)
-                    .background(Theme.danger)
-                    .clipShape(Circle())
+        HStack(spacing: 26) {
+            CallButton(
+                icon: call.micOn ? "mic.fill" : "mic.slash.fill",
+                label: "Mikrofon"
+            ) {
+                Task { await call.toggleMic() }
             }
-            .accessibilityLabel("Qo'ng'iroqni tugatish")
-            Spacer()
+
+            CallButton(
+                icon: call.camOn ? "video.fill" : "video.slash.fill",
+                label: "Kamera"
+            ) {
+                Task { await call.toggleCam() }
+            }
+
+            CallButton(icon: "phone.down.fill", label: "Tugatish", tint: Theme.danger) {
+                dismiss()
+            }
         }
         .padding(.vertical, 18)
+        .frame(maxWidth: .infinity)
         .background(Theme.panel)
+    }
+
+    // MARK: Anti-capture
+
+    private func startCaptureMonitor() {
+        capture.start { kind in
+            Task {
+                guard let token = state.session?.token else { return }
+                await state.api.reportCapture(
+                    token: token,
+                    meetingId: meetingId,
+                    kind: kind,
+                    severity: kind == "screen_record_detected" ? "critical" : "warning"
+                )
+            }
+        }
     }
 }
 
-/// Ekran yozuvi va skrinshotni kuzatuvchi (iOS faqat aniqlay oladi, blokla olmaydi).
+struct CallButton: View {
+    let icon: String
+    let label: String
+    var tint: Color = Theme.panelHi
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            Image(systemName: icon)
+                .font(.title3)
+                .foregroundColor(.white)
+                .frame(width: 56, height: 56)
+                .background(tint)
+                .clipShape(Circle())
+        }
+        .accessibilityLabel(label)
+    }
+}
+
+// MARK: - LiveKit
+
+struct TrackTile: Identifiable {
+    let id: String
+    let label: String
+    let track: VideoTrack
+}
+
+/// UIKit `VideoView` ni SwiftUI'ga o'rash (LiveKit SwiftUI komponentlari alohida
+/// paketda — qo'shimcha bog'liqlikni oldini olamiz).
+struct LKVideoView: UIViewRepresentable {
+    let track: VideoTrack
+
+    func makeUIView(context: Context) -> VideoView {
+        let view = VideoView()
+        view.layoutMode = .fill
+        view.track = track
+        return view
+    }
+
+    func updateUIView(_ uiView: VideoView, context: Context) {
+        if uiView.track !== track {
+            uiView.track = track
+        }
+    }
+
+    static func dismantleUIView(_ uiView: VideoView, coordinator: ()) {
+        uiView.track = nil
+    }
+}
+
+/// Qo'ng'iroq holati: ulanish, mikrofon/kamera, video treklar.
+/// Delegat chaqiruvlari fon oqimidan kelishi mumkin → `nonisolated` + MainActor'ga o'tish.
+@MainActor
+final class CallModel: ObservableObject {
+    @Published private(set) var tiles: [TrackTile] = []
+    @Published private(set) var status = "Ulanmoqda…"
+    @Published private(set) var micOn = true
+    @Published private(set) var camOn = true
+
+    private let room = Room()
+    private lazy var proxy = RoomDelegateProxy(model: self)
+
+    func connect(url: String, token: String) async {
+        room.add(delegate: proxy)
+
+        // Mikrofon/kamera ruxsati — LiveKit trek yaratishdan oldin so'raladi.
+        await AVCaptureDevice.requestAccess(for: .video)
+        await AVCaptureDevice.requestAccess(for: .audio)
+
+        do {
+            try await room.connect(url: url, token: token)
+            status = "Efirda"
+            try await room.localParticipant.setMicrophone(enabled: true)
+            try await room.localParticipant.setCamera(enabled: true)
+        } catch {
+            status = "Xatolik: \(error.localizedDescription)"
+        }
+    }
+
+    func disconnect() async {
+        await room.disconnect()
+    }
+
+    func toggleMic() async {
+        micOn.toggle()
+        try? await room.localParticipant.setMicrophone(enabled: micOn)
+    }
+
+    func toggleCam() async {
+        camOn.toggle()
+        try? await room.localParticipant.setCamera(enabled: camOn)
+    }
+
+    // Delegatdan chaqiriladi (MainActor'da).
+
+    func addTile(label: String, track: VideoTrack) {
+        let id = String(UInt(bitPattern: ObjectIdentifier(track).hashValue))
+        guard !tiles.contains(where: { $0.id == id }) else { return }
+        tiles.append(TrackTile(id: id, label: label, track: track))
+    }
+
+    func removeTile(track: VideoTrack) {
+        let id = String(UInt(bitPattern: ObjectIdentifier(track).hashValue))
+        tiles.removeAll { $0.id == id }
+    }
+}
+
+/// `RoomDelegate` — alohida sinf: `CallModel` MainActor'da, delegat esa emas.
+final class RoomDelegateProxy: RoomDelegate {
+    private weak var model: CallModel?
+
+    init(model: CallModel) {
+        self.model = model
+    }
+
+    func room(_ room: Room, participant: LocalParticipant, didPublishTrack publication: LocalTrackPublication) {
+        guard let track = publication.track as? VideoTrack else { return }
+        Task { @MainActor [weak model] in
+            model?.addTile(label: "Siz", track: track)
+        }
+    }
+
+    func room(_ room: Room, participant: RemoteParticipant, didSubscribeTrack publication: RemoteTrackPublication) {
+        guard let track = publication.track as? VideoTrack else { return }
+        let label = participant.identity.map { "\($0)" } ?? "ishtirokchi"
+        Task { @MainActor [weak model] in
+            model?.addTile(label: label, track: track)
+        }
+    }
+
+    func room(_ room: Room, participant: RemoteParticipant, didUnsubscribeTrack publication: RemoteTrackPublication) {
+        guard let track = publication.track as? VideoTrack else { return }
+        Task { @MainActor [weak model] in
+            model?.removeTile(track: track)
+        }
+    }
+}
+
+// MARK: - Ekran yozuvi / skrinshot aniqlash
+
+/// iOS faqat **aniqlay** oladi, blokla olmaydi (ADR D-013).
 @MainActor
 final class CaptureMonitor: ObservableObject {
     @Published private(set) var isBeingCaptured = false
@@ -153,7 +321,7 @@ final class CaptureMonitor: ObservableObject {
         guard observers.isEmpty else { return }
         self.onEvent = onEvent
 
-        // Boshlang'ich holat: qo'ng'iroq ochilganda allaqachon yozilayotgan bo'lishi mumkin.
+        // Qo'ng'iroq ochilganda allaqachon yozilayotgan bo'lishi mumkin.
         isBeingCaptured = UIScreen.main.isCaptured
         if isBeingCaptured { onEvent("screen_record_detected") }
 
@@ -166,10 +334,9 @@ final class CaptureMonitor: ObservableObject {
             Task { @MainActor in
                 guard let self else { return }
                 let captured = UIScreen.main.isCaptured
-                if captured != self.isBeingCaptured {
-                    self.isBeingCaptured = captured
-                    if captured { self.onEvent?("screen_record_detected") }
-                }
+                guard captured != self.isBeingCaptured else { return }
+                self.isBeingCaptured = captured
+                if captured { self.onEvent?("screen_record_detected") }
             }
         })
 

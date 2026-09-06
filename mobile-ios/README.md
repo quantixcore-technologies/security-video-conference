@@ -13,7 +13,7 @@ Android ilovasi (`../mobile`) bilan bir xil funksiya va dizayn: landing → logi
 | Xabarlar (o'qilmagan badge, o'qilgan belgilash) | ✅ |
 | Bo'lim xodimlari, profil, chiqish | ✅ |
 | Skrinshot / ekran-yozuv **aniqlash** + serverga qayd | ✅ |
-| LiveKit video | ⬜ 2-bosqich (pastga qarang) |
+| LiveKit video (kamera/mikrofon, grid, RoomDelegate) | ✅ yozilgan — server LiveKit URL kutmoqda |
 | Push-bildirishnoma (APNs) | ⬜ rejada |
 
 **Anti-capture farqi (ADR D-013):** iOS'da Android'dagi `FLAG_SECURE` ekvivalenti
@@ -61,15 +61,27 @@ POST /api/capture-events
 
 Token iOS **Keychain**'da saqlanadi (`kSecAttrAccessibleWhenUnlockedThisDeviceOnly`).
 
-## 2-bosqich — LiveKit video
+## LiveKit video
 
-Server tomonda media oqimi hozir qurilmalararo o'tmaydi (NAT + Cloudflare tunnel
-UDP tashimaydi). LiveKit Cloud ulanganda yoki statik IP olinganda:
+Klient tomoni **tayyor** (`Views/CallView.swift`): `Room` + `RoomDelegate`,
+kamera/mikrofon, video grid (UIKit `VideoView` `UIViewRepresentable` orqali).
 
-1. `project.yml` dagi `packages: LiveKit` blokini oching va
-   `dependencies: - package: LiveKit` ni target'ga qaytaring.
-2. `Views/CallView.swift` dagi placeholder o'rniga `Room` + `SwiftUIVideoView`.
-3. `SvcApi.join(...)` allaqachon `wss://` manzil qaytaradi (ATS talabi).
+Qolgan yagona narsa — **server LiveKit manzili**. Hozir backend
+`ws://127.0.0.1:7880` qaytaradi (dev.exs default): shifrlanmagan `ws://` ni
+iOS ATS ham, Android ham bloklaydi, media esa NAT + Cloudflare tunnel orqali
+o'tmaydi (tunnel UDP tashimaydi).
+
+Yechim — LiveKit Cloud (yoki statik IP + self-host). Kod o'zgarmaydi: systemd
+unit `~/svc-real.env` ni source qiladi, Mix `dev.exs` ni boot paytida o'qiydi:
+
+```bash
+# darkside'da, foydalanuvchi `!` orqali (kalitlar maxfiy):
+LK_URL='wss://xxx.livekit.cloud' LK_KEY='APIxxx' LK_SECRET='xxx' \
+  bash ~/Shuxrat/svc_stage/livekit_apply.sh
+```
+
+Shundan keyin `/api/meetings/:id/join` `wss://…livekit.cloud` qaytaradi —
+Android ham, iOS ham ishlaydi.
 
 ## Tuzilma
 
