@@ -1,0 +1,60 @@
+name: iOS build
+
+# macOS runner — iOS ilovani kompilyatsiya qiladi (Linux'da Xcode yo'q).
+# Public repo uchun macOS runner minutlari bepul.
+on:
+  push:
+    paths:
+      - "mobile-ios/**"
+      - ".github/workflows/ios.yml"
+  pull_request:
+    paths:
+      - "mobile-ios/**"
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build (iOS Simulator, imzosiz)
+    runs-on: macos-14
+    timeout-minutes: 30
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Xcode versiyasi
+        run: xcodebuild -version
+
+      - name: XcodeGen o'rnatish
+        run: brew install xcodegen
+
+      - name: .xcodeproj generatsiya
+        working-directory: mobile-ios
+        run: xcodegen generate
+
+      - name: Build
+        working-directory: mobile-ios
+        run: |
+          set -o pipefail
+          xcodebuild \
+            -project SVC.xcodeproj \
+            -scheme SVC \
+            -configuration Debug \
+            -destination 'generic/platform=iOS Simulator' \
+            -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            build
+
+      - name: Artefaktni yig'ish (.app)
+        working-directory: mobile-ios
+        run: |
+          APP=$(find build/Build/Products -name "SVC.app" -maxdepth 3 | head -1)
+          echo "APP=$APP"
+          mkdir -p artifact && cp -R "$APP" artifact/
+
+      - name: Yuklash
+        uses: actions/upload-artifact@v4
+        with:
+          name: SVC-ios-simulator
+          path: mobile-ios/artifact
+          retention-days: 14

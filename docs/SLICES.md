@@ -77,7 +77,7 @@
 | S23 | Android — **2FA(TOTP) через API** (login→totp_required→/api/login/totp→bearer) + экран ввода кода | ✅ собран, проверен на реальном устройстве (2026-06-08) |
 | S24 | Android — **GPS-захват (E7) при join** — LocationManager → lat/lon/accuracy в join; backend gate пишет в network_geo_checks (+миграция gps_*) | ✅ собран, проверен на реальном устройстве (2026-06-08) |
 | S25 | Android — **чат (LiveKit data, topic "chat") + screen-share (MediaProjection → LiveKit screencast)** | ✅ собран, установлен на устройство (2026-06-08) |
-| —   | iOS-клиент (Swift, isCaptured detect, GPS) | ⬜ требует macOS |
+| S34 | iOS-клиент (SwiftUI): landing/login/2FA, встречи + создание, уведомления, отдел, профиль, Keychain, GPS, **isCaptured/screenshot detect → /api/capture-events** | 🔵 код написан (`mobile-ios/`), сборка — CI macOS runner; видео (LiveKit) — 2-й этап |
 
 ## Кросс-функциональные ⬜
 | S28 | **Kod-sifat + xavfsizlik qatlami** — Credo (0 issue) · Sobelow (0 High/Med, CSP qo'shildi) · CI (GitHub Actions) · 0 compile-warning · 193 test | ✅ 2026-08-30 |
