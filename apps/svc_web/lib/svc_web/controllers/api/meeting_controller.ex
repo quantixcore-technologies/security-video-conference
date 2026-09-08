@@ -62,7 +62,10 @@ defmodule SvcWeb.API.MeetingController do
             meeting_id: meeting.id
           )
 
-          Audit.log_action(user, :meeting_create, resource_type: :meeting, resource_id: meeting.id)
+          Audit.log_action(user, :meeting_create,
+            resource_type: :meeting,
+            resource_id: meeting.id
+          )
 
           conn
           |> put_status(:created)
@@ -86,7 +89,9 @@ defmodule SvcWeb.API.MeetingController do
 
   defp parse_dt(s) when is_binary(s) do
     case DateTime.from_iso8601(s) do
-      {:ok, dt, _} -> dt
+      {:ok, dt, _} ->
+        dt
+
       _ ->
         # datetime-local "2026-09-03T14:30" — секунды/зону добавляем сами
         case NaiveDateTime.from_iso8601(s <> ":00") do

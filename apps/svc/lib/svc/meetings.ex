@@ -150,7 +150,10 @@ defmodule Svc.Meetings do
   def list_in_range(%User{} = actor, %DateTime{} = from, %DateTime{} = to) do
     Repo.all(
       visible_query(actor.id, actor.org_id)
-      |> where([m], not is_nil(m.scheduled_start) and m.scheduled_start >= ^from and m.scheduled_start <= ^to)
+      |> where(
+        [m],
+        not is_nil(m.scheduled_start) and m.scheduled_start >= ^from and m.scheduled_start <= ^to
+      )
       |> order_by([m], m.scheduled_start)
     )
   end

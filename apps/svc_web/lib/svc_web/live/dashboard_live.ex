@@ -32,7 +32,9 @@ defmodule SvcWeb.DashboardLive do
       <h1 class="text-2xl font-semibold tracking-tight">
         {gettext("Здравствуйте, %{name}", name: first_name(@current_user.full_name))}
       </h1>
-      <p class="text-sm text-base-content/55 mt-1 mb-6">{gettext("Обзор организации и активности")}</p>
+      <p class="text-sm text-base-content/55 mt-1 mb-6">
+        {gettext("Обзор организации и активности")}
+      </p>
 
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
         <.metric
@@ -52,7 +54,9 @@ defmodule SvcWeb.DashboardLive do
           class="group rounded-xl border border-base-300 bg-base-100/50 p-5 hover:border-primary/30 transition"
         >
           <div class="flex items-center justify-between">
-            <span class="text-xs uppercase tracking-wider text-base-content/45">{gettext("Мои поручения")}</span>
+            <span class="text-xs uppercase tracking-wider text-base-content/45">
+              {gettext("Мои поручения")}
+            </span>
             <.icon
               name="hero-clipboard-document-list"
               class="size-4 text-base-content/35 group-hover:text-primary transition"

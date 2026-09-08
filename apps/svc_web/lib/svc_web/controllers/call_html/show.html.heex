@@ -119,7 +119,9 @@
 
         <div id="tab-settings" class="hidden flex-1 overflow-auto p-4 space-y-4 text-sm">
           <label class="block">
-            <span class="text-xs font-medium text-base-content/60 mb-1.5 block">{gettext("Камера")}</span>
+            <span class="text-xs font-medium text-base-content/60 mb-1.5 block">
+              {gettext("Камера")}
+            </span>
             <select
               id="sel-cam"
               onchange="switchDevice('videoinput', this.value)"
@@ -128,7 +130,9 @@
             </select>
           </label>
           <label class="block">
-            <span class="text-xs font-medium text-base-content/60 mb-1.5 block">{gettext("Микрофон")}</span>
+            <span class="text-xs font-medium text-base-content/60 mb-1.5 block">
+              {gettext("Микрофон")}
+            </span>
             <select
               id="sel-mic"
               onchange="switchDevice('audioinput', this.value)"
@@ -142,7 +146,9 @@
 
     <footer class="relative flex items-center justify-center gap-2.5 h-20 border-t border-base-300 bg-base-100 shrink-0 px-4">
       <span class="hidden md:inline-flex absolute left-4 items-center gap-1.5 text-xs text-base-content/40">
-        <.icon name="hero-lock-closed" class="size-3.5" /> {gettext("Запись запрещена · контент watermarked")}
+        <.icon name="hero-lock-closed" class="size-3.5" /> {gettext(
+          "Запись запрещена · контент watermarked"
+        )}
       </span>
       <button
         id="btn-mic"

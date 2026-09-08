@@ -64,7 +64,9 @@ defmodule SvcWeb.SecurityLive do
       <div class="flex items-start justify-between gap-4 mb-6">
         <div>
           <h1 class="text-2xl font-semibold tracking-tight">{gettext("Безопасность")}</h1>
-          <p class="text-sm text-base-content/55 mt-1">{gettext("Журнал попыток захвата контента (E5)")}</p>
+          <p class="text-sm text-base-content/55 mt-1">
+            {gettext("Журнал попыток захвата контента (E5)")}
+          </p>
         </div>
         <div
           :if={@critical > 0}
@@ -82,11 +84,17 @@ defmodule SvcWeb.SecurityLive do
         <form phx-submit="save_policy" class="space-y-3">
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <label class="block">
-              <span class="text-xs font-medium text-base-content/60 mb-1 block">{gettext("Режим")}</span>
+              <span class="text-xs font-medium text-base-content/60 mb-1 block">
+                {gettext("Режим")}
+              </span>
               <select name="policy[mode]" class="select select-sm select-bordered w-full bg-base-100">
                 <option value="off" selected={@policy.mode == :off}>{gettext("Выключен")}</option>
-                <option value="flag_only" selected={@policy.mode == :flag_only}>{gettext("Только флаг")}</option>
-                <option value="enforce" selected={@policy.mode == :enforce}>{gettext("Блокировка")}</option>
+                <option value="flag_only" selected={@policy.mode == :flag_only}>
+                  {gettext("Только флаг")}
+                </option>
+                <option value="enforce" selected={@policy.mode == :enforce}>
+                  {gettext("Блокировка")}
+                </option>
               </select>
             </label>
             <label class="block">
@@ -142,7 +150,9 @@ defmodule SvcWeb.SecurityLive do
       </div>
 
       <h2 class="text-sm font-medium mb-3 flex items-center gap-2">
-        <.icon name="hero-film" class="size-4 text-base-content/45" /> {gettext("Журнал захвата контента")}
+        <.icon name="hero-film" class="size-4 text-base-content/45" /> {gettext(
+          "Журнал захвата контента"
+        )}
       </h2>
 
       <div
@@ -152,7 +162,9 @@ defmodule SvcWeb.SecurityLive do
         <.icon name="hero-shield-check" class="size-10 mx-auto mb-3 opacity-40 text-success" />
         {gettext("Событий захвата не зафиксировано")}
         <div class="text-xs text-base-content/35 mt-2">
-          {gettext("Детекты приходят от нативного клиента (Tauri/mobile). Web-слой защищён watermark.")}
+          {gettext(
+            "Детекты приходят от нативного клиента (Tauri/mobile). Web-слой защищён watermark."
+          )}
         </div>
       </div>
 
@@ -195,7 +207,9 @@ defmodule SvcWeb.SecurityLive do
       <div class="flex items-center gap-2 mt-8 mb-3">
         <.icon name="hero-globe-alt" class="size-4 text-base-content/45" />
         <h2 class="text-sm font-medium">{gettext("Сетевые / гео-проверки (pre-join)")}</h2>
-        <span :if={@flagged > 0} class="text-xs text-warning">{gettext("· флагнуто:")} {@flagged}</span>
+        <span :if={@flagged > 0} class="text-xs text-warning">
+          {gettext("· флагнуто:")} {@flagged}
+        </span>
       </div>
 
       <div

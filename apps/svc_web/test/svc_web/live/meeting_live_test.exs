@@ -96,9 +96,24 @@ defmodule SvcWeb.MeetingLiveTest do
   test "employee не может открыть форму поручения из встречи", %{conn: conn, mgr: mgr, emp: emp} do
     {:ok, meeting} = Meetings.create_meeting(mgr, %{title: "Совещание"})
 
+    # D-016: чтобы вообще видеть встречу, employee должен быть назначен в неё
+    {:ok, _} = Attendance.add_invitee(meeting, emp)
+
     assert {:error, {:live_redirect, %{to: path}}} =
              conn |> login(emp) |> live(~p"/admin/meetings/#{meeting.id}/assign-task")
 
     assert path =~ "/admin/meetings/#{meeting.id}"
+  end
+
+  test "не назначенный не видит чужую встречу вовсе (D-016)", %{conn: conn, mgr: mgr, emp: emp} do
+    {:ok, meeting} = Meetings.create_meeting(mgr, %{title: "Приватное совещание"})
+
+    # emp НЕ назначен → встреча для него не существует (redirect на список)
+    assert {:error, {:live_redirect, %{to: "/admin/meetings"}}} =
+             conn |> login(emp) |> live(~p"/admin/meetings/#{meeting.id}")
+
+    # и в списке её нет
+    {:ok, _lv, html} = conn |> login(emp) |> live(~p"/admin/meetings")
+    refute html =~ "Приватное совещание"
   end
 end

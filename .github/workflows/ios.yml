@@ -15,7 +15,7 @@ on:
 jobs:
   build:
     name: Build (iOS Simulator, imzosiz)
-    runs-on: macos-14
+    runs-on: macos-latest
     timeout-minutes: 30
 
     steps:
@@ -29,7 +29,13 @@ jobs:
 
       - name: .xcodeproj generatsiya
         working-directory: mobile-ios
-        run: xcodegen generate
+        run: |
+          xcodegen generate
+          # Homebrew'dagi eng yangi XcodeGen loyihani runner'dagi Xcode'dan
+          # yangiroq formatda yozishi mumkin ("future project file format").
+          # objectVersion'ni Xcode 16 o'qiy oladigan qiymatga tushiramiz.
+          sed -i '' -E 's/objectVersion = [0-9]+;/objectVersion = 63;/' SVC.xcodeproj/project.pbxproj
+          grep -m1 objectVersion SVC.xcodeproj/project.pbxproj
 
       - name: Build
         working-directory: mobile-ios

@@ -19,7 +19,9 @@
 
       <.form for={to_form(%{}, as: :user)} action={~p"/login"} class="space-y-4">
         <label class="block">
-          <span class="text-xs font-medium text-base-content/60 mb-1.5 block">{gettext("Логин")}</span>
+          <span class="text-xs font-medium text-base-content/60 mb-1.5 block">
+            {gettext("Логин")}
+          </span>
           <input
             type="text"
             name="user[username]"
@@ -30,7 +32,9 @@
           />
         </label>
         <label class="block">
-          <span class="text-xs font-medium text-base-content/60 mb-1.5 block">{gettext("Пароль")}</span>
+          <span class="text-xs font-medium text-base-content/60 mb-1.5 block">
+            {gettext("Пароль")}
+          </span>
           <input
             type="password"
             name="user[password]"
