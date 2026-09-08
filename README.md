@@ -17,7 +17,9 @@ government and privacy-critical organizations.*
 [![Tests](https://img.shields.io/badge/tests-224%20passing-3FB950)](#)
 [![Security](https://img.shields.io/badge/Sobelow-0%20high%2Fmed-3FB950)](#)
 
-**🌐 Live demo:** [svc.co1nlist.uz](https://svc.co1nlist.uz) · **Taqdimot:** [slayd.co1nlist.uz](https://slayd.co1nlist.uz)
+**🌐 Live demo:** [svc.co1nlist.uz](https://svc.co1nlist.uz) · [svc.neti.uz](https://svc.neti.uz) · **Taqdimot:** [slayd.co1nlist.uz](https://slayd.co1nlist.uz)
+
+**🎬 Demo video (EN):** [docs/award/SVC_Demo_EN.mp4](docs/award/SVC_Demo_EN.mp4) · **Pitch deck (EN):** [docs/award/Presentation_SVC_EN.pdf](docs/award/Presentation_SVC_EN.pdf)
 
 </div>
 
