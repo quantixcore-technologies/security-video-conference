@@ -36,6 +36,7 @@ import androidx.compose.material.icons.filled.Password
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Shield
+import androidx.compose.material.icons.filled.SystemUpdate
 import androidx.compose.material.icons.filled.Videocam
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
@@ -46,12 +47,16 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.launch
 
@@ -126,9 +131,15 @@ class MainActivity : ComponentActivity() {
         var checking by remember { mutableStateOf(true) }
         var showLogin by rememberSaveable { mutableStateOf(false) }
         var auth by remember { mutableStateOf<Auth?>(null) }
+        var update by remember { mutableStateOf<UpdateManager.UpdateInfo?>(null) }
 
-        // Auto-login: saqlangan token yaroqli bo'lsa — to'g'ridan-to'g'ri ish ekraniga.
+        val updater = remember { UpdateManager(applicationContext) }
+
         LaunchedEffect(Unit) {
+            // 1) Yangilanish tekshiruvi — MAJBURIY bo'lsa ilova umuman ochilmaydi.
+            update = updater.checkForUpdate()
+
+            // 2) Auto-login: saqlangan token yaroqli bo'lsa — to'g'ridan-to'g'ri ish ekraniga.
             val token = Prefs.token(this@MainActivity)
             if (token != null) {
                 val api = SvcApi(SERVER_URL)
@@ -142,11 +153,19 @@ class MainActivity : ComponentActivity() {
             checking = false
         }
 
+        val pending = update
+
         when {
             checking -> Surface(color = Bg, modifier = Modifier.fillMaxSize()) {
                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     CircularProgressIndicator(color = Accent)
                 }
+            }
+
+            // Majburiy yangilanish: orqaga qaytish yo'q, boshqa ekran ko'rsatilmaydi.
+            pending != null && pending.mandatory -> {
+                BackHandler { /* bloklangan — chiqish yo'q */ }
+                ForcedUpdateScreen(updater, pending)
             }
 
             auth != null -> HomeScreen(auth!!, onLogout = {
@@ -168,24 +187,177 @@ class MainActivity : ComponentActivity() {
                 locationPermission.launch(Manifest.permission.ACCESS_FINE_LOCATION)
             })
         }
-        UpdateDialog()
+
+        // Ixtiyoriy yangilanish — faqat majburiy bo'lmagan holatda taklif qilinadi.
+        if (!checking && pending != null && !pending.mandatory) {
+            OptionalUpdateDialog(updater, pending) { update = null }
+        }
     }
 
-    // ── OTA: serverdagi version.json bilan solishtirib, yangi APK'ni taklif qiladi ──
+    // ── Majburiy yangilanish: ilova yangilanmaguncha ishlamaydi ──
 
     @Composable
-    private fun UpdateDialog() {
-        val updater = remember { UpdateManager(applicationContext) }
-        var update by remember { mutableStateOf<UpdateManager.UpdateInfo?>(null) }
+    private fun ForcedUpdateScreen(updater: UpdateManager, info: UpdateManager.UpdateInfo) {
+        var downloading by remember { mutableStateOf(false) }
+        var progress by remember { mutableStateOf(0) }
+        var error by remember { mutableStateOf<String?>(null) }
+        // Sozlamalardan qaytganda ruxsat qayta tekshirilishi uchun hisoblagich.
+        var permCheck by remember { mutableStateOf(0) }
+        val canInstall = remember(permCheck) { updater.canInstallPackages() }
+
+        // Ekranga qaytganda (masalan, sozlamalardan) ruxsatni qayta o'qiymiz.
+        val lifecycleOwner = LocalLifecycleOwner.current
+        DisposableEffect(lifecycleOwner) {
+            val obs = LifecycleEventObserver { _, event ->
+                if (event == Lifecycle.Event.ON_RESUME) permCheck++
+            }
+            lifecycleOwner.lifecycle.addObserver(obs)
+            onDispose { lifecycleOwner.lifecycle.removeObserver(obs) }
+        }
+
+        Surface(color = Bg, modifier = Modifier.fillMaxSize()) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .verticalScroll(rememberScrollState())
+                    .padding(28.dp),
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Icon(
+                    Icons.Default.SystemUpdate, null,
+                    tint = Accent, modifier = Modifier.size(72.dp)
+                )
+                Spacer(Modifier.height(20.dp))
+
+                Text(
+                    "Yangilanish talab qilinadi",
+                    style = MaterialTheme.typography.headlineSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White,
+                    textAlign = TextAlign.Center
+                )
+                Spacer(Modifier.height(10.dp))
+
+                Text(
+                    "Xavfsizlik talablariga ko'ra ilovaning eski versiyasidan " +
+                        "foydalanib bo'lmaydi. Davom etish uchun yangilang.",
+                    color = Muted,
+                    textAlign = TextAlign.Center,
+                    style = MaterialTheme.typography.bodyMedium
+                )
+
+                Spacer(Modifier.height(22.dp))
+                Surface(color = Panel, shape = RoundedCornerShape(14.dp)) {
+                    Column(Modifier.padding(16.dp)) {
+                        Row {
+                            Text("Sizda:", color = Muted, modifier = Modifier.width(96.dp))
+                            Text("v${updater.installedVersionName()}", color = Color.White)
+                        }
+                        Spacer(Modifier.height(6.dp))
+                        Row {
+                            Text("Yangi:", color = Muted, modifier = Modifier.width(96.dp))
+                            Text(
+                                "v${info.versionName}",
+                                color = Accent, fontWeight = FontWeight.Bold
+                            )
+                        }
+                        info.notes?.let {
+                            Spacer(Modifier.height(10.dp))
+                            Text(it, color = Muted, style = MaterialTheme.typography.bodySmall)
+                        }
+                    }
+                }
+
+                error?.let {
+                    Spacer(Modifier.height(14.dp))
+                    Text(
+                        it, color = Danger,
+                        textAlign = TextAlign.Center,
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                }
+
+                Spacer(Modifier.height(26.dp))
+
+                if (!canInstall) {
+                    // Android 8+: "noma'lum manbalardan o'rnatish" ruxsati kerak.
+                    Text(
+                        "Ilova ichida yangilanish uchun bir martalik ruxsat kerak.",
+                        color = Muted,
+                        textAlign = TextAlign.Center,
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                    Spacer(Modifier.height(12.dp))
+                    Button(
+                        onClick = {
+                            runCatching { startActivity(updater.installPermissionIntent()) }
+                                .onFailure { error = "Sozlamalarni ochib bo'lmadi" }
+                        },
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Accent, contentColor = Color.White
+                        ),
+                        modifier = Modifier.fillMaxWidth().height(50.dp)
+                    ) { Text("Ruxsat berish") }
+                } else if (downloading) {
+                    Text("Yuklab olinmoqda… $progress%", color = Color.White)
+                    Spacer(Modifier.height(12.dp))
+                    LinearProgressIndicator(
+                        progress = { progress / 100f },
+                        color = Accent,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                } else {
+                    Button(
+                        onClick = {
+                            error = null
+                            downloading = true
+                            progress = 0
+                            lifecycleScope.launch {
+                                runCatching {
+                                    updater.downloadAndInstall(info) { p -> progress = p }
+                                }.onFailure {
+                                    error = it.message ?: "Yangilashda xatolik"
+                                }
+                                downloading = false
+                            }
+                        },
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Accent, contentColor = Color.White
+                        ),
+                        modifier = Modifier.fillMaxWidth().height(50.dp)
+                    ) {
+                        Icon(Icons.Default.SystemUpdate, null, modifier = Modifier.size(18.dp))
+                        Spacer(Modifier.width(8.dp))
+                        Text(if (error != null) "Qayta urinish" else "Hozir yangilash")
+                    }
+                }
+
+                Spacer(Modifier.height(18.dp))
+                Text(
+                    "QuantixCore Technologies",
+                    color = Muted,
+                    style = MaterialTheme.typography.labelSmall
+                )
+            }
+        }
+    }
+
+    // ── Ixtiyoriy yangilanish (majburiy emas): tashlab ketish mumkin ──
+
+    @Composable
+    private fun OptionalUpdateDialog(
+        updater: UpdateManager,
+        info: UpdateManager.UpdateInfo,
+        onDismiss: () -> Unit
+    ) {
         var downloading by remember { mutableStateOf(false) }
         var progress by remember { mutableStateOf(0) }
         var failed by remember { mutableStateOf(false) }
 
-        LaunchedEffect(Unit) { update = updater.checkForUpdate() }
-
-        update?.let { info ->
+        run {
             AlertDialog(
-                onDismissRequest = { if (!downloading) update = null },
+                onDismissRequest = { if (!downloading) onDismiss() },
                 containerColor = Panel,
                 title = { Text("Yangi versiya: v${info.versionName}", color = Color.White) },
                 text = {
@@ -211,7 +383,7 @@ class MainActivity : ComponentActivity() {
                             failed = false
                             lifecycleScope.launch {
                                 runCatching { updater.downloadAndInstall(info) { p -> progress = p } }
-                                    .onSuccess { update = null }
+                                    .onSuccess { onDismiss() }
                                     .onFailure { failed = true }
                                 downloading = false
                             }
@@ -219,7 +391,7 @@ class MainActivity : ComponentActivity() {
                     ) { Text(if (failed) "Qayta urinish" else "Yangilash", color = Accent) }
                 },
                 dismissButton = {
-                    TextButton(enabled = !downloading, onClick = { update = null }) {
+                    TextButton(enabled = !downloading, onClick = onDismiss) {
                         Text("Keyinroq", color = Muted)
                     }
                 }
@@ -1008,7 +1180,7 @@ class MainActivity : ComponentActivity() {
                             Text("Chiqish")
                         }
                         Spacer(Modifier.height(16.dp))
-                        Text("SVC v0.4.3 · QuantixCore Technologies", color = Muted,
+                        Text("SVC v0.5.0 · QuantixCore Technologies", color = Muted,
                             style = MaterialTheme.typography.labelSmall)
                     }
                 }

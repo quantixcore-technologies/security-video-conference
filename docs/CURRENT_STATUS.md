@@ -78,7 +78,17 @@
 - **UI:** бейдж «спуф» (с причиной в title) в гео-журнале `SecurityLive`.
 - `mix precommit` зелёный: **224 теста, 0 failures** (+8 `GeoSpoofingTest`).
 
+## 📲 Сессия 2026-09-01…09 — LiveKit Cloud, RBAC совещаний, обязательное обновление
+- ✅ **LiveKit Cloud подключён** (`wss://quantixcore-2mcrpdkd.livekit.cloud`): ключи в `~/svc-real.env` на сервере, код не менялся. Решало реальную проблему — сервер отдавал `ws://127.0.0.1:7880`, Android режет cleartext, а UDP через Cloudflare-туннель не проходит. Проверено: join → `wss://…`, `/rtc/validate` OK, участник виден в RoomService (`state=ACTIVE, tracks=[VIDEO,AUDIO]`).
+- ✅ **RBAC совещаний (D-016)** — организация: `super_admin` + `manager`; управление пользователями: только `super_admin`; видимость: организатор ИЛИ приглашённый (главный администратор **не видит** закрытые совещания других руководителей); прикрепление по рангу `@role_rank`. Регрессионный тест добавлен.
+- ✅ **S35 — обязательное OTA-обновление (D-017)**: Android v0.5.0 (versionCode 8) блокирует запуск на устаревших сборках, качает APK внутри приложения и открывает системный установщик — **без браузера и Play Market**; iOS-зеркало (`UpdateChecker` + `ForcedUpdateView`) блокирует, но ставит систему (запрет Apple). Проверено на эмуляторе end-to-end.
+- ✅ **Лендинг** (`svc.co1nlist.uz` / `svc.neti.uz`, один файл на оба домена): 3 языка uz/ru/en, светлая/тёмная тема, бейдж APK v0.5.0, `?v=8` против кэша Cloudflare (`/downloads/` отдаётся `no-cache` + `CDN-Cache-Control: no-store`).
+- ✅ **Gitea → GitHub push-mirror** (`sync_on_commit`): коммит уходит одной командой `bash ~/Shuxrat/svc_stage/gitea_auto_push.sh`, CI (Elixir + iOS macOS-раннер) зелёный.
+- 📤 **President Tech Award** — заявка подана повторно 2026-08-31 (материалы EN: презентация 16 слайдов + демо-видео 2:47); правки принимались до 15.09.2026.
+
 ## ⏭️ СЛЕДУЮЩИЙ КВЕСТ (Tauri-каркас + звонок готовы ✅ S26/S27)
+- 🔒 **2-сторонний реальный видеозвонок с мобильных** — заблокирован: у заказчика только iPhone, установка iOS-сборки требует Apple Developer ($99/год).
+- 🔴 **`svc-real` перевести с dev-режима на prod `mix release`** (сейчас mix в dev на сервере).
 - 🔴 **Tauri видео на Windows** — проверить реальное WebRTC-медиа в WebView2 + `setContentProtected` enforce (Linux webkit2gtk WebRTC ненадёжен; D-002 Windows-first).
 - **2-сторонний тест** — desktop ↔ web-call (`/admin/meetings/1/call`) / mobile: встречное видео.
 - **Tauri — детектор рекордеров (Rust)** → capture_events (E5).
@@ -107,4 +117,4 @@ i18n RU/UZ/EN · Tauri-клиент · реальный LiveKit Egress · E4/E6 
 Комплаенс O'zDSt/СКЗИ · парк Windows · каналы уведомлений E3 · смысл «CRM»(E4) · mobile-стек · хранение записей.
 
 ## 📚 Ключевые доки
-ADR: `docs/ARCHITECTURE_DECISIONS.md` (14) · разведка: `docs/research/` (4) · спеки: `docs/superpowers/specs/E0-E7` · итоги: `docs/sessions/2026-06-05.md` · `CLAUDE.md`(навигация).
+ADR: `docs/ARCHITECTURE_DECISIONS.md` (17) · разведка: `docs/research/` (4) · спеки: `docs/superpowers/specs/E0-E7` · итоги: `docs/sessions/2026-06-05.md` · `CLAUDE.md`(навигация).

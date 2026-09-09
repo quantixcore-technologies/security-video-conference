@@ -4,7 +4,7 @@
 > Статус: ✅ done · 🔵 in progress · ⬜ planned · 🔒 blocked (заказчик/лицензия/R&D).
 > Обновлять при закрытии каждого слайса. Источник истины по прогрессу проекта.
 
-## 📊 Прогресс: 33 ✅ · 8 ⬜ · 5 🔒 — **33 из ~40** (+ Android: PoC, 2FA, GPS, чат/screen-share · + Tauri desktop · + i18n полный uz/ru/en)
+## 📊 Прогресс: 34 ✅ · 8 ⬜ · 5 🔒 — **34 из ~41** (+ Android: PoC, 2FA, GPS, чат/screen-share · + Tauri desktop · + i18n полный uz/ru/en)
 
 ---
 
@@ -78,6 +78,7 @@
 | S24 | Android — **GPS-захват (E7) при join** — LocationManager → lat/lon/accuracy в join; backend gate пишет в network_geo_checks (+миграция gps_*) | ✅ собран, проверен на реальном устройстве (2026-06-08) |
 | S25 | Android — **чат (LiveKit data, topic "chat") + screen-share (MediaProjection → LiveKit screencast)** | ✅ собран, установлен на устройство (2026-06-08) |
 | S34 | iOS-клиент (SwiftUI): landing/login/2FA, встречи + создание, уведомления, отдел, профиль, Keychain, GPS, **isCaptured/screenshot detect → /api/capture-events** | 🔵 код написан (`mobile-ios/`), сборка — CI macOS runner; видео (LiveKit) — 2-й этап |
+| S35 | **Обязательное OTA-обновление (D-017)** — `version.json`: `minVersionCode` + `ios.minBuild` · Android `UpdateManager` (mandatory, проверка права `REQUEST_INSTALL_PACKAGES`, скачивание + системный установщик, fail-open) · блокирующий `ForcedUpdateScreen` + `BackHandler {}` до логина · iOS `UpdateChecker` + `ForcedUpdateView` (блокировка + ссылка, установка — не разрешена Apple) | ✅ 2026-09-09 · проверено на эмуляторе end-to-end: блок → скачивание → установщик → v0.5.0 запустилось (без Chrome/Play Market) |
 
 ## Кросс-функциональные ⬜
 | S28 | **Kod-sifat + xavfsizlik qatlami** — Credo (0 issue) · Sobelow (0 High/Med, CSP qo'shildi) · CI (GitHub Actions) · 0 compile-warning · 193 test | ✅ 2026-08-30 |
