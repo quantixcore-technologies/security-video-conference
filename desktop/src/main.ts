@@ -1,4 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
+import { listen } from "@tauri-apps/api/event";
 import { Room, RoomEvent, Track, type RemoteTrack, type Participant } from "livekit-client";
 import { fetch as httpFetch } from "@tauri-apps/plugin-http";
 import "./styles.css";
@@ -11,7 +12,21 @@ const state = {
   username: "",
   meetingId: "1",
   room: null as Room | null,
+  platform: "linux",
 };
+
+// Rust tomonidan aniqlangan rekorder (recorder.rs → DetectedRecorder).
+interface DetectedRecorder {
+  name: string;
+  process: string;
+  pid: number;
+  category: "recorder" | "remote_access";
+}
+
+interface RecorderAlert {
+  platform: string;
+  detections: DetectedRecorder[];
+}
 
 // ---------- Ekran himoyasi (Tauri Rust IPC) ----------
 async function paintBadge(): Promise<void> {
@@ -24,6 +39,84 @@ async function paintBadge(): Promise<void> {
     if (txt) txt.textContent = on ? "Ekran himoyasi: yoqilgan" : `Ekran himoyasi: ${info}`;
   } catch {
     if (txt) txt.textContent = "Ekran himoyasi: noma'lum";
+  }
+}
+
+// ---------- Anti-capture: rekorder detektori (E5, S36) ----------
+// Rust `recorder` moduli jarayonlarni skanerlaydi; bu yer aniqlanganini
+// serverga yozadi va per-meeting siyosat javobini (none/warn/eject) qo'llaydi.
+// D-013: bu DETECT qatlami — bloklash emas, kafolat bermaymiz.
+
+function alertBanner(msg: string, kind: "warn" | "crit"): void {
+  const box = document.querySelector<HTMLDivElement>("#capalert");
+  if (!box) return;
+  box.className = "capalert " + kind;
+  box.textContent = msg;
+}
+
+/// Aniqlangan rekorderni serverga qayd etadi va reaksiyani qaytaradi.
+async function reportRecorders(found: DetectedRecorder[]): Promise<void> {
+  // Token yo'q bo'lsa yubora olmaymiz (login oldidan aniqlanganlar
+  // majlisga kirishdagi qayta skanda baribir qayd etiladi).
+  if (!state.bearer || found.length === 0) return;
+
+  const names = [...new Set(found.map((d) => d.name))].join(", ");
+  const body: Record<string, unknown> = {
+    kind: "recorder_detected",
+    platform: state.platform,
+    severity: "warning",
+    detail: {
+      processes: found.map((d) => ({ name: d.name, process: d.process, pid: d.pid, category: d.category })),
+    },
+  };
+  if (state.room) body.meeting_id = Number(state.meetingId);
+
+  try {
+    const r = await httpFetch(`${state.server}/api/capture-events`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${state.bearer}` },
+      body: JSON.stringify(body),
+    });
+    const data = await r.json().catch(() => ({}));
+    applyReaction(String(data.reaction ?? "none"), names);
+  } catch (e) {
+    // Tarmoq xatosi qo'ng'iroqni buzmasin — foydalanuvchini baribir ogohlantiramiz.
+    console.error(e);
+    alertBanner(`⚠️ Ekran yozib olish aniqlandi: ${names}. Serverga qayd etilmadi.`, "warn");
+  }
+}
+
+function applyReaction(reaction: string, names: string): void {
+  if (reaction === "eject") {
+    // Server LiveKit'dan allaqachon chiqarib yubordi — mahalliy holatni tozalaymiz.
+    alertBanner(`⛔ Ekran yozib olish aniqlandi (${names}). Majlisdan chiqarildingiz.`, "crit");
+    void state.room?.disconnect();
+    return;
+  }
+  const suffix = reaction === "warn" ? " Tashkilotchi xabardor qilindi." : "";
+  alertBanner(`⚠️ Ekran yozib olish dasturi aniqlandi: ${names}. Hodisa qayd etildi.${suffix}`, "warn");
+}
+
+/// Fon kuzatuvchisi — majlis davomida ishga tushirilgan rekorderni tutadi.
+/// Bir marta o'rnatiladi; Rust tomoni faqat YANGI aniqlanganlarni yuboradi.
+async function watchRecorders(): Promise<void> {
+  try {
+    state.platform = await invoke<string>("client_platform");
+  } catch {
+    /* platform aniqlanmasa, standart "linux" qoladi */
+  }
+  await listen<RecorderAlert>("recorder-detected", (event) => {
+    void reportRecorders(event.payload.detections ?? []);
+  });
+}
+
+/// Majlisga kirishdan oldingi skan — ilova ishga tushishidan OLDIN ochilgan
+/// rekorderni tutadi (fon kuzatuvchisi uni login'gacha "ko'rilgan" deb belgilagan).
+async function scanBeforeJoin(): Promise<void> {
+  try {
+    await reportRecorders(await invoke<DetectedRecorder[]>("detect_recorders"));
+  } catch (e) {
+    console.error(e);
   }
 }
 
@@ -148,6 +241,8 @@ async function connectLiveKit(url: string, token: string, roomName: string): Pro
     await room.localParticipant.setMicrophoneEnabled(true);
     await room.localParticipant.setCameraEnabled(true);
     renderLocalTile(room);
+    // E5: majlis kontekstida allaqachon ochiq rekorderlarni qayd etamiz.
+    void scanBeforeJoin();
   } catch (e) {
     console.error(e);
     const grid = document.querySelector("#grid");
@@ -216,6 +311,7 @@ function renderCall(roomName: string): void {
         <div class="rn">SVC — majlis<small>${roomName}</small></div>
         <span class="pill">🔒 Himoyalangan kanal (DTLS-SRTP)</span>
       </div>
+      <div class="capalert" id="capalert"></div>
       <div class="grid" id="grid"></div>
       <div class="controls">
         <button class="ctrl" id="micBtn" title="Mikrofon">🎙️</button>
@@ -245,3 +341,4 @@ function renderCall(roomName: string): void {
 }
 
 renderLogin();
+void watchRecorders();

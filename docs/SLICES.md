@@ -4,7 +4,7 @@
 > Статус: ✅ done · 🔵 in progress · ⬜ planned · 🔒 blocked (заказчик/лицензия/R&D).
 > Обновлять при закрытии каждого слайса. Источник истины по прогрессу проекта.
 
-## 📊 Прогресс: 34 ✅ · 8 ⬜ · 5 🔒 — **34 из ~41** (+ Android: PoC, 2FA, GPS, чат/screen-share · + Tauri desktop · + i18n полный uz/ru/en)
+## 📊 Прогресс: 35 ✅ · 8 ⬜ · 5 🔒 — **35 из ~42** (+ Android: PoC, 2FA, GPS, чат/screen-share · + Tauri desktop · + i18n полный uz/ru/en)
 
 ---
 
@@ -35,12 +35,13 @@
 | S14 | **E3-F** `.ics`-экспорт (Outlook/Google) | ✅ |
 | —   | E3-внешние каналы (email/SMS/Telegram) | 🔒 каналы для гос = открытый вопрос |
 
-## E5 — Анти-захват ✅ 3/5
+## E5 — Анти-захват ✅ 4/6
 | # | Слайс | Статус |
 |---|-------|--------|
 | S15 | **E5-A** Watermark + журнал capture_events + матрица | ✅ |
 | S16 | **E5-B** Журнал захвата UI (SecurityLive) + API endpoint | ✅ |
 | S30 | **E5-C** Пер-встречная политика: `watermark_enabled` + `capture_reaction` (none/warn/eject) · `AntiCapture.enforce_policy` (warn→уведомление+audit · eject→LiveKit RemoveParticipant+audit) · gating watermark в звонке · UI в редакторе встречи | ✅ 2026-09-01 |
+| S36 | **E5-DETECT** (D-018) Rust-детектор рекордеров в Tauri (`recorder.rs`) — сканер процессов (`sysinfo`), 35 сигнатур (OBS/Bandicam/Camtasia/ShareX/Snagit/XSplit… + remote-access AnyDesk/RustDesk/TeamViewer отдельной категорией) · фоновый watcher (5 с, дедуп по (имя,pid)) + команды `detect_recorders`/`client_platform` · пере-скан при входе в звонок · frontend шлёт `recorder_detected` → `/api/capture-events` и применяет `reaction` (warn→баннер · eject→выход из комнаты) | ✅ 2026-09-11 · 7 Rust-тестов (вкл. запуск реального процесса) + 5 контрактных тестов API |
 | —   | **E5-ENFORCE** setContentProtected (Win) / FLAG_SECURE (Android) | ⬜ Android FLAG_SECURE ✅ · Tauri `contentProtected:true` задан → нужна Windows-валидация |
 | —   | E5-forensic аудио-watermark | 🔒 R&D + библиотека |
 

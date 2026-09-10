@@ -86,13 +86,48 @@
 - ✅ **Gitea → GitHub push-mirror** (`sync_on_commit`): коммит уходит одной командой `bash ~/Shuxrat/svc_stage/gitea_auto_push.sh`, CI (Elixir + iOS macOS-раннер) зелёный.
 - 📤 **President Tech Award** — заявка подана повторно 2026-08-31 (материалы EN: презентация 16 слайдов + демо-видео 2:47); правки принимались до 15.09.2026.
 
+## 🔍 Сессия 2026-09-11 — Tauri-детектор рекордеров (S36, E5-DETECT, D-018) ✅
+- ✅ **`desktop/src-tauri/src/recorder.rs`** — сканер процессов на `sysinfo` (0.36):
+  35 сигнатур рекордеров (OBS, Bandicam, Camtasia, ShareX, Snagit, XSplit, Fraps,
+  ScreenToGif, SimpleScreenRecorder, vokoscreen, QuickTime, macOS `screencapture`…)
+  + отдельная категория `remote_access` (AnyDesk / RustDesk / TeamViewer).
+  Матчинг двухуровневый: **exact** по нормализованному имени для коротких/общих
+  слов и **substring** только для характерных токенов — иначе `action`→`transaction`,
+  `peek`→`peekaboo`, `loom`→`bloom` давали бы ложные срабатывания, а при политике
+  `eject` это выкидывает невиновного участника из совещания. `ffmpeg` намеренно
+  **не** в таблице (слишком общий инструмент).
+- ✅ **Фоновый watcher** (отдельный OS-поток, скан раз в 5 с) шлёт событие
+  `recorder-detected` только для **новых** детектов; дедуп по паре (имя, pid),
+  закрытый и заново открытый процесс считается новым событием.
+  Команды: `detect_recorders`, `client_platform`, прежняя `security_status`.
+- ✅ **Frontend** (`desktop/src/main.ts`): слушает событие, шлёт
+  `POST /api/capture-events` (`kind: recorder_detected`, `platform: windows|macos|linux`,
+  `detail.processes[]`) и применяет `reaction` из ответа — `warn` → жёлтый баннер
+  в звонке, `eject` → локальный `room.disconnect()` (сервер уже снял участника).
+  При входе в звонок — пере-скан, иначе рекордер, открытый **до** старта приложения,
+  остался бы помечен «уже виден» ещё до логина и не попал бы в журнал.
+- ✅ **Бэкенд менять не пришлось** — `recorder_detected`, `enforce_policy` и
+  строка в SecurityLive существовали с S15/S16/S30. Добавлен только контрактный
+  тест API (`capture_controller_test.exs`), т.к. на этот endpoint теперь
+  опираются **три** клиента (Tauri, Android, iOS).
+- ✅ **Проверено:** 7 Rust-тестов (среди них — запуск реального процесса с именем
+  `obs64` и его обнаружение через `scan()`, что пиннит поведение `sysinfo`:
+  на Linux `Process::name()` отдаёт basename) · 5 контрактных тестов API ·
+  полный прогон **232 теста 0 failures** · `cargo test` без warning'ов ·
+  `tsc --noEmit` чисто · `vite build` собирается.
+- ⚠️ **Честная граница (D-013):** детектор не ловит переименованный бинарник,
+  отсутствующий в таблице инструмент и съёмку экрана телефоном. Это **снижение
+  риска, а не гарантия** — формулировка зафиксирована в `docs/security/anti-capture-matrix.md`.
+
 ## ⏭️ СЛЕДУЮЩИЙ КВЕСТ (Tauri-каркас + звонок готовы ✅ S26/S27)
 - 🔒 **2-сторонний реальный видеозвонок с мобильных** — заблокирован: у заказчика только iPhone, установка iOS-сборки требует Apple Developer ($99/год).
 - 🔴 **`svc-real` перевести с dev-режима на prod `mix release`** (сейчас mix в dev на сервере).
 - 🔴 **Tauri видео на Windows** — проверить реальное WebRTC-медиа в WebView2 + `setContentProtected` enforce (Linux webkit2gtk WebRTC ненадёжен; D-002 Windows-first).
 - **2-сторонний тест** — desktop ↔ web-call (`/admin/meetings/1/call`) / mobile: встречное видео.
-- **Tauri — детектор рекордеров (Rust)** → capture_events (E5).
-- **E5-C** политика захвата per-meeting · **E6-A** ML-инфра (🔒 GPU/R&D) · **i18n** RU/UZ/EN.
+- **S36-детектор на Windows** — таблица сигнатур проверена на Linux; на реальном
+  Windows-парке имена процессов иные (`obs64.exe`, `bdcam.exe`, `SnagitEditor32.exe`),
+  нужен прогон + добор сигнатур. Там же валидировать `setContentProtected` (E5-ENFORCE).
+- **E6-A** ML-инфра 🔒 (GPU/R&D).
 > Открытые вопросы заказчику собраны в `docs/requirements-interview.md` (6 блоков) — разблокируют E4-обращения, E3-каналы, E5-enforce, E7-MMDB, E6-ML, комплаенс.
 > ❌ OneID/E-IMZO — НЕ планируется (D-006, 2026-06-05).
 

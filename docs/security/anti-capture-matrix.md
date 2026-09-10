@@ -124,7 +124,20 @@ Loopback-аудио, физический микрофон рядом, rooted-у
   (`log_event`/`list_events`/`critical_count`) — для детектов от нативного клиента.
 - ✅ **Юр. баннер** (слой 5): «Запись запрещена · контент watermarked» в звонке.
 
-Отложено (требует Tauri / mobile / R&D):
+Реализовано в нативных клиентах:
+- ✅ **DETECT** (слой 2, S36, 2026-09-11): Rust-сканер рекордеров в Tauri
+  (`desktop/src-tauri/src/recorder.rs`) — перечисляет процессы через `sysinfo`,
+  сверяет с таблицей сигнатур (exact для коротких имён, substring для
+  характерных токенов), фоновый watcher раз в 5 с шлёт только **новые**
+  детекты в `/api/capture-events` (`kind: recorder_detected`), клиент применяет
+  `reaction` из ответа (warn → баннер · eject → выход из комнаты).
+  Отдельная категория `remote_access` (AnyDesk/RustDesk/TeamViewer) — та же
+  угроза утечки кадров, но иной сценарий.
+  iOS-индикаторы (`UIScreen.isCaptured` + screenshot-notification) — S34.
+  ⚠️ **Граница честности:** переименованный бинарник или отсутствующий в
+  таблице инструмент не детектируется; съёмку телефоном не ловит ничто.
+  Это снижение риска, а не гарантия (D-013).
+
+Отложено (требует Windows-парка / R&D):
 - ⏳ **ENFORCE** (слой 1): `setContentProtected` (Win) / `FLAG_SECURE` (Android) — Tauri-клиент.
-- ⏳ **DETECT** (слой 2): Rust-сканер рекордеров, macOS/iOS-индикаторы → шлют в `capture_events`.
 - ⏳ **Forensic аудио-watermark** (слой 4): R&D.
