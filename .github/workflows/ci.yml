@@ -52,10 +52,11 @@ jobs:
       - run: mix sobelow --exit Medium --root apps/svc_web -i Config.CSRF
       - run: mix test
 
-  # Tauri-shell (Rust): анти-захват детектор рекордеров (S36/D-018) живёт здесь,
-  # и без этой job'ы его тесты не гоняются нигде, кроме машины разработчика.
+  # Tauri-клиент целиком: Rust-shell (детектор рекордеров S36/D-018) + TS-фронтенд
+  # (отправка `capture_events`, реакция warn/eject). Без этой job'ы ни то, ни другое
+  # не проверялось нигде, кроме машины разработчика.
   desktop:
-    name: Desktop · Rust (fmt · clippy · test)
+    name: Desktop · Rust + TypeScript
     runs-on: ubuntu-latest
 
     defaults:
@@ -90,3 +91,19 @@ jobs:
       - run: cargo fmt --check
       - run: cargo clippy --lib --all-targets -- -D warnings
       - run: cargo test --lib
+
+      # Фронтенд Tauri: именно здесь живёт отправка `recorder_detected` и
+      # обработка reaction (warn → баннер, eject → выход из комнаты).
+      - uses: oven-sh/setup-bun@v2
+
+      - name: Зависимости фронтенда
+        working-directory: desktop
+        run: bun install --frozen-lockfile
+
+      - name: TypeScript
+        working-directory: desktop
+        run: bunx tsc --noEmit
+
+      - name: Сборка фронтенда
+        working-directory: desktop
+        run: bun run build
