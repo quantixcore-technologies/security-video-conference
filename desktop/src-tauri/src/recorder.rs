@@ -32,6 +32,8 @@ pub struct DetectedRecorder {
 
 /// Qisqa yoki umumiy nomlar — faqat to'liq moslik bo'yicha.
 /// Substring bo'lsa yolg'on ijobiy natija beradi (masalan "action" → "transaction").
+// Har imzo bir qatorda tursin — jadval sifatida o'qish osonroq.
+#[rustfmt::skip]
 const EXACT: &[(&str, &str, &str)] = &[
     ("obs", "OBS Studio", CATEGORY_RECORDER),
     ("obs64", "OBS Studio", CATEGORY_RECORDER),
@@ -56,6 +58,7 @@ const EXACT: &[(&str, &str, &str)] = &[
 /// Ajralib turadigan (uzun, o'ziga xos) tokenlar — substring bo'yicha,
 /// chunki versiya/qurilma qo'shimchalari nomga qo'shilib ketadi
 /// (masalan "Bandicam 7", "SnagitEditor32").
+#[rustfmt::skip]
 const CONTAINS: &[(&str, &str, &str)] = &[
     ("bandicam", "Bandicam", CATEGORY_RECORDER),
     ("camtasia", "Camtasia", CATEGORY_RECORDER),
@@ -110,11 +113,7 @@ pub fn match_recorder(process_name: &str) -> Option<(&'static str, &'static str)
 pub fn scan() -> Vec<DetectedRecorder> {
     let mut sys = System::new();
     // Faqat nomlar kerak — CPU/xotira yig'ilmaydi (skan arzon bo'lsin).
-    sys.refresh_processes_specifics(
-        ProcessesToUpdate::All,
-        true,
-        ProcessRefreshKind::nothing(),
-    );
+    sys.refresh_processes_specifics(ProcessesToUpdate::All, true, ProcessRefreshKind::nothing());
 
     let mut found: Vec<DetectedRecorder> = sys
         .processes()
@@ -144,10 +143,8 @@ impl SeenSet {
     /// ko'rilgan deb belgilaydi. Yo'qolgan jarayonlar unutiladi — dastur
     /// qayta ishga tushirilsa, u yangi hodisa sifatida qayd etiladi.
     pub fn take_new(&mut self, current: &[DetectedRecorder]) -> Vec<DetectedRecorder> {
-        let live: HashSet<(String, u32)> = current
-            .iter()
-            .map(|d| (d.process.clone(), d.pid))
-            .collect();
+        let live: HashSet<(String, u32)> =
+            current.iter().map(|d| (d.process.clone(), d.pid)).collect();
         self.0.retain(|k| live.contains(k));
 
         current
@@ -177,8 +174,14 @@ mod tests {
             match_recorder("simplescreenrecorder").unwrap().0,
             "SimpleScreenRecorder"
         );
-        assert_eq!(match_recorder("QuickTime Player").unwrap().0, "QuickTime Player");
-        assert_eq!(match_recorder("screencapture").unwrap().0, "macOS screencapture");
+        assert_eq!(
+            match_recorder("QuickTime Player").unwrap().0,
+            "QuickTime Player"
+        );
+        assert_eq!(
+            match_recorder("screencapture").unwrap().0,
+            "macOS screencapture"
+        );
     }
 
     #[test]
@@ -213,10 +216,7 @@ mod tests {
             "",
             "   ",
         ] {
-            assert!(
-                match_recorder(name).is_none(),
-                "{name} noto'g'ri aniqlandi"
-            );
+            assert!(match_recorder(name).is_none(), "{name} noto'g'ri aniqlandi");
         }
     }
 
@@ -263,11 +263,12 @@ mod tests {
             category: CATEGORY_RECORDER,
         };
 
-        assert_eq!(seen.take_new(&[obs.clone()]).len(), 1, "birinchi marta");
-        assert!(seen.take_new(&[obs.clone()]).is_empty(), "takrorlanmaydi");
+        let one = std::slice::from_ref(&obs);
+        assert_eq!(seen.take_new(one).len(), 1, "birinchi marta");
+        assert!(seen.take_new(one).is_empty(), "takrorlanmaydi");
 
         // Jarayon yopildi → keyin qayta ochildi: yangi hodisa sifatida qayd etiladi.
         assert!(seen.take_new(&[]).is_empty());
-        assert_eq!(seen.take_new(&[obs]).len(), 1, "qayta ishga tushirish");
+        assert_eq!(seen.take_new(one).len(), 1, "qayta ishga tushirish");
     }
 }

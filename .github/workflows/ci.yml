@@ -51,3 +51,42 @@ jobs:
       - run: mix credo
       - run: mix sobelow --exit Medium --root apps/svc_web -i Config.CSRF
       - run: mix test
+
+  # Tauri-shell (Rust): анти-захват детектор рекордеров (S36/D-018) живёт здесь,
+  # и без этой job'ы его тесты не гоняются нигде, кроме машины разработчика.
+  desktop:
+    name: Desktop · Rust (fmt · clippy · test)
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: desktop/src-tauri
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # Крейт `tauri` линкуется с webkit2gtk/soup — без них не собирается даже `cargo test --lib`.
+      - name: Системные зависимости Tauri
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            libwebkit2gtk-4.1-dev libsoup-3.0-dev libjavascriptcoregtk-4.1-dev \
+            libayatana-appindicator3-dev librsvg2-dev patchelf
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+
+      - name: Cache cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            desktop/src-tauri/target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('desktop/src-tauri/Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-cargo-
+
+      - run: cargo fmt --check
+      - run: cargo clippy --lib --all-targets -- -D warnings
+      - run: cargo test --lib

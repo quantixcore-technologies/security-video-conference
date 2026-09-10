@@ -41,7 +41,12 @@ defmodule SvcWeb.API.CaptureControllerTest do
       "meeting_id" => meeting.id,
       "detail" => %{
         "processes" => [
-          %{"name" => "OBS Studio", "process" => "obs64.exe", "pid" => 4242, "category" => "recorder"}
+          %{
+            "name" => "OBS Studio",
+            "process" => "obs64.exe",
+            "pid" => 4242,
+            "category" => "recorder"
+          }
         ]
       }
     }
