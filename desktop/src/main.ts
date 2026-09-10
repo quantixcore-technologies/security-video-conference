@@ -13,6 +13,8 @@ const state = {
   meetingId: "1",
   room: null as Room | null,
   platform: "linux",
+  // Login ekraniga o'tkaziladigan xabar (masalan majlisdan chiqarilish sababi).
+  notice: "",
 };
 
 // Rust tomonidan aniqlangan rekorder (recorder.rs → DetectedRecorder).
@@ -89,7 +91,12 @@ async function reportRecorders(found: DetectedRecorder[]): Promise<void> {
 function applyReaction(reaction: string, names: string): void {
   if (reaction === "eject") {
     // Server LiveKit'dan allaqachon chiqarib yubordi — mahalliy holatni tozalaymiz.
-    alertBanner(`⛔ Ekran yozib olish aniqlandi (${names}). Majlisdan chiqarildingiz.`, "crit");
+    const msg = `⛔ Ekran yozib olish aniqlandi (${names}). Majlisdan chiqarildingiz.`;
+    alertBanner(msg, "crit");
+    // `disconnect()` → RoomEvent.Disconnected → renderLogin(), ya'ni banner
+    // yo'qoladi. Sababni login ekraniga o'tkazamiz, aks holda foydalanuvchi
+    // nega chiqarilganini bilmay qoladi.
+    state.notice = msg;
     void state.room?.disconnect();
     return;
   }
@@ -150,6 +157,10 @@ function renderLogin(): void {
     <div class="status" id="status"></div>
   `);
   void paintBadge();
+  if (state.notice) {
+    status(state.notice, "err");
+    state.notice = "";
+  }
   const go = () => void doLogin();
   document.querySelector<HTMLButtonElement>("#loginBtn")!.addEventListener("click", go);
   document.querySelector<HTMLInputElement>("#password")!.addEventListener("keydown", (e) => {
