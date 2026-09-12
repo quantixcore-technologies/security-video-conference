@@ -107,3 +107,38 @@ jobs:
       - name: Сборка фронтенда
         working-directory: desktop
         run: bun run build
+
+  # Android-клиент — основной боевой клиент (APK раздаётся с лендинга, OTA D-017),
+  # но до сих пор не проверялся в CI вообще: баг с незеркальным своим видео и
+  # незаявленный ACCESS_COARSE_LOCATION дожили до продакшена именно поэтому.
+  android:
+    name: Android · Kotlin (lint · build)
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: mobile
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # AGP 8.7 требует JDK 17+; проект собирается под jvmTarget 17.
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      # Ставит cmdline-tools и принимает лицензии — дальше AGP сам дотянет
+      # platform-35 / build-tools по compileSdk из build.gradle.kts.
+      - uses: android-actions/setup-android@v3
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      # Android Lint держим как обязательный гейт: именно он поймал
+      # CoarseFineLocation (Android 12+ даёт выбор «приблизительно», и запрос
+      # только FINE оставлял такого пользователя вообще без координат — E7).
+      - run: ./gradlew lintDebug
+
+      # Собираем именно debug: release-keystore в проекте нет, assembleRelease
+      # даст неподписанный APK, который не встанет поверх установленного (D-017).
+      - run: ./gradlew assembleDebug

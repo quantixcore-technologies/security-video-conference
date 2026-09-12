@@ -74,8 +74,11 @@ class MainActivity : ComponentActivity() {
     }
 
     // E7: запрос разрешения на геолокацию (GPS отправляется при join, см. currentGeo()).
+    // Просим ОБА разрешения: на Android 12+ пользователь может выдать только
+    // приблизительное (COARSE), и системный диалог показывает этот выбор лишь
+    // когда оба заявлены. Отказ допустим — join пройдёт без координат.
     private val locationPermission = registerForActivityResult(
-        ActivityResultContracts.RequestPermission()
+        ActivityResultContracts.RequestMultiplePermissions()
     ) { /* отказ допустим: join пройдёт без координат */ }
 
     // Android 13+: ruxsatsiz fon bildirishnomalari ko'rinmaydi (rad etsa ham app ishlayveradi).
@@ -90,9 +93,15 @@ class MainActivity : ComponentActivity() {
 
     /** Последняя известная GPS-точка (best-effort, без Play Services). null, если нет разрешения/фикса. */
     private fun currentGeo(): SvcApi.GeoPoint? {
-        val granted = ContextCompat.checkSelfPermission(
-            this, Manifest.permission.ACCESS_FINE_LOCATION
-        ) == PackageManager.PERMISSION_GRANTED
+        // Приблизительной геолокации тоже достаточно: E7-гейт сверяет страну, а
+        // не адрес. Проверять только FINE значило бы молча слать join без
+        // координат у всех, кто выбрал «приблизительно» (Android 12+).
+        val granted = listOf(
+            Manifest.permission.ACCESS_FINE_LOCATION,
+            Manifest.permission.ACCESS_COARSE_LOCATION
+        ).any {
+            ContextCompat.checkSelfPermission(this, it) == PackageManager.PERMISSION_GRANTED
+        }
         if (!granted) return null
 
         val lm = getSystemService(Context.LOCATION_SERVICE) as? LocationManager ?: return null
@@ -184,7 +193,12 @@ class MainActivity : ComponentActivity() {
 
             else -> LandingScreen(onLoginClick = {
                 showLogin = true
-                locationPermission.launch(Manifest.permission.ACCESS_FINE_LOCATION)
+                locationPermission.launch(
+                    arrayOf(
+                        Manifest.permission.ACCESS_FINE_LOCATION,
+                        Manifest.permission.ACCESS_COARSE_LOCATION
+                    )
+                )
             })
         }
 

@@ -7,8 +7,13 @@
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
     <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
     <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
-    <!-- E7: гео-проверка (GPS кросс-чек с IP-страной) -->
+    <!-- E7: гео-проверка (GPS кросс-чек с IP-страной).
+         Android 12+ даёт пользователю выбор «точно / приблизительно», поэтому
+         COARSE обязателен рядом с FINE: без него запрос разрешения ведёт себя
+         некорректно, а выдавший только приблизительную геолокацию пользователь
+         молча остался бы вообще без координат. -->
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <!-- Демонстрация экрана (screen-share, паритет с web): MediaProjection через foreground-сервис -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PROJECTION" />
