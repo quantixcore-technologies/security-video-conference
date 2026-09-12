@@ -4,7 +4,10 @@
 > Статус: ✅ done · 🔵 in progress · ⬜ planned · 🔒 blocked (заказчик/лицензия/R&D).
 > Обновлять при закрытии каждого слайса. Источник истины по прогрессу проекта.
 
-## 📊 Прогресс: 35 ✅ · 8 ⬜ · 5 🔒 — **35 из ~42** (+ Android: PoC, 2FA, GPS, чат/screen-share · + Tauri desktop · + i18n полный uz/ru/en)
+## 📊 Прогресс: **35 из 36 нумерованных слайсов готовы** (S1–S36; в работе только S34 — iOS 🔵)
+> Сверх них: 6 ⬜ запланированных и 5 🔒 заблокированных пунктов без S-номера
+> (номер присваивается при взятии в работу). Плюс безномерной Android-PoC ✅.
+> Разбивка по эпикам — в заголовках таблиц ниже.
 
 ---
 
@@ -74,7 +77,7 @@
 | S26 | **Tauri-каркас** — scaffold (Vite+TS / src-tauri, `uz.svc.desktop`), экран входа SVC (username → 2FA), `contentProtected:true`, Rust-команда `security_status` | ✅ собран+запущен под xvfb (2026-08-28) |
 | S27 | **Tauri LiveKit-звонок** — login(username)→join→комната, локальное+удалённое видео, mic/cam, per-user watermark(E5), native HTTP (tauri-plugin-http, обход CORS) | ✅ login→join→issue_token подтверждён backend-логом; видео-медиа = Windows/WebRTC-webview (2026-08-28) |
 | —   | Tauri — `setContentProtected` enforce (Windows-валидация) | ⬜ |
-| —   | Tauri — детектор рекордеров (Rust) → capture_events | ⬜ |
+| S36 | Tauri — детектор рекордеров (Rust) → capture_events | ✅ 2026-09-11 — подробности в строке E5-DETECT выше |
 | S23 | Android — **2FA(TOTP) через API** (login→totp_required→/api/login/totp→bearer) + экран ввода кода | ✅ собран, проверен на реальном устройстве (2026-06-08) |
 | S24 | Android — **GPS-захват (E7) при join** — LocationManager → lat/lon/accuracy в join; backend gate пишет в network_geo_checks (+миграция gps_*) | ✅ собран, проверен на реальном устройстве (2026-06-08) |
 | S25 | Android — **чат (LiveKit data, topic "chat") + screen-share (MediaProjection → LiveKit screencast)** | ✅ собран, установлен на устройство (2026-06-08) |
