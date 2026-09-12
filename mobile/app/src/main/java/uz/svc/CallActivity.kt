@@ -77,7 +77,21 @@ class CallActivity : ComponentActivity() {
     private var chatVisible by mutableStateOf(false)
     private var screenSharing by mutableStateOf(false)
 
-    data class TrackTile(val id: String, val label: String, val track: VideoTrack)
+    /**
+     * [mirror] — faqat O'ZINGIZNING old kameradan olingan tasviringiz uchun `true`.
+     * Kamera sizni qarama-qarshi tomondan ko'radi, shuning uchun xom tasvir
+     * ko'zgudagi aksga teskari bo'ladi va foydalanuvchiga g'alati tuyuladi
+     * (qo'lni o'ngga qimirlatsa, ekranda chapga ketadi). Barcha video-ilovalar
+     * o'z tasvirini ko'zgu qilib ko'rsatadi — biz ham shunday qilamiz.
+     * Boshqa ishtirokchilar va ekran namoyishi HECH QACHON ko'zgu qilinmaydi:
+     * ularni teskari ko'rsatish yozuvlarni o'qib bo'lmas holga keltiradi.
+     */
+    data class TrackTile(
+        val id: String,
+        val label: String,
+        val track: VideoTrack,
+        val mirror: Boolean = false
+    )
 
     data class ChatMessage(val sender: String, val text: String, val mine: Boolean)
 
@@ -107,7 +121,7 @@ class CallActivity : ComponentActivity() {
                 room.localParticipant.setCameraEnabled(true)
                 // Локальный трек камеры доступен сразу после публикации (нет LocalTrackPublished в SDK 2.18)
                 room.localParticipant.getTrackPublication(Track.Source.CAMERA)
-                    ?.let { (it.track as? VideoTrack)?.let { t -> addTile(t, "Siz") } }
+                    ?.let { (it.track as? VideoTrack)?.let { t -> addTile(t, "Siz", mirror = true) } }
             }.onFailure { status = "Xatolik: ${it.message}" }
         }
     }
@@ -153,9 +167,9 @@ class CallActivity : ComponentActivity() {
         }
     }
 
-    private fun addTile(track: VideoTrack, label: String) {
+    private fun addTile(track: VideoTrack, label: String, mirror: Boolean = false) {
         if (videoTracks.none { it.track == track }) {
-            videoTracks.add(TrackTile(track.sid ?: track.hashCode().toString(), label, track))
+            videoTracks.add(TrackTile(track.sid ?: track.hashCode().toString(), label, track, mirror))
         }
     }
 
@@ -255,6 +269,10 @@ class CallActivity : ComponentActivity() {
                     factory = { ctx ->
                         TextureViewRenderer(ctx).also { v ->
                             room.initVideoRenderer(v)
+                            // Har plitka uchun ochiq belgilaymiz: SDK standartiga
+                            // tayanmaymiz, aks holda versiya yangilanganda xatti-harakat
+                            // sezdirmay o'zgarib ketishi mumkin.
+                            v.setMirror(tile.mirror)
                             tile.track.addRenderer(v)
                         }
                     },

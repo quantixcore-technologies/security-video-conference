@@ -294,6 +294,11 @@ function renderLocalTile(room: Room): void {
   if (pub?.track) {
     const el = pub.track.attach();
     el.muted = true;
+    // Kamera sizni qarama-qarshi tomondan ko'radi, shuning uchun xom tasvir
+    // ko'zgudagi aksga teskari bo'lib, foydalanuvchiga g'alati tuyuladi.
+    // Faqat O'Z tasvirimizni ko'zgu qilamiz — boshqa ishtirokchilarni hech qachon
+    // (ularni teskari ko'rsatish yozuvlarni o'qib bo'lmas holga keltiradi).
+    el.classList.add("mirror");
     tile.querySelector(".ph")?.remove();
     tile.insertBefore(el, tile.firstChild);
   }

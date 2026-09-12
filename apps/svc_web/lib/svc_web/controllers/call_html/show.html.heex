@@ -284,7 +284,14 @@
         tile.querySelector(".ph")?.remove();
         tile.querySelector("video")?.remove();
         const el = track.attach();
-        el.className = "absolute inset-0 w-full h-full " + (source === "screen" ? "object-contain bg-black" : "object-cover");
+        // Своё видео с камеры зеркалим: камера видит вас «с той стороны», и
+        // незеркальная картинка ощущается перевёрнутой (двигаешь рукой вправо —
+        // на экране влево). Чужое видео и демонстрацию экрана НЕ зеркалим никогда:
+        // перевёрнутый текст на чужом экране нечитаем.
+        const mirror = isLocal && source !== "screen";
+        el.className = "absolute inset-0 w-full h-full " +
+          (source === "screen" ? "object-contain bg-black" : "object-cover") +
+          (mirror ? " -scale-x-100" : "");
         if (isLocal) el.muted = true;
         tile.insertBefore(el, tile.firstChild);
       }
