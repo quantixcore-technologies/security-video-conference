@@ -67,7 +67,7 @@ defmodule SvcWeb.UserLiveTest do
     {:ok, lv, _html} = conn |> login(admin) |> live(~p"/admin/users/new")
 
     lv
-    |> form("form",
+    |> form("form[phx-submit]",
       user: %{
         full_name: "Новый Сотрудник",
         username: "newbie",

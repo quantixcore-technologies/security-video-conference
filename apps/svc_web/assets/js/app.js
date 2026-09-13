@@ -60,7 +60,127 @@ const Hooks = {
         }
       })
     }
-  }
+  },
+
+  // Встроенный помощник (S37). Ходит в тот же REST API, что Android и Tauri —
+  // одна реализация поведения на три клиента.
+  Assistant: {
+    mounted() {
+      this.panel = this.el.querySelector("#svc-assistant-panel")
+      this.log = this.el.querySelector("[data-log]")
+      this.input = this.el.querySelector("[data-input]")
+      this.locale = this.el.dataset.locale || "uz"
+      this.loaded = false
+
+      this.el.querySelector("[data-toggle]").onclick = () => this.toggle()
+      this.el.querySelector("[data-form]").onsubmit = e => {
+        e.preventDefault()
+        const q = this.input.value.trim()
+        if (q) { this.input.value = ""; this.ask(q) }
+      }
+    },
+
+    toggle() {
+      const btn = this.el.querySelector("[data-toggle]")
+      const open = this.panel.hidden
+      this.panel.hidden = !open
+      btn.setAttribute("aria-expanded", String(open))
+      this.el.querySelector("[data-icon-open]").classList.toggle("hidden", open)
+      this.el.querySelector("[data-icon-close]").classList.toggle("hidden", !open)
+
+      // Подсказки тянем один раз и только при первом открытии — до него панель
+      // никому не нужна, а запрос уходил бы на каждой загрузке страницы.
+      if (open && !this.loaded) { this.loaded = true; this.loadSuggestions() }
+      if (open) this.input.focus()
+    },
+
+    async loadSuggestions() {
+      const data = await this.get(`/api/assistant/suggestions?locale=${this.locale}`)
+      if (data) this.showChips(data.suggestions)
+    },
+
+    async ask(question) {
+      this.bubble(question, "me")
+      const thinking = this.bubble(this.t("thinking"), "bot muted")
+
+      const data = await this.post("/api/assistant/ask", {question, locale: this.locale})
+      thinking.remove()
+      if (!data) { this.bubble(this.t("error"), "bot"); return }
+
+      if (data.status === "ok") {
+        this.bubble(data.answer.answer, "bot")
+        this.showChips(data.related)
+      } else if (data.status === "unsure") {
+        this.bubble(this.t("unsure"), "bot")
+        this.showChips(data.candidates)
+      } else if (data.status === "restricted") {
+        this.bubble(`${this.t("restricted")} ${data.allowed_roles.join(", ")}`, "bot")
+      } else {
+        this.bubble(this.t("nomatch"), "bot")
+        this.showChips(data.suggestions)
+      }
+    },
+
+    // Клик по подсказке берёт готовый ответ по id: незачем прогонять
+    // собственный вопрос помощника через поиск ещё раз.
+    async openEntry(entry) {
+      this.bubble(entry.question, "me")
+      const data = await this.get(`/api/assistant/${entry.id}?locale=${this.locale}`)
+      this.bubble(data ? data.answer.answer : this.t("error"), "bot")
+    },
+
+    bubble(text, kind) {
+      const mine = kind.startsWith("me")
+      const el = document.createElement("div")
+      el.className = mine
+        ? "ml-auto max-w-[85%] rounded-2xl rounded-br-sm bg-primary text-primary-content px-3 py-2"
+        : "mr-auto max-w-[90%] rounded-2xl rounded-bl-sm bg-base-200 px-3 py-2" +
+          (kind.includes("muted") ? " opacity-60 italic" : "")
+      el.textContent = text
+      this.log.appendChild(el)
+      this.log.scrollTop = this.log.scrollHeight
+      return el
+    },
+
+    showChips(entries) {
+      if (!entries || entries.length === 0) return
+      const box = document.createElement("div")
+      box.className = "flex flex-wrap gap-1.5"
+      entries.forEach(entry => {
+        const chip = document.createElement("button")
+        chip.type = "button"
+        chip.className = "btn btn-xs btn-outline normal-case font-normal"
+        chip.textContent = entry.question
+        chip.onclick = () => { box.remove(); this.openEntry(entry) }
+        box.appendChild(chip)
+      })
+      this.log.appendChild(box)
+      this.log.scrollTop = this.log.scrollHeight
+    },
+
+    t(key) { return this.el.dataset[`t${key.charAt(0).toUpperCase()}${key.slice(1)}`] || "" },
+
+    async get(url) { return this.request(url, {headers: {accept: "application/json"}}) },
+
+    async post(url, body) {
+      return this.request(url, {
+        method: "POST",
+        headers: {"content-type": "application/json", accept: "application/json"},
+        body: JSON.stringify(body),
+      })
+    },
+
+    // Сетевая ошибка не должна ронять страницу — помощник вторичен по отношению
+    // к тому, зачем человек вообще открыл систему.
+    async request(url, opts) {
+      try {
+        const res = await fetch(url, {credentials: "same-origin", ...opts})
+        return res.ok ? await res.json() : null
+      } catch (_) {
+        return null
+      }
+    },
+  },
 }
 
 const csrfToken = document.querySelector("meta[name='csrf-token']").getAttribute("content")

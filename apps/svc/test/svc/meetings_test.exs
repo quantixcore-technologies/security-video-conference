@@ -248,4 +248,56 @@ defmodule Svc.MeetingsTest do
       assert length(meetings) == 52
     end
   end
+
+  # Ни одной проверки на list_in_range не было — поэтому и не заметили, что
+  # клауза с %User{} недостижима: календарь падал, а фильтр D-016 не работал.
+  describe "list_in_range/3" do
+    setup %{org: org, manager: manager} do
+      {:ok, other_mgr} = mk(org, "mgr2", :manager)
+
+      {:ok, mine} =
+        Meetings.create_meeting(manager, %{
+          title: "Моя",
+          scheduled_start: ~U[2026-09-15 10:00:00Z]
+        })
+
+      {:ok, foreign} =
+        Meetings.create_meeting(other_mgr, %{
+          title: "Чужая закрытая",
+          scheduled_start: ~U[2026-09-16 10:00:00Z]
+        })
+
+      %{mine: mine, foreign: foreign, other_mgr: other_mgr}
+    end
+
+    test "актор видит свою встречу и НЕ видит чужую закрытую (D-016)", ctx do
+      titles =
+        ctx.manager
+        |> Meetings.list_in_range(~U[2026-09-01 00:00:00Z], ~U[2026-09-30 23:59:59Z])
+        |> Enum.map(& &1.title)
+
+      assert "Моя" in titles
+      refute "Чужая закрытая" in titles
+    end
+
+    test "посторонний сотрудник не видит ни одной", ctx do
+      assert ctx.employee
+             |> Meetings.list_in_range(~U[2026-09-01 00:00:00Z], ~U[2026-09-30 23:59:59Z]) == []
+    end
+
+    test "вариант с org_id возвращает все встречи организации", ctx do
+      titles =
+        ctx.org.id
+        |> Meetings.list_in_range(~U[2026-09-01 00:00:00Z], ~U[2026-09-30 23:59:59Z])
+        |> Enum.map(& &1.title)
+
+      assert "Моя" in titles
+      assert "Чужая закрытая" in titles
+    end
+
+    test "встречи вне диапазона не попадают", ctx do
+      assert ctx.manager
+             |> Meetings.list_in_range(~U[2026-10-01 00:00:00Z], ~U[2026-10-31 23:59:59Z]) == []
+    end
+  end
 end

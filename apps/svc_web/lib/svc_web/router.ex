@@ -67,6 +67,11 @@ defmodule SvcWeb.Router do
     get "/assignable", MeetingController, :assignable
     post "/meetings/:id/join", MeetingController, :join
     post "/capture-events", CaptureController, :create
+
+    # Встроенный помощник (S37) — один источник справки на все три клиента.
+    get "/assistant/suggestions", AssistantController, :suggestions
+    post "/assistant/ask", AssistantController, :ask
+    get "/assistant/:id", AssistantController, :show
   end
 
   ## LiveKit вебхуки (E1) — без session-auth, подпись проверяется в контроллере

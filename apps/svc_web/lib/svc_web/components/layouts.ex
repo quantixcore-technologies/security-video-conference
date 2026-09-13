@@ -253,6 +253,88 @@ defmodule SvcWeb.Layouts do
     </div>
 
     <.flash_group flash={@flash} />
+    <.assistant_widget />
+    """
+  end
+
+  @doc """
+  Встроенный помощник (S37) — плавающая панель в правом нижнем углу.
+
+  Работает на обычном fetch к `/api/assistant/*`, а не на LiveView-событиях:
+  ровно тот же контракт используют Android и Tauri, и держать для веба вторую
+  реализацию значило бы чинить каждую правку дважды.
+
+  `phx-update="ignore"` обязателен — иначе LiveView затирает переписку при
+  каждом патче страницы.
+  """
+  def assistant_widget(assigns) do
+    assigns = assign(assigns, :locale, Gettext.get_locale(SvcWeb.Gettext))
+
+    ~H"""
+    <div
+      id="svc-assistant"
+      phx-hook="Assistant"
+      phx-update="ignore"
+      data-locale={@locale}
+      data-t-unsure={gettext("Aniq tushunmadim. Quyidagilardan birini nazarda tutdingizmi?")}
+      data-t-nomatch={gettext("Buni tushunmadim. Mana nimalar bo'yicha yordam bera olaman:")}
+      data-t-restricted={gettext("Bu amalni bajarish huquqi sizda yo'q. U quyidagi rollar uchun:")}
+      data-t-error={gettext("Javob olinmadi. Internet aloqasini tekshiring.")}
+      data-t-thinking={gettext("Qidirilmoqda…")}
+    >
+      <button
+        type="button"
+        data-toggle
+        aria-expanded="false"
+        aria-controls="svc-assistant-panel"
+        class="fixed bottom-5 right-5 z-40 grid place-items-center size-14 rounded-full bg-primary text-primary-content shadow-lg ring-1 ring-primary/30 hover:brightness-110 transition"
+        title={gettext("Yordamchi")}
+      >
+        <span data-icon-open>
+          <.icon name="hero-chat-bubble-left-right" class="size-6" />
+        </span>
+        <span data-icon-close class="hidden">
+          <.icon name="hero-x-mark" class="size-6" />
+        </span>
+      </button>
+
+      <section
+        id="svc-assistant-panel"
+        hidden
+        class="fixed bottom-24 right-5 z-40 flex flex-col w-[22rem] max-w-[calc(100vw-2.5rem)] h-[28rem] max-h-[calc(100vh-8rem)] rounded-2xl border border-base-300 bg-base-100 shadow-2xl overflow-hidden"
+      >
+        <header class="flex items-center gap-2 px-4 py-3 border-b border-base-300 bg-base-200/60">
+          <span class="grid place-items-center size-8 rounded-lg bg-primary/15 text-primary">
+            <.icon name="hero-sparkles" class="size-4" />
+          </span>
+          <span class="leading-tight">
+            <span class="block text-sm font-semibold">{gettext("Yordamchi")}</span>
+            <span class="block text-[11px] text-base-content/50">
+              {gettext("Tizimdan foydalanish bo'yicha savollar")}
+            </span>
+          </span>
+        </header>
+
+        <div data-log class="flex-1 overflow-y-auto px-4 py-3 space-y-3 text-sm"></div>
+
+        <form data-form class="flex items-center gap-2 p-3 border-t border-base-300">
+          <input
+            data-input
+            type="text"
+            autocomplete="off"
+            placeholder={gettext("Savolingizni yozing…")}
+            class="input input-bordered input-sm flex-1"
+          />
+          <button
+            type="submit"
+            class="btn btn-primary btn-sm btn-square"
+            aria-label={gettext("Yuborish")}
+          >
+            <.icon name="hero-paper-airplane" class="size-4" />
+          </button>
+        </form>
+      </section>
+    </div>
     """
   end
 

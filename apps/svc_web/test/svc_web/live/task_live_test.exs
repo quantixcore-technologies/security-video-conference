@@ -72,7 +72,7 @@ defmodule SvcWeb.TaskLiveTest do
     {:ok, lv, _html} = conn |> login(mgr) |> live(~p"/admin/tasks/new")
 
     lv
-    |> form("form",
+    |> form("form[phx-submit]",
       task: %{
         title: "Планёрка отдела",
         priority: "high",

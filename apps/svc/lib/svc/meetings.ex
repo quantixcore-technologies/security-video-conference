@@ -135,18 +135,15 @@ defmodule Svc.Meetings do
     Repo.exists?(from i in Invitee, where: i.meeting_id == ^mid and i.user_id == ^uid)
   end
 
-  @doc "Встречи с scheduled_start в диапазоне [from, to] — для календаря (E3)."
-  def list_in_range(org_id, %DateTime{} = from, %DateTime{} = to) do
-    Repo.all(
-      from m in Meeting,
-        where:
-          m.org_id == ^org_id and not is_nil(m.scheduled_start) and
-            m.scheduled_start >= ^from and m.scheduled_start <= ^to,
-        order_by: m.scheduled_start
-    )
-  end
+  @doc """
+  Встречи с `scheduled_start` в диапазоне [from, to] — для календаря (E3).
 
-  # list_in_range с фильтром видимости D-016 (для календаря конкретного актора).
+  Клауза с `%User{}` ОБЯЗАНА идти первой: у клаузы с `org_id` первый аргумент —
+  свободная переменная, она матчит всё подряд, включая структуру пользователя.
+  Пока порядок был обратным, календарь падал с `Ecto.Query.CastError`
+  (в `where` прилетал `%User{}` вместо id), а фильтр видимости D-016 был
+  недостижимым кодом.
+  """
   def list_in_range(%User{} = actor, %DateTime{} = from, %DateTime{} = to) do
     Repo.all(
       visible_query(actor.id, actor.org_id)
@@ -155,6 +152,16 @@ defmodule Svc.Meetings do
         not is_nil(m.scheduled_start) and m.scheduled_start >= ^from and m.scheduled_start <= ^to
       )
       |> order_by([m], m.scheduled_start)
+    )
+  end
+
+  def list_in_range(org_id, %DateTime{} = from, %DateTime{} = to) when is_integer(org_id) do
+    Repo.all(
+      from m in Meeting,
+        where:
+          m.org_id == ^org_id and not is_nil(m.scheduled_start) and
+            m.scheduled_start >= ^from and m.scheduled_start <= ^to,
+        order_by: m.scheduled_start
     )
   end
 

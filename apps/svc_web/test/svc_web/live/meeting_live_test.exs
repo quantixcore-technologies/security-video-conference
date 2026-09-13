@@ -49,7 +49,7 @@ defmodule SvcWeb.MeetingLiveTest do
     {:ok, lv, _html} = conn |> login(mgr) |> live(~p"/admin/meetings/new")
 
     lv
-    |> form("form",
+    |> form("form[phx-submit]",
       meeting: %{
         title: "Планёрка отдела",
         recording_policy: "optional",
@@ -81,7 +81,7 @@ defmodule SvcWeb.MeetingLiveTest do
     assert html =~ "Поручение по итогам"
 
     lv
-    |> form("form",
+    |> form("form[phx-submit]",
       task: %{title: "Подготовить смету", assignee_id: to_string(emp.id), priority: "high"}
     )
     |> render_submit()
