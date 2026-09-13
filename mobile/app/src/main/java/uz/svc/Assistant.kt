@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -23,6 +24,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -186,12 +188,18 @@ fun AssistantSheet(
         }
     }
 
-    ModalBottomSheet(onDismissRequest = onDismiss, containerColor = panel) {
+    // Chat varag'i darhol to'liq ochilsin: yarim holatda kiritish maydoni ekran pastidan
+    // tashqarida qoladi va foydalanuvchi qayerga yozishni ko'rmaydi (emulyatorda ushlangan).
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+
+    ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState, containerColor = panel) {
         Column(
             Modifier
                 .fillMaxWidth()
                 .fillMaxHeight(0.85f)
                 .padding(horizontal = 16.dp)
+                // Klaviatura ochilganda kiritish qatori uning ostida qolmasin.
+                .imePadding()
         ) {
             Text(t.title, color = Color.White, style = MaterialTheme.typography.titleMedium)
             Text(t.subtitle, color = muted, style = MaterialTheme.typography.bodySmall)
