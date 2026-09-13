@@ -128,3 +128,32 @@ button.primary:disabled { opacity: 0.6; cursor: default; }
   width: auto; padding: 0 18px; border-radius: 23px; height: 46px;
   background: var(--danger); border-color: var(--danger); color: #fff; font-weight: 700;
 }
+
+/* S39: yordamchi paneli — boshqaruv tugmalari ustida, o'ng pastda (web bilan bir xil joy) */
+.ctrl.on { border-color: var(--teal); background: rgba(45, 212, 191, 0.12); }
+.assist {
+  position: fixed; right: 16px; bottom: 86px; z-index: 20;
+  width: 360px; max-width: calc(100vw - 32px); height: 460px; max-height: calc(100vh - 170px);
+  display: flex; flex-direction: column;
+  background: #0b1120; border: 1px solid var(--line); border-radius: 14px;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.5); overflow: hidden;
+}
+/* `hidden` atributi `display: flex` ga yutqazadi — shusiz panel doim ochiq ko'rinardi */
+.assist[hidden] { display: none; }
+.assist header { padding: 10px 14px; font-weight: 700; font-size: 0.9rem; border-bottom: 1px solid var(--line); }
+.alog { flex: 1; overflow-y: auto; padding: 12px; display: flex; flex-direction: column; gap: 8px; font-size: 0.85rem; }
+.ab { max-width: 88%; padding: 8px 11px; border-radius: 12px; background: rgba(255, 255, 255, 0.06); line-height: 1.4; align-self: flex-start; }
+.ab.mine { align-self: flex-end; background: rgba(45, 212, 191, 0.18); }
+.ab.muted { color: var(--muted); font-style: italic; }
+.achips { display: flex; flex-wrap: wrap; gap: 6px; }
+.achips button {
+  font-size: 0.75rem; color: var(--ink); background: transparent; border: 1px solid var(--line);
+  border-radius: 999px; padding: 4px 10px; cursor: pointer; text-align: left;
+}
+.achips button:hover { border-color: var(--teal); }
+.assist form { display: flex; gap: 8px; padding: 10px; border-top: 1px solid var(--line); }
+.assist input {
+  flex: 1; background: rgba(255, 255, 255, 0.04); border: 1px solid var(--line);
+  border-radius: 10px; color: var(--ink); padding: 8px 10px;
+}
+.assist form button { width: 40px; border: none; border-radius: 10px; background: var(--teal); color: #042f2e; font-weight: 700; cursor: pointer; }

@@ -114,7 +114,7 @@ const Hooks = {
         this.bubble(this.t("unsure"), "bot")
         this.showChips(data.candidates)
       } else if (data.status === "restricted") {
-        this.bubble(`${this.t("restricted")} ${data.allowed_roles.join(", ")}`, "bot")
+        this.bubble(`${this.t("restricted")} ${(data.allowed_role_labels || data.allowed_roles).join(", ")}`, "bot")
       } else {
         this.bubble(this.t("nomatch"), "bot")
         this.showChips(data.suggestions)

@@ -320,6 +320,141 @@ function fillWatermark(el: HTMLDivElement): void {
   el.innerHTML = html;
 }
 
+// ---------- Yordamchi (S39, D-019) ----------
+// Web va Android bilan bir xil /api/assistant/* kontrakti: javoblar serverdagi yagona
+// bilimlar bazasidan keladi, klientda matn saqlanmaydi.
+
+interface AssistEntry { id: string; question: string; answer: string }
+
+const assistLocale: "uz" | "ru" | "en" = (() => {
+  const lang = (navigator.language || "uz").slice(0, 2);
+  return lang === "ru" || lang === "en" ? lang : "uz";
+})();
+
+const ASSIST_T = {
+  uz: {
+    title: "Yordamchi",
+    greeting: "Assalomu alaykum! Tizimdan qanday foydalanishni so'rang yoki mavzuni tanlang:",
+    placeholder: "Savolingizni yozing…",
+    thinking: "Qidirilmoqda…",
+    unsure: "Aniq tushunmadim. Quyidagilardan birini nazarda tutdingizmi?",
+    noMatch: "Buni tushunmadim. Mana nimalar bo'yicha yordam bera olaman:",
+    restricted: "Bu amalni bajarish huquqi sizda yo'q. U quyidagi rollar uchun:",
+    error: "Javob olinmadi. Internet aloqasini tekshiring.",
+  },
+  ru: {
+    title: "Помощник",
+    greeting: "Здравствуйте! Спросите, как пользоваться системой, или выберите тему:",
+    placeholder: "Ваш вопрос…",
+    thinking: "Ищу ответ…",
+    unsure: "Не совсем понял. Вы имели в виду одно из этого?",
+    noMatch: "Не понял вопрос. Вот с чем я могу помочь:",
+    restricted: "У вас нет прав на это действие. Оно доступно ролям:",
+    error: "Не удалось получить ответ. Проверьте подключение к интернету.",
+  },
+  en: {
+    title: "Assistant",
+    greeting: "Hello! Ask how to use the system, or pick a topic:",
+    placeholder: "Your question…",
+    thinking: "Searching…",
+    unsure: "I'm not sure what you meant. Was it one of these?",
+    noMatch: "I didn't understand. Here is what I can help with:",
+    restricted: "You don't have permission for this action. It is available to:",
+    error: "Couldn't get an answer. Check your internet connection.",
+  },
+}[assistLocale];
+
+// Har bir qo'ng'iroq ekrani yangi bo'sh jurnal bilan chiziladi — takliflar ham qaytadan olinadi.
+let assistLoaded = false;
+
+// Tarmoq xatosi qo'ng'iroqni buzmasin: yordamchi ikkinchi darajali.
+async function assistRequest(path: string, init: { method?: string; body?: string } = {}): Promise<any | null> {
+  try {
+    const r = await httpFetch(`${state.server}${path}`, {
+      ...init,
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${state.bearer}` },
+    });
+    return r.ok ? await r.json() : null;
+  } catch (e) {
+    console.error(e);
+    return null;
+  }
+}
+
+function assistBubble(text: string, mine = false, muted = false): HTMLElement {
+  const log = document.querySelector<HTMLDivElement>("#assistLog")!;
+  const el = document.createElement("div");
+  el.className = "ab" + (mine ? " mine" : "") + (muted ? " muted" : "");
+  el.textContent = text;
+  log.appendChild(el);
+  log.scrollTop = log.scrollHeight;
+  return el;
+}
+
+function assistChips(entries: AssistEntry[] | undefined): void {
+  if (!entries || entries.length === 0) return;
+  const log = document.querySelector<HTMLDivElement>("#assistLog")!;
+  const box = document.createElement("div");
+  box.className = "achips";
+  for (const entry of entries) {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.textContent = entry.question;
+    b.onclick = () => { box.remove(); void assistOpen(entry); };
+    box.appendChild(b);
+  }
+  log.appendChild(box);
+  log.scrollTop = log.scrollHeight;
+}
+
+async function assistAsk(question: string): Promise<void> {
+  assistBubble(question, true);
+  const wait = assistBubble(ASSIST_T.thinking, false, true);
+  const data = await assistRequest("/api/assistant/ask", {
+    method: "POST",
+    body: JSON.stringify({ question, locale: assistLocale }),
+  });
+  wait.remove();
+  if (!data) { assistBubble(ASSIST_T.error); return; }
+
+  if (data.status === "ok") {
+    assistBubble(data.answer.answer);
+    assistChips(data.related);
+  } else if (data.status === "unsure") {
+    assistBubble(ASSIST_T.unsure);
+    assistChips(data.candidates);
+  } else if (data.status === "restricted") {
+    // Eski server `allowed_role_labels` bermasa — xom rol nomlari, bo'sh qolmasin.
+    const roles: string[] = data.allowed_role_labels ?? data.allowed_roles ?? [];
+    assistBubble(`${ASSIST_T.restricted} ${roles.join(", ")}`);
+  } else {
+    assistBubble(ASSIST_T.noMatch);
+    assistChips(data.suggestions);
+  }
+}
+
+// Taklif bosilganda javob id bo'yicha olinadi — o'z savolini qidiruvdan qayta o'tkazish shart emas.
+async function assistOpen(entry: AssistEntry): Promise<void> {
+  assistBubble(entry.question, true);
+  const data = await assistRequest(`/api/assistant/${encodeURIComponent(entry.id)}?locale=${assistLocale}`);
+  assistBubble(data ? data.answer.answer : ASSIST_T.error);
+}
+
+async function assistToggle(): Promise<void> {
+  const panel = document.querySelector<HTMLElement>("#assist")!;
+  panel.hidden = !panel.hidden;
+  document.querySelector("#assistBtn")!.classList.toggle("on", !panel.hidden);
+  if (panel.hidden) return;
+  document.querySelector<HTMLInputElement>("#assistInput")!.focus();
+
+  // Takliflar birinchi ochilishda bir marta olinadi — ungacha panel hech kimga kerak emas.
+  if (assistLoaded) return;
+  assistLoaded = true;
+  assistBubble(ASSIST_T.greeting);
+  const data = await assistRequest(`/api/assistant/suggestions?locale=${assistLocale}`);
+  if (data) assistChips(data.suggestions); else assistBubble(ASSIST_T.error);
+}
+
 function renderCall(roomName: string): void {
   app.innerHTML = `
     <div class="call">
@@ -332,9 +467,20 @@ function renderCall(roomName: string): void {
       <div class="controls">
         <button class="ctrl" id="micBtn" title="Mikrofon">🎙️</button>
         <button class="ctrl" id="camBtn" title="Kamera">🎥</button>
+        <button class="ctrl" id="assistBtn" title="${ASSIST_T.title}">💬</button>
         <button class="ctrl leave" id="leaveBtn">Chiqish</button>
       </div>
+      <section class="assist" id="assist" hidden>
+        <header>💬 ${ASSIST_T.title}</header>
+        <div class="alog" id="assistLog"></div>
+        <form id="assistForm">
+          <input id="assistInput" type="text" autocomplete="off" placeholder="${ASSIST_T.placeholder}" />
+          <button type="submit" aria-label="${ASSIST_T.title}">➤</button>
+        </form>
+      </section>
     </div>`;
+
+  assistLoaded = false;
 
   document.querySelector<HTMLButtonElement>("#micBtn")!.addEventListener("click", async () => {
     const lp = state.room?.localParticipant; if (!lp) return;
@@ -348,6 +494,13 @@ function renderCall(roomName: string): void {
     await lp.setCameraEnabled(on);
     document.querySelector("#camBtn")!.classList.toggle("off", !on);
     if (on && state.room) renderLocalTile(state.room);
+  });
+  document.querySelector<HTMLButtonElement>("#assistBtn")!.addEventListener("click", () => void assistToggle());
+  document.querySelector<HTMLFormElement>("#assistForm")!.addEventListener("submit", (e) => {
+    e.preventDefault();
+    const input = document.querySelector<HTMLInputElement>("#assistInput")!;
+    const question = input.value.trim();
+    if (question) { input.value = ""; void assistAsk(question); }
   });
   document.querySelector<HTMLButtonElement>("#leaveBtn")!.addEventListener("click", async () => {
     await state.room?.disconnect();

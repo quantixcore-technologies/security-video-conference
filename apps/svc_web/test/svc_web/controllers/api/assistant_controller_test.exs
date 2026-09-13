@@ -77,6 +77,20 @@ defmodule SvcWeb.API.AssistantControllerTest do
     # Клиент из этого списка строит фразу «обратитесь к ...».
     assert "super_admin" in body["allowed_roles"]
     assert is_binary(body["question"])
+
+    # Подписи — на языке запроса, а не сырые атомы: их показывают все три клиента.
+    assert "Superadmin" in body["allowed_role_labels"]
+    refute Enum.any?(body["allowed_role_labels"], &String.contains?(&1, "_"))
+  end
+
+  test "restricted: подписи ролей следуют локали запроса", %{conn: conn, worker: worker} do
+    body =
+      conn
+      |> login(worker)
+      |> post(~p"/api/assistant/ask", %{"question" => "yangi xodim qo'shish", "locale" => "ru"})
+      |> json_response(200)
+
+    assert "Суперадмин" in body["allowed_role_labels"]
   end
 
   test "тот же вопрос от админа → полный ответ", %{conn: conn, admin: admin} do

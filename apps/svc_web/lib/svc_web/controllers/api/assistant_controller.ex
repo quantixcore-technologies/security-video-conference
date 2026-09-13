@@ -52,7 +52,10 @@ defmodule SvcWeb.API.AssistantController do
           status: "restricted",
           locale: locale,
           question: Entry.text(entry.question, locale),
-          allowed_roles: Enum.map(entry.roles, &to_string/1)
+          allowed_roles: Enum.map(entry.roles, &to_string/1),
+          # Готовые подписи на языке запроса: иначе каждому из трёх клиентов пришлось бы
+          # держать свою таблицу ролей, а пользователю — читать «super_admin».
+          allowed_role_labels: role_labels(entry.roles, locale)
         })
 
       {:no_match, suggestions} ->
@@ -79,6 +82,18 @@ defmodule SvcWeb.API.AssistantController do
   end
 
   ## Внутреннее
+
+  defp role_labels(roles, locale) do
+    Gettext.with_locale(SvcWeb.Gettext, locale, fn -> Enum.map(roles, &role_label/1) end)
+  end
+
+  # Те же msgid, что в ProfileLive / UserLive: переводы берутся из общего .po, новых строк нет.
+  defp role_label(:super_admin), do: gettext("Суперадмин")
+  defp role_label(:admin_hr), do: gettext("Админ/HR")
+  defp role_label(:manager), do: gettext("Руководитель")
+  defp role_label(:employee), do: gettext("Сотрудник")
+  defp role_label(:security_officer), do: gettext("Офицер безопасности")
+  defp role_label(other), do: to_string(other)
 
   defp render_one(%Entry{} = entry, locale) do
     %{
