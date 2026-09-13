@@ -41,6 +41,7 @@ import androidx.compose.material.icons.filled.Videocam
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.*
+import androidx.compose.material.icons.filled.SupportAgent
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
@@ -668,6 +669,7 @@ class MainActivity : ComponentActivity() {
     @Composable
     private fun HomeScreen(auth: Auth, onLogout: () -> Unit) {
         var tab by rememberSaveable { mutableStateOf(0) }
+        var showAssistant by rememberSaveable { mutableStateOf(false) }
         var unread by remember { mutableStateOf(0) }
 
         LaunchedEffect(Unit) {
@@ -677,6 +679,14 @@ class MainActivity : ComponentActivity() {
 
         Scaffold(
             containerColor = Bg,
+            // S39: yordamchi — har bir bo'limda pastki o'ng burchakda (web va Tauri bilan bir xil joy).
+            floatingActionButton = {
+                FloatingActionButton(
+                    onClick = { showAssistant = true },
+                    containerColor = Accent,
+                    contentColor = Color.White
+                ) { Icon(Icons.Default.SupportAgent, "Yordamchi") }
+            },
             bottomBar = {
                 NavigationBar(containerColor = Panel) {
                     val items = listOf(
@@ -717,6 +727,17 @@ class MainActivity : ComponentActivity() {
                     else -> ProfileTab(auth, onLogout)
                 }
             }
+        }
+
+        if (showAssistant) {
+            AssistantSheet(
+                api = auth.api,
+                token = auth.session.token,
+                accent = Accent,
+                panel = Panel,
+                muted = Muted,
+                onDismiss = { showAssistant = false }
+            )
         }
     }
 

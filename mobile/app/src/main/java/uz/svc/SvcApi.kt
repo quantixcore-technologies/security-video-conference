@@ -227,6 +227,69 @@ class SvcApi(private val baseUrl: String) {
             postEmpty("/api/notifications/read-all", token)
         }
 
+    // ── Yordamchi (S39, D-019): /api/assistant/* — web, Android va Tauri uchun bitta kontrakt ──
+
+    data class AssistantEntry(val id: String, val question: String, val answer: String)
+
+    /** Server javobi `status` bo'yicha: ok / unsure / restricted / no_match. */
+    sealed class AssistantReply {
+        data class Answer(val entry: AssistantEntry, val related: List<AssistantEntry>) : AssistantReply()
+        data class Unsure(val candidates: List<AssistantEntry>) : AssistantReply()
+        data class Restricted(val question: String, val roleLabels: List<String>) : AssistantReply()
+        data class NoMatch(val suggestions: List<AssistantEntry>) : AssistantReply()
+    }
+
+    suspend fun assistantSuggestions(token: String, locale: String): List<AssistantEntry> =
+        withContext(Dispatchers.IO) {
+            parseEntries(getJson("/api/assistant/suggestions?locale=$locale", token).optJSONArray("suggestions"))
+        }
+
+    suspend fun assistantAsk(token: String, question: String, locale: String): AssistantReply =
+        withContext(Dispatchers.IO) {
+            val payload = JSONObject().put("question", question).put("locale", locale)
+            val req = Request.Builder()
+                .url("$baseUrl/api/assistant/ask")
+                .addHeader("Authorization", "Bearer $token")
+                .post(payload.toString().toRequestBody(json))
+                .build()
+
+            http.newCall(req).execute().use { resp ->
+                val text = resp.body?.string().orEmpty()
+                if (!resp.isSuccessful) error("So'rov bajarilmadi (${resp.code})")
+                parseReply(JSONObject(text))
+            }
+        }
+
+    suspend fun assistantEntry(token: String, id: String, locale: String): AssistantEntry =
+        withContext(Dispatchers.IO) {
+            val path = "/api/assistant/${java.net.URLEncoder.encode(id, "UTF-8")}?locale=$locale"
+            parseEntry(getJson(path, token).getJSONObject("answer"))
+        }
+
+    private fun parseReply(o: JSONObject): AssistantReply = when (o.optString("status")) {
+        "ok" -> AssistantReply.Answer(parseEntry(o.getJSONObject("answer")), parseEntries(o.optJSONArray("related")))
+        "unsure" -> AssistantReply.Unsure(parseEntries(o.optJSONArray("candidates")))
+        // Eski server `allowed_role_labels` bermasa — xom rol nomlari (yaxshisi yo'q, lekin bo'sh qolmaydi).
+        "restricted" -> AssistantReply.Restricted(
+            o.optString("question"),
+            strings(o.optJSONArray("allowed_role_labels") ?: o.optJSONArray("allowed_roles"))
+        )
+        else -> AssistantReply.NoMatch(parseEntries(o.optJSONArray("suggestions")))
+    }
+
+    private fun parseEntries(arr: JSONArray?): List<AssistantEntry> = buildList {
+        if (arr == null) return@buildList
+        for (i in 0 until arr.length()) add(parseEntry(arr.getJSONObject(i)))
+    }
+
+    private fun parseEntry(o: JSONObject) =
+        AssistantEntry(o.getString("id"), o.optString("question"), o.optString("answer"))
+
+    private fun strings(arr: JSONArray?): List<String> = buildList {
+        if (arr == null) return@buildList
+        for (i in 0 until arr.length()) add(arr.getString(i))
+    }
+
     private fun getJson(path: String, token: String): JSONObject {
         val req = Request.Builder()
             .url("$baseUrl$path")
