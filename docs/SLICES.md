@@ -4,7 +4,7 @@
 > Статус: ✅ done · 🔵 in progress · ⬜ planned · 🔒 blocked (заказчик/лицензия/R&D).
 > Обновлять при закрытии каждого слайса. Источник истины по прогрессу проекта.
 
-## 📊 Прогресс: **36 из 37 нумерованных слайсов готовы** (S1–S37; в работе только S34 — iOS 🔵)
+## 📊 Прогресс: **37 из 38 нумерованных слайсов готовы** (S1–S38; в работе только S34 — iOS 🔵)
 > Сверх них: 7 ⬜ запланированных и 5 🔒 заблокированных пунктов без S-номера
 > (номер присваивается при взятии в работу). Плюс безномерной Android-PoC ✅.
 > Разбивка по эпикам — в заголовках таблиц ниже.
@@ -83,6 +83,7 @@
 | S25 | Android — **чат (LiveKit data, topic "chat") + screen-share (MediaProjection → LiveKit screencast)** | ✅ собран, установлен на устройство (2026-06-08) |
 | S34 | iOS-клиент (SwiftUI): landing/login/2FA, встречи + создание, уведомления, отдел, профиль, Keychain, GPS, **isCaptured/screenshot detect → /api/capture-events** | 🔵 код написан (`mobile-ios/`), сборка — CI macOS runner; видео (LiveKit) — 2-й этап |
 | S35 | **Обязательное OTA-обновление (D-017)** — `version.json`: `minVersionCode` + `ios.minBuild` · Android `UpdateManager` (mandatory, проверка права `REQUEST_INSTALL_PACKAGES`, скачивание + системный установщик, fail-open) · блокирующий `ForcedUpdateScreen` + `BackHandler {}` до логина · iOS `UpdateChecker` + `ForcedUpdateView` (блокировка + ссылка, установка — не разрешена Apple) | ✅ 2026-09-09 · проверено на эмуляторе end-to-end: блок → скачивание → установщик → v0.5.0 запустилось (без Chrome/Play Market) |
+| S38 | **Авто-уведомление о новой версии (D-020)** — Oban Cron раз в 10 мин читает опубликованный `version.json`; новый Android `versionCode` → одна строка в `app_release_announcements` (unique `platform+version_code`, `on_conflict: :nothing`) + `:update` каждому активному пользователю в одной транзакции · доходит до установок v0.4.0+ через `NotifyWorker` даже при закрытом приложении и до старых сборок, не умеющих блокироваться · выключено без `APP_RELEASE_MANIFEST_URL` (в `runtime.exs` вне `:prod` — сервер в dev) | ✅ 2026-09-13 · 12 тестов · прод: путь cron (реальный fetch → разбор → дедуп) → `:already_announced`, 0.5.1 засеяна до рестарта |
 
 ## E8 — Встроенный помощник 🔵 1/2
 | # | Слайс | Статус |
