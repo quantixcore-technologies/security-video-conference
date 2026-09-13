@@ -16,7 +16,13 @@ config :svc,
 # Oban — фоновые задачи (E2: finalize absent; E3: уведомления)
 config :svc, Oban,
   repo: Svc.Repo,
-  queues: [default: 10, attendance: 5, notifications: 5]
+  queues: [default: 10, attendance: 5, notifications: 5],
+  # D-020: сверка опубликованного манифеста приложения. В тестах Oban в режиме :manual —
+  # плагины там не запускаются. Pruner сюда НЕ добавлять: ReminderWorker держит
+  # unique: [period: :infinity] и опирается на уже выполненные джобы.
+  plugins: [
+    {Oban.Plugins.Cron, crontab: [{"*/10 * * * *", Svc.AppReleases.AnnounceWorker}]}
+  ]
 
 # Cloak — шифрование полей at-rest (totp_secret). CLOAK_KEY из env в prod (CRED-CHECK).
 config :svc, Svc.Vault,

@@ -9,6 +9,11 @@ import Config
 
 config :svc_web, SvcWeb.Endpoint, http: [port: String.to_integer(System.get_env("PORT", "4000"))]
 
+# D-020: авто-уведомление об обновлении приложения. Читается во ВСЕХ окружениях —
+# боевой сервер работает в MIX_ENV=dev, и внутри блока :prod ниже переменная там
+# никогда бы не прочиталась. Без переменной рассылка выключена.
+config :svc, Svc.AppReleases, manifest_url: System.get_env("APP_RELEASE_MANIFEST_URL")
+
 if config_env() == :prod do
   database_url =
     System.get_env("DATABASE_URL") ||
