@@ -16,6 +16,8 @@ defmodule Svc.Assistant do
 
   # Слова, которые есть почти в любом вопросе. Без их отсева «как мне сделать»
   # матчится со всем подряд и первый же ответ оказывается случайным.
+  # «yangi» / «новый» / «new» — надпись на кнопке, а не тема; к тому же «yangi»
+  # однокоренное с «yangila» (обновить) и тянуло «yangi majlis» в профиль.
   @stopwords ~w(
     qanday qilaman qilish nima uchun kerak menga meni mumkin bo'ladi bu shu
     qayerda qayerdan qachon kim nimaga iltimos ayting yordam
@@ -23,6 +25,7 @@ defmodule Svc.Assistant do
     сделать делать пожалуйста скажи помоги хочу
     how do i what where when who why can could should the a an to my me
     is are please help want need
+    yangi новый новое новая новую new
   )
 
   # Минимальная длина общего префикса, при которой считаем слова однокоренными.
@@ -34,6 +37,9 @@ defmodule Svc.Assistant do
   # обязательно: без него «yangi» (новый) склеивается с «yangilanish»
   # (обновление) — общий префикс есть, а смысл разный.
   @max_tail 5
+
+  # Допустимое окончание после короткого (3 символа) ключа: «kod» → «kodni».
+  @short_tail 3
 
   @typedoc "Результат запроса к помощнику."
   @type result ::
@@ -100,25 +106,20 @@ defmodule Svc.Assistant do
 
   defp decide([], _role, opts), do: {:no_match, suggestions(opts)}
 
-  defp decide([{top_score, best} | rest], role, _opts) do
-    ties = Enum.filter(rest, fn {score, _} -> score == top_score end)
+  defp decide([{top_score, _} | _] = ranked, role, _opts) do
+    {top, rest} = Enum.split_with(ranked, fn {score, _} -> score == top_score end)
+    top = Enum.map(top, &elem(&1, 1))
 
-    cond do
-      # Ответ есть, но роль его выполнить не может — говорим об этом прямо.
-      not Entry.visible?(best, role) ->
-        {:restricted, best}
+    case Enum.filter(top, &Entry.visible?(&1, role)) do
+      # Лучший балл только у недоступных роли записей — говорим об этом прямо.
+      [] ->
+        {:restricted, hd(top)}
 
-      # Несколько записей набрали одинаковый балл — уверенности нет, пусть
-      # человек выберет сам, это честнее случайного попадания.
-      ties != [] ->
-        candidates =
-          [best | Enum.map(ties, &elem(&1, 1))]
-          |> Enum.filter(&Entry.visible?(&1, role))
-          |> Enum.take(4)
-
-        {:unsure, candidates}
-
-      true ->
+      # Ровно одна доступная запись на вершине. Недоступная с тем же баллом её не
+      # перебивает: сотрудник, спросивший «как подключиться к совещанию», не должен
+      # получать «создавать совещания может только руководитель» лишь потому, что
+      # оба ответа содержат слово «совещание» (так было на проде 2026-09-13).
+      [best] ->
         related =
           rest
           |> Enum.map(&elem(&1, 1))
@@ -126,6 +127,11 @@ defmodule Svc.Assistant do
           |> Enum.take(3)
 
         {:ok, best, related}
+
+      # Несколько доступных записей с одинаковым баллом — уверенности нет, пусть
+      # человек выберет сам, это честнее случайного попадания.
+      candidates ->
+        {:unsure, Enum.take(candidates, 4)}
     end
   end
 
@@ -137,11 +143,25 @@ defmodule Svc.Assistant do
   # похож на окончание, а не на другое слово. Две проверки нужны обе:
   # «совещания»/«совещание» — общий префикс 8, хвост 1 → одно слово;
   # «yangi»/«yangilanish»  — общий префикс 5, хвост 6 → разные слова.
+  #
+  # Короткие ключи (2fa, kod, til, geo) префикс в 4 символа не наберут никогда,
+  # поэтому для них — точное совпадение или ключ целиком в начале слова с коротким
+  # окончанием («kod» → «kodni»). Без этой ветки они были мёртвыми: вопрос
+  # «2fa kodni qayerdan olaman» не находил ничего.
   defp same_stem?(token, keyword) do
-    shared = common_prefix_length(token, keyword)
-    longest = max(String.length(token), String.length(keyword))
+    cond do
+      token == keyword ->
+        true
 
-    shared >= @stem_len and longest - shared <= @max_tail
+      String.length(keyword) < @stem_len ->
+        String.length(keyword) >= 3 and String.starts_with?(token, keyword) and
+          String.length(token) - String.length(keyword) <= @short_tail
+
+      true ->
+        shared = common_prefix_length(token, keyword)
+        longest = max(String.length(token), String.length(keyword))
+        shared >= @stem_len and longest - shared <= @max_tail
+    end
   end
 
   defp common_prefix_length(a, b) do

@@ -173,4 +173,79 @@ defmodule Svc.AssistantTest do
       end
     end
   end
+
+  # Формулировки — из живой проверки на проде 2026-09-13: там 12 из 34 ответов
+  # оказались неверными. Тест держит их все, чтобы правка ключевых слов одной темы
+  # не отнимала ответы у соседней.
+  describe "реальные формулировки пользователей" do
+    @cases [
+      {"majlisga qanday ulanaman", :manager, :join_call},
+      {"qo'ng'iroqqa qanday kiraman", :employee, :join_call},
+      {"videoga ulanish", :employee, :join_call},
+      {"majlisga kira olmayapman", :employee, :join_call},
+      {"majlis qanday yarataman", :manager, :create_meeting},
+      {"yangi majlis ochish", :manager, :create_meeting},
+      {"yig'ilish tashkil qilish", :manager, :create_meeting},
+      {"2fa kodni qayerdan olaman", :employee, :login_2fa},
+      {"tizimga kira olmayapman", :employee, :login_2fa},
+      {"ekranni qanday ko'rsataman", :employee, :screen_share},
+      {"topshiriq qanday beraman", :manager, :tasks},
+      {"bildirishnomalar qayerda", :employee, :notifications},
+      {"tilni o'zgartirish", :employee, :language},
+      {"ilovani qanday yangilayman", :employee, :mobile_app},
+      {"parolni o'zgartirish", :employee, :profile_password},
+      {"joylashuv ruxsati", :employee, :geo_check},
+      {"kalendar va eslatmalar", :employee, :calendar_reminders},
+      {"xodim qo'shish", :super_admin, :manage_users},
+      {"skrinshot jurnali", :security_officer, :security_log},
+      {"как подключиться к совещанию", :employee, :join_call},
+      {"как создать совещание", :manager, :create_meeting},
+      {"где уведомления", :employee, :notifications},
+      {"как сменить пароль", :employee, :profile_password},
+      {"как показать свой экран", :employee, :screen_share},
+      {"как поставить задачу", :manager, :tasks},
+      {"как скачать приложение", :employee, :mobile_app},
+      {"как добавить сотрудника", :super_admin, :manage_users},
+      {"how do I join a meeting", :employee, :join_call},
+      {"how to create a meeting", :manager, :create_meeting},
+      {"change the language", :employee, :language},
+      {"share my screen", :employee, :screen_share},
+      {"why can't I see a meeting", :employee, :meeting_privacy}
+    ]
+
+    for {question, role, expected} <- @cases do
+      @question question
+      @role role
+      @expected expected
+      test "[#{role}] #{question} -> #{expected}" do
+        assert {:ok, %Entry{id: @expected}, _} = Assistant.ask(@question, role: @role)
+      end
+    end
+  end
+
+  describe "равный балл с недоступной записью" do
+    # Регрессия с прода: сотрудник спрашивал, как ПОДКЛЮЧИТЬСЯ к совещанию, а получал
+    # «создавать совещания может только руководитель» — оба ответа содержат слово
+    # «совещание», и недоступная запись стояла в выдаче первой.
+    test "доступная запись с тем же баллом побеждает недоступную" do
+      for q <- ["majlisga ulanish", "meeting join", "как подключиться к совещанию"] do
+        refute match?({:restricted, _}, Assistant.ask(q, role: :employee)),
+               "#{q}: xodimga restricted qaytmasligi kerak"
+      end
+    end
+
+    test "restricted — только когда лучший балл целиком у недоступных записей" do
+      assert {:restricted, %Entry{id: :create_meeting}} =
+               Assistant.ask("majlis yaratish", role: :employee)
+    end
+  end
+
+  describe "короткие ключевые слова" do
+    # Ключи короче 4 символов не проходили проверку общего префикса и были мёртвыми.
+    test "2fa, kod, til находятся" do
+      assert {:ok, %Entry{id: :login_2fa}, _} = Assistant.ask("2fa", role: :employee)
+      assert {:ok, %Entry{id: :login_2fa}, _} = Assistant.ask("kodni kiritish", role: :employee)
+      assert {:ok, %Entry{id: :language}, _} = Assistant.ask("til", role: :employee)
+    end
+  end
 end

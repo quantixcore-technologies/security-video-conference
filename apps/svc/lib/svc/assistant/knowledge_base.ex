@@ -15,9 +15,10 @@ defmodule Svc.Assistant.KnowledgeBase do
     %Entry{
       id: :login_2fa,
       topic: :auth,
-      keywords: ~w(kirish login parol 2fa totp kod tasdiq autentifikatsiya
+      # Ключ через дефис («two-factor») мёртв: токенизатор режет слова по «-».
+      keywords: ~w(kirish kira tizim login parol 2fa totp kod tasdiq autentifikatsiya
                    вход войти пароль код подтверждение двухфакторная
-                   sign password verification code two-factor),
+                   sign password verification code factor),
       question: %{
         "uz" => "Tizimga qanday kiraman? 2FA kodi nima?",
         "ru" => "Как войти в систему? Что за код 2FA?",
@@ -35,13 +36,12 @@ defmodule Svc.Assistant.KnowledgeBase do
     %Entry{
       id: :create_meeting,
       topic: :meetings,
-      # Осознанно без «yangi» / «новое» / «new» и «qo'sh» / «добавить»: это
-      # надписи на кнопках, а не признак темы. С ними «yangi xodim qo'shish»
-      # (добавить сотрудника) набирало столько же баллов, сколько инструкция
-      # по созданию совещания, и помощник отвечал наугад.
-      keywords: ~w(majlis yig'ilish uchrashuv yarat rejalash tashkil
+      # Без «qo'sh» / «добавить»: это надписи на кнопках, а не признак темы — с
+      # ними «yangi xodim qo'shish» делило балл с созданием совещания.
+      # «yangi» / «новое» / «new» вынесены в стоп-слова (Svc.Assistant).
+      keywords: ~w(majlis yig'ilish uchrashuv yarat rejalash tashkil ochish
                    совещание встреча создать запланировать организовать
-                   meeting schedule organize),
+                   meeting create schedule organize),
       roles: [:super_admin, :manager],
       question: %{
         "uz" => "Majlisni qanday yarataman?",
@@ -60,9 +60,14 @@ defmodule Svc.Assistant.KnowledgeBase do
     %Entry{
       id: :join_call,
       topic: :meetings,
-      keywords: ~w(qo'ng'iroq video ulanish qo'shil kirish efir kamera qatnash
+      # «majlis» / «совещание» / «meeting» нужны и здесь: так и спрашивают —
+      # «majlisga qanday ulanaman». Без них вопрос делил балл с созданием
+      # совещания, и помощник отвечал «не понял». Различает тему глагол.
+      keywords: ~w(qo'ng'iroq video ulanish qo'shil kirish kira efir kamera qatnash
+                   majlis yig'ilish uchrashuv
                    звонок видео подключиться присоединиться войти эфир камера
-                   call video join connect),
+                   совещание встреча
+                   call video join connect meeting),
       question: %{
         "uz" => "Video qo'ng'iroqqa qanday qo'shilaman?",
         "ru" => "Как подключиться к видеозвонку?",
@@ -80,9 +85,12 @@ defmodule Svc.Assistant.KnowledgeBase do
     %Entry{
       id: :meeting_privacy,
       topic: :meetings,
-      keywords: ~w(maxfiy yopiq ko'rinmaydi kim ko'radi huquq ruxsat rbac rol
-                   закрытое конфиденциальное невидно кто видит права роль доступ
-                   private confidential visibility who sees permission role),
+      # Без «kim» / «кто» / «who»: это стоп-слова, из вопроса они вырезаются, и
+      # ключ никогда не срабатывал.
+      keywords:
+        ~w(maxfiy yopiq ko'rinmaydi ko'radi huquq ruxsat rbac rol majlis
+                   закрытое конфиденциальное невидно видно вижу видит права роль доступ совещание
+                   private confidential visibility sees see missing hidden permission role meeting),
       question: %{
         "uz" => "Majlisni kim ko'ra oladi? Nega ro'yxatda ko'rinmayapti?",
         "ru" => "Кто видит совещание? Почему его нет в списке?",
@@ -140,7 +148,9 @@ defmodule Svc.Assistant.KnowledgeBase do
     %Entry{
       id: :notifications,
       topic: :notifications,
-      keywords: ~w(bildirishnoma xabar qo'ng'iroqcha o'qilgan
+      # Без «qo'ng'iroqcha» (колокольчик): однокоренная с «qo'ng'iroq» (звонок)
+      # и перетягивала на себя вопросы о подключении к звонку.
+      keywords: ~w(bildirishnoma xabar o'qilgan
                    уведомление оповещение колокольчик прочитано
                    notification bell unread),
       question: %{
