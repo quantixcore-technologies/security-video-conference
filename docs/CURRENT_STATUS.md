@@ -301,7 +301,16 @@
 - ✅ **`check_origin` включён** (env `CHECK_ORIGIN`, runtime.exs): live-socket принимает только
   `https://admin.co1nlist.uz` и `https://admin.neti.uz` (проверено на 4000: свои → 101, чужой → 403).
   Нативные клиенты (REST) не затронуты.
-- Осталось к prod-режиму: `mix release` (сейчас mix в dev на сервере) — следующий шаг.
+- ✅ **`svc-real` переведён на собранный prod-релиз** (`mix release`, был `mix phx.server` в dev).
+  Добавлены `Svc.Release` (миграции: `bin/svc eval "Svc.Release.migrate()"`), `releases:` в `mix.exs`,
+  `PHX_SERVER`/`PHX_HOST` в `runtime.exs`. Собрано в `_build/prod`, проверено на :4001 (login 200, API 401,
+  **страница ошибки без stacktrace** — dev-утечка закрыта), затем cutover на :4000 с авто-откатом. Живьём:
+  login/API/OTA/реальный вход `/api/me` → OK, процесс `beam.smp` (релиз). systemd-unit обновлён
+  (`bin/svc start`), бэкапы `~/svc-real.service.devmode.bak`, `~/svc-real.env.bak.prerelease`. Пере-деплой:
+  `MIX_ENV=prod mix release svc --overwrite` + `systemctl restart svc-real`.
+- 🐛 **Осталось (hardening): Phoenix 1.8.7 → патч.** `mix hex.audit`: HIGH CVE-2026-56811 (нет лимита
+  channel-join на соединение → DoS истощением процессов) + MEDIUM CVE-2026-56812 (Presence-краш). Апгрейд
+  Phoenix до фикса — следующий шаг.
 
 ## ⏭️ СЛЕДУЮЩИЙ КВЕСТ (Tauri-каркас + звонок готовы ✅ S26/S27)
 - 🔒 **2-сторонний реальный видеозвонок с мобильных** — заблокирован: у заказчика только iPhone, установка iOS-сборки требует Apple Developer ($99/год).

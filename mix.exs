@@ -8,7 +8,18 @@ defmodule Svc.Umbrella.MixProject do
       start_permanent: Mix.env() == :prod,
       deps: deps(),
       aliases: aliases(),
+      releases: releases(),
       listeners: [Phoenix.CodeReloader]
+    ]
+  end
+
+  # Собранный релиз (prod): один релиз `svc`, включающий оба приложения зонтика.
+  # Сборка: MIX_ENV=prod mix release svc --overwrite. Миграции: bin/svc eval "Svc.Release.migrate()".
+  defp releases do
+    [
+      svc: [
+        applications: [svc: :permanent, svc_web: :permanent]
+      ]
     ]
   end
 

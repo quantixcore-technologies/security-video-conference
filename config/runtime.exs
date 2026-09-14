@@ -28,6 +28,11 @@ end
 # никогда бы не прочиталась. Без переменной рассылка выключена.
 config :svc, Svc.AppReleases, manifest_url: System.get_env("APP_RELEASE_MANIFEST_URL")
 
+# Собранный релиз запускает веб-сервер только при PHX_SERVER=true (в dev это делает `mix phx.server`).
+if System.get_env("PHX_SERVER") do
+  config :svc_web, SvcWeb.Endpoint, server: true
+end
+
 if config_env() == :prod do
   database_url =
     System.get_env("DATABASE_URL") ||
@@ -58,11 +63,14 @@ if config_env() == :prod do
       You can generate one by calling: mix phx.gen.secret
       """
 
+  host = System.get_env("PHX_HOST") || "admin.co1nlist.uz"
+
   config :svc_web, SvcWeb.Endpoint,
+    url: [host: host, port: 443, scheme: "https"],
     http: [
-      # Enable IPv6 and bind on all interfaces.
-      # Set it to  {0, 0, 0, 0, 0, 0, 0, 1} for local network only access.
-      ip: {0, 0, 0, 0, 0, 0, 0, 0}
+      # nginx (Cloudflare tunnel) proxy'lagani uchun faqat loopback'ni tinglaymiz.
+      ip: {127, 0, 0, 1},
+      port: String.to_integer(System.get_env("PORT") || "4000")
     ],
     secret_key_base: secret_key_base
 
