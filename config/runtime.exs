@@ -9,6 +9,13 @@ import Config
 
 config :svc_web, SvcWeb.Endpoint, http: [port: String.to_integer(System.get_env("PORT", "4000"))]
 
+# Imzolash kaliti (sessiya cookie, LiveView, API bearer-token) — serverda faqat env'dan.
+# dev.exs dagi kalit ochiq repoda turibdi: u bilan istalgan foydalanuvchi uchun token yoki
+# sessiya soxtalashtirish mumkin. Boshqa muhitlarda (dev/test) env bo'lmasa, o'z qiymati qoladi.
+if secret_key_base = System.get_env("SECRET_KEY_BASE") do
+  config :svc_web, SvcWeb.Endpoint, secret_key_base: secret_key_base
+end
+
 # D-020: авто-уведомление об обновлении приложения. Читается во ВСЕХ окружениях —
 # боевой сервер работает в MIX_ENV=dev, и внутри блока :prod ниже переменная там
 # никогда бы не прочиталась. Без переменной рассылка выключена.
