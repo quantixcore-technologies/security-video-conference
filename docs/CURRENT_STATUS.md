@@ -298,7 +298,10 @@
 - ✅ **`/dev/*` закрыты снаружи** (nginx `location ^~ /dev/ { return 404; }` на admin-vhost): LiveDashboard
   и Swoosh mailbox больше не доступны из интернета. Бэкапы: `~/svc-real.env.bak.2026-09-14`,
   `~/nginx-backup/`.
-- Осталось к prod-режиму: `check_origin` на реальные хосты (сейчас dev `false`), затем `mix release`.
+- ✅ **`check_origin` включён** (env `CHECK_ORIGIN`, runtime.exs): live-socket принимает только
+  `https://admin.co1nlist.uz` и `https://admin.neti.uz` (проверено на 4000: свои → 101, чужой → 403).
+  Нативные клиенты (REST) не затронуты.
+- Осталось к prod-режиму: `mix release` (сейчас mix в dev на сервере) — следующий шаг.
 
 ## ⏭️ СЛЕДУЮЩИЙ КВЕСТ (Tauri-каркас + звонок готовы ✅ S26/S27)
 - 🔒 **2-сторонний реальный видеозвонок с мобильных** — заблокирован: у заказчика только iPhone, установка iOS-сборки требует Apple Developer ($99/год).

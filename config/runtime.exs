@@ -16,6 +16,13 @@ if secret_key_base = System.get_env("SECRET_KEY_BASE") do
   config :svc_web, SvcWeb.Endpoint, secret_key_base: secret_key_base
 end
 
+# WebSocket/LiveView ulanishlari uchun Origin tekshiruvi. CHECK_ORIGIN berilsa (masalan
+# "https://admin.co1nlist.uz,https://admin.neti.uz") — faqat o'sha manzillardagi sahifalar
+# jonli socket'ga ulana oladi. Berilmasa (lokal dev), dev.exs dagi check_origin: false qoladi.
+if check_origin = System.get_env("CHECK_ORIGIN") do
+  config :svc_web, SvcWeb.Endpoint, check_origin: String.split(check_origin, ",", trim: true)
+end
+
 # D-020: авто-уведомление об обновлении приложения. Читается во ВСЕХ окружениях —
 # боевой сервер работает в MIX_ENV=dev, и внутри блока :prod ниже переменная там
 # никогда бы не прочиталась. Без переменной рассылка выключена.
