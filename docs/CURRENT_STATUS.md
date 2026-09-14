@@ -308,9 +308,11 @@
   login/API/OTA/реальный вход `/api/me` → OK, процесс `beam.smp` (релиз). systemd-unit обновлён
   (`bin/svc start`), бэкапы `~/svc-real.service.devmode.bak`, `~/svc-real.env.bak.prerelease`. Пере-деплой:
   `MIX_ENV=prod mix release svc --overwrite` + `systemctl restart svc-real`.
-- 🐛 **Осталось (hardening): Phoenix 1.8.7 → патч.** `mix hex.audit`: HIGH CVE-2026-56811 (нет лимита
-  channel-join на соединение → DoS истощением процессов) + MEDIUM CVE-2026-56812 (Presence-краш). Апгрейд
-  Phoenix до фикса — следующий шаг.
+- ✅ **Phoenix 1.8.7 → 1.8.14** (HIGH CVE-2026-56811 channel-join DoS + MEDIUM CVE-2026-56812 Presence
+  устранены; заодно plug 1.20.3, plug_crypto 2.2.0, phoenix_pubsub 2.3.0). Пересобран релиз, re-cutover
+  с бэкапом `_build/prod/rel/svc.prev` и авто-откатом; живьём login/API/вход — OK.
+- ⏳ **Остаётся (LOW, отложено): req 0.5.18** — CVE-2026-49755/49756 (LOW). Фикс только в req 0.6+
+  (minor-скачок), а req несёт OTA-манифест (D-020) и Swoosh — риск поломки > пользы при LOW. Вернуться отдельно.
 
 ## ⏭️ СЛЕДУЮЩИЙ КВЕСТ (Tauri-каркас + звонок готовы ✅ S26/S27)
 - 🔒 **2-сторонний реальный видеозвонок с мобильных** — заблокирован: у заказчика только iPhone, установка iOS-сборки требует Apple Developer ($99/год).
