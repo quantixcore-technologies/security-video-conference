@@ -1,7 +1,7 @@
 defmodule SvcWeb.API.MeetingControllerTest do
   use SvcWeb.ConnCase, async: true
 
-  alias Svc.{Meetings, Accounts, Orgs}
+  alias Svc.{Meetings, Accounts, Orgs, Attendance}
 
   setup do
     {:ok, org} = Orgs.create_organization(%{name: "Орг", slug: "org"})
@@ -45,6 +45,21 @@ defmodule SvcWeb.API.MeetingControllerTest do
 
     conn = conn |> login(other_user) |> post(~p"/api/meetings/#{meeting.id}/join")
     assert json_response(conn, 404)
+  end
+
+  test "D-016: участник ТОЙ ЖЕ орг, но НЕ приглашённый → 404 (не может войти в чужую закрытую встречу)",
+       %{conn: conn, org: org, meeting: meeting} do
+    {:ok, outsider} = mk(org, "outsider", :employee)
+    conn = conn |> login(outsider) |> post(~p"/api/meetings/#{meeting.id}/join")
+    assert json_response(conn, 404)["error"] == "meeting_not_found"
+  end
+
+  test "D-016: приглашённый участник той же орг → join проходит (200 + токен)",
+       %{conn: conn, org: org, meeting: meeting} do
+    {:ok, invited} = mk(org, "invited", :employee)
+    {:ok, _} = Attendance.add_invitee(meeting, invited)
+    conn = conn |> login(invited) |> post(~p"/api/meetings/#{meeting.id}/join")
+    assert is_binary(json_response(conn, 200)["token"])
   end
 
   ## E7 — GPS/гео pre-join gate (нативный клиент)

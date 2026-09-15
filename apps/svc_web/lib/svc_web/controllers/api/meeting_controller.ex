@@ -108,19 +108,23 @@ defmodule SvcWeb.API.MeetingController do
   def join(conn, %{"id" => id} = params) do
     user = conn.assigns.current_user
 
-    case fetch_meeting(user.org_id, id) do
-      nil ->
-        conn |> put_status(:not_found) |> json(%{error: "meeting_not_found"})
-
-      meeting ->
-        # E7 pre-join gate: классификация IP + запись GPS (нативный клиент).
-        # MVP без MMDB: gate возвращает только :allow/:flag (никогда :block — см. Svc.Geo).
-        # flag = пометка для ручной проверки, НЕ отказ → в звонок пускаем. Когда подключим
-        # MaxMind MMDB (locus) и появится :block — компилятор потребует ветку отказа (D-012).
-        case Geo.gate(user.org_id, remote_ip(conn), gate_opts(user, meeting, params)) do
-          {:allow, _reason} -> issue_token(conn, user, meeting)
-          {:flag, _reason} -> issue_token(conn, user, meeting)
-        end
+    # Право на звонок = та же видимость, что и в списке (D-016): организатор или
+    # приглашённый. Одного org-scoping мало: id встреч последовательны, и участник
+    # той же организации мог бы подобрать чужую закрытую встречу и получить
+    # LiveKit-токен, хотя в списке её не видит (нарушение конфиденциальности встречи).
+    # Не-видимую отдаём как 404 — не раскрываем сам факт её существования.
+    with meeting when not is_nil(meeting) <- fetch_meeting(user.org_id, id),
+         true <- Meetings.can_view_meeting?(user, meeting) do
+      # E7 pre-join gate: классификация IP + запись GPS (нативный клиент).
+      # MVP без MMDB: gate возвращает только :allow/:flag (никогда :block — см. Svc.Geo).
+      # flag = пометка для ручной проверки, НЕ отказ → в звонок пускаем. Когда подключим
+      # MaxMind MMDB (locus) и появится :block — компилятор потребует ветку отказа (D-012).
+      case Geo.gate(user.org_id, remote_ip(conn), gate_opts(user, meeting, params)) do
+        {:allow, _reason} -> issue_token(conn, user, meeting)
+        {:flag, _reason} -> issue_token(conn, user, meeting)
+      end
+    else
+      _ -> conn |> put_status(:not_found) |> json(%{error: "meeting_not_found"})
     end
   end
 
