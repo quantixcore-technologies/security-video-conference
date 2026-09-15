@@ -128,11 +128,16 @@ jobs:
           distribution: temurin
           java-version: "17"
 
-      # Ставит cmdline-tools и принимает лицензии — дальше AGP сам дотянет
-      # platform-35 / build-tools по compileSdk из build.gradle.kts.
-      # v4: @v3 пытался поставить устаревший пакет `tools`, который Google убрал из
-      # cmdline-tools 16.0 → "Failed to find package 'tools'" (ломалось с ~15.09.2026).
-      - uses: android-actions/setup-android@v4
+      # android-actions/setup-android (и v3, и v4) жёстко ставит устаревший пакет
+      # `tools`, который Google убрал из SDK → "Failed to find package 'tools'"
+      # (ломается с ~15.09.2026). Ставим ровно нужное preinstalled sdkmanager'ом
+      # runner'а (compileSdk/targetSdk = 35), без `tools`.
+      - name: Android SDK (packages + licenses)
+        run: |
+          SDK="${ANDROID_SDK_ROOT:-$ANDROID_HOME}"
+          MGR="$SDK/cmdline-tools/latest/bin/sdkmanager"
+          yes | "$MGR" --licenses > /dev/null 2>&1 || true
+          "$MGR" "platform-tools" "platforms;android-35" "build-tools;35.0.0"
 
       - uses: gradle/actions/setup-gradle@v4
 
