@@ -113,6 +113,23 @@ enum LoginResult {
     case totpRequired(String)
 }
 
+/// Yordamchi bazasidagi bitta yozuv (S39) — server bilan bir xil: id/topic/question/answer.
+struct AssistantEntry: Decodable, Identifiable, Hashable {
+    let id: String
+    let topic: String
+    let question: String
+    let answer: String
+    static let empty = AssistantEntry(id: "", topic: "", question: "", answer: "")
+}
+
+/// `/api/assistant/ask` javobi — serverdagi to'rt holat (S37/D-019).
+enum AssistResult {
+    case ok(AssistantEntry, related: [AssistantEntry])
+    case unsure([AssistantEntry])
+    case restricted(question: String, roleLabels: [String])
+    case noMatch([AssistantEntry])
+}
+
 enum ApiError: LocalizedError {
     case http(Int, String?)
     case forbidden
@@ -284,6 +301,63 @@ actor SvcApi {
             s = "wss://" + s.dropFirst(5)
         }
         return s
+    }
+
+    // MARK: Yordamchi (S39)
+
+    /// Qurilma tili (uz/ru/en); qo'llab-quvvatlanmasa serverning standarti (ru).
+    static var deviceLocale: String {
+        let code = (Locale.preferredLanguages.first ?? "ru").prefix(2).lowercased()
+        return ["uz", "ru", "en"].contains(code) ? code : "ru"
+    }
+
+    /// Boshlang'ich takliflar (birinchi savoldan oldin ko'rsatiladi).
+    func assistantSuggestions(token: String) async throws -> [AssistantEntry] {
+        struct Wrap: Decodable { let suggestions: [AssistantEntry] }
+        let data = try await getData("/api/assistant/suggestions?locale=\(SvcApi.deviceLocale)", token: token)
+        return try decoder.decode(Wrap.self, from: data).suggestions
+    }
+
+    /// Bitta yozuv id bo'yicha ("o'xshash savollar" bosilganda).
+    func assistantEntry(token: String, id: String) async throws -> AssistantEntry {
+        struct Wrap: Decodable { let answer: AssistantEntry }
+        let enc = id.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? id
+        let data = try await getData("/api/assistant/\(enc)?locale=\(SvcApi.deviceLocale)", token: token)
+        return try decoder.decode(Wrap.self, from: data).answer
+    }
+
+    /// Foydalanuvchi savoli. Server matchingi rol bilan hisoblab, to'rt holatdan birini qaytaradi.
+    func assistantAsk(token: String, question: String) async throws -> AssistResult {
+        let json = try await postJSON(
+            "/api/assistant/ask",
+            body: ["question": question, "locale": SvcApi.deviceLocale],
+            token: token
+        )
+        switch json["status"] as? String {
+        case "ok":
+            return .ok(Self.entry(json["answer"]) ?? .empty, related: Self.entries(json["related"]))
+        case "unsure":
+            return .unsure(Self.entries(json["candidates"]))
+        case "restricted":
+            let q = json["question"] as? String ?? question
+            let labels = (json["allowed_role_labels"] as? [Any])?.compactMap { $0 as? String } ?? []
+            return .restricted(question: q, roleLabels: labels)
+        default:  // "no_match"
+            return .noMatch(Self.entries(json["suggestions"]))
+        }
+    }
+
+    // `ask` javobi JSONSerialization bilan o'qiladi (snake_case saqlanadi) — qo'lda yig'amiz.
+    private static func entry(_ any: Any?) -> AssistantEntry? {
+        guard let d = any as? [String: Any],
+              let id = d["id"] as? String, let topic = d["topic"] as? String,
+              let question = d["question"] as? String, let answer = d["answer"] as? String
+        else { return nil }
+        return AssistantEntry(id: id, topic: topic, question: question, answer: answer)
+    }
+
+    private static func entries(_ any: Any?) -> [AssistantEntry] {
+        (any as? [Any])?.compactMap { entry($0) } ?? []
     }
 
     // MARK: HTTP

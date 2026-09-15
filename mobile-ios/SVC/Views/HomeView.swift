@@ -6,6 +6,7 @@ struct HomeView: View {
     let session: Session
     @EnvironmentObject private var state: AppState
     @State private var unread = 0
+    @State private var showAssistant = false
 
     init(session: Session) {
         self.session = session
@@ -27,22 +28,43 @@ struct HomeView: View {
     }
 
     var body: some View {
-        TabView {
-            MeetingsView(session: session)
-                .tabItem { Label("Uchrashuvlar", systemImage: "video.fill") }
+        ZStack(alignment: .bottomTrailing) {
+            TabView {
+                MeetingsView(session: session)
+                    .tabItem { Label("Uchrashuvlar", systemImage: "video.fill") }
 
-            NotificationsView(session: session, unread: $unread)
-                .tabItem { Label("Xabarlar", systemImage: "bell.fill") }
-                .badge(unread)
+                NotificationsView(session: session, unread: $unread)
+                    .tabItem { Label("Xabarlar", systemImage: "bell.fill") }
+                    .badge(unread)
 
-            DepartmentView(session: session)
-                .tabItem { Label("Bo'lim", systemImage: "person.3.fill") }
+                DepartmentView(session: session)
+                    .tabItem { Label("Bo'lim", systemImage: "person.3.fill") }
 
-            ProfileView(session: session)
-                .tabItem { Label("Profil", systemImage: "person.fill") }
+                ProfileView(session: session)
+                    .tabItem { Label("Profil", systemImage: "person.fill") }
+            }
+            .tint(Theme.accent)
+
+            // Yordamchi — pastki o'ng burchakda suzuvchi tugma (Android bilan bir xil joy).
+            Button {
+                showAssistant = true
+            } label: {
+                Image(systemName: "questionmark.bubble.fill")
+                    .font(.system(size: 22, weight: .semibold))
+                    .foregroundColor(.white)
+                    .frame(width: 56, height: 56)
+                    .background(Theme.accent)
+                    .clipShape(Circle())
+                    .shadow(color: .black.opacity(0.35), radius: 6, x: 0, y: 3)
+            }
+            .padding(.trailing, 18)
+            .padding(.bottom, 66)  // pastki navigatsiya panelidan yuqorida
+            .accessibilityLabel("Yordamchi")
         }
-        .tint(Theme.accent)
         .task { await refreshUnread() }
+        .sheet(isPresented: $showAssistant) {
+            AssistantView(session: session).environmentObject(state)
+        }
     }
 
     @MainActor
