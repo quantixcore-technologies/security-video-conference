@@ -314,8 +314,22 @@
 - ⏳ **Остаётся (LOW, отложено): req 0.5.18** — CVE-2026-49755/49756 (LOW). Фикс только в req 0.6+
   (minor-скачок), а req несёт OTA-манифест (D-020) и Swoosh — риск поломки > пользы при LOW. Вернуться отдельно.
 
-## ⏭️ СЛЕДУЮЩИЙ КВЕСТ (Tauri-каркас + звонок готовы ✅ S26/S27)
-- 🔒 **2-сторонний реальный видеозвонок с мобильных** — заблокирован: у заказчика только iPhone, установка iOS-сборки требует Apple Developer ($99/год).
+## 📹 2026-09-15 — реальный cross-device видеозвонок ПОДТВЕРЖДЁН через LiveKit Cloud ✅
+Старая пометка «видео между устройствами заблокировано (туннель не тянет WebRTC)» — **устарела**:
+у проекта уже подключён LiveKit Cloud (`wss://quantixcore-2mcrpdkd.livekit.cloud`, регион odubai1a),
+медиа идёт через облачный SFU, минуя Cloudflare-туннель.
+- **Инфра-проверка (lk CLI, 2 участника):** botA `--publish-demo` → botB `track subscribed {kind: video,
+  source: CAMERA}`. Облако релеит видео между двумя участниками на реальных креды проекта.
+- **App end-to-end (эмулятор, реальный APK v0.5.2):** вход `aziz` → встреча → **join**. LiveKit-сторона
+  (lk `web-mehmon` в той же комнате `meeting.livekit_room_name`) увидела `participant connected: user-2`
+  и **subscribed** к его трекам **video (CAMERA)** и **audio (MICROPHONE)**. На экране звонка приложения —
+  тайлы `web-mehmon` + `Siz`, «Efirda». Т.е. приложение публикует свою камеру/микрофон в облако и видит
+  удалённого участника. Скриншот звонка пуст — **FLAG_SECURE (D-013) работает** (анти-запись).
+- Вывод: двусторонний защищённый видеозвонок Android↔другое устройство через LiveKit Cloud **работает**.
+  Осталось: живой тест на 2 физических устройствах (для приёмки) и iOS.
+
+## ⏭️ СЛЕДУЮЩИЙ КВЕСТ
+- 🔒 **iOS на живой iPhone** — нужен Apple Developer ($99/год); сборка идёт на CI (macOS runner).
 - 🔴 **`svc-real` перевести с dev-режима на prod `mix release`** (сейчас mix в dev на сервере).
 - 🔴 **Tauri видео на Windows** — проверить реальное WebRTC-медиа в WebView2 + `setContentProtected` enforce (Linux webkit2gtk WebRTC ненадёжен; D-002 Windows-first).
 - **2-сторонний тест** — desktop ↔ web-call (`/admin/meetings/1/call`) / mobile: встречное видео.
