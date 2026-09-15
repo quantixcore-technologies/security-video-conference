@@ -356,7 +356,15 @@
   SQL-инъекций, `mark_read` по владельцу, секретов в git нет, логин Argon2id+lockout. Мелочи
   (отложено): `capture-events` берёт `meeting_id` из тела (org/user — серверные, низкий риск);
   `BORG_PASSPHRASE` в `svc-backup.sh` вынести в 600-файл; `req 0.5.18` LOW.
-- ⏳ Дальше по плану: (3) ops-runbook, (4) req 0.5.18 LOW.
+- ✅ **Ops-runbook** написан (`docs/RUNBOOK.md`): деплой/откат/бэкап-restore/мониторинг/ограничения.
+- ✅ **Зависимости: `mix hex.audit` теперь ЧИСТ** («No retired or security advisory packages found»).
+  Закрыты: Phoenix 1.8.14 (HIGH DoS), req 0.7.4, postgrex 0.22.4 (MEDIUM), phoenix_live_view 1.1.33,
+  swoosh 1.28.0. Всё пересобрано в prod-релиз и задеплоено с авто-откатом; login/API/процесс `beam.smp`.
+  Примечание: advisory-база экосистемы обновляется постоянно — периодически гонять `mix hex.audit`
+  (в runbook). Мелочи из ревью (низкий риск, не сделано): `capture-events` meeting_id из тела;
+  `BORG_PASSPHRASE` вынести в 600-файл.
+- **Итог сессии 2026-09-16:** прод-режим (mix release), безопасность (ключи/check_origin/CVE/IDOR-join),
+  cross-device видео подтверждено, iOS-паритет + CI зелёный, бэкап-restore проверен, аудит чист.
 
 ## ⏭️ СЛЕДУЮЩИЙ КВЕСТ
 - 🔒 **iOS на живой iPhone** — нужен Apple Developer ($99/год); сборка/паритет готовы, CI зелёный.
