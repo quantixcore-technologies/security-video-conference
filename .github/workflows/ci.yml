@@ -130,7 +130,9 @@ jobs:
 
       # Ставит cmdline-tools и принимает лицензии — дальше AGP сам дотянет
       # platform-35 / build-tools по compileSdk из build.gradle.kts.
-      - uses: android-actions/setup-android@v3
+      # v4: @v3 пытался поставить устаревший пакет `tools`, который Google убрал из
+      # cmdline-tools 16.0 → "Failed to find package 'tools'" (ломалось с ~15.09.2026).
+      - uses: android-actions/setup-android@v4
 
       - uses: gradle/actions/setup-gradle@v4
 
