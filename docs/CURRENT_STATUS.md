@@ -328,8 +328,23 @@
 - Вывод: двусторонний защищённый видеозвонок Android↔другое устройство через LiveKit Cloud **работает**.
   Осталось: живой тест на 2 физических устройствах (для приёмки) и iOS.
 
+## 📱 2026-09-16 — iOS (S34) доведён до паритета с Android + CI зелёный
+- **Помощник (S39) добавлен в iOS** (`SVC/Views/AssistantView.swift` + методы `SvcApi` `assistant*`,
+  плавающая кнопка в `HomeView`): те же `/api/assistant/{suggestions,ask,:id}`, четыре ветки
+  (ok/unsure/restricted/no_match), локаль устройства. Контракт всех веток сверен с ЖИВЫМ прод-сервером.
+  iOS раньше был единственным клиентом без помощника — паритет закрыт.
+- **iOS build (macOS runner) — зелёный.** Видео/аудио (LiveKit `CallView`) уже были. Swift локально не
+  компилируется (нет Xcode на Linux) — проверка только через CI + сверка API curl'ом.
+- **Чинил CI (не код приложения):** `android-actions/setup-android` (и v3, и v4) жёстко ставит
+  устаревший пакет `tools`, убранный Google из SDK → Android-джоб падал с ~15.09. Заменил на явную
+  установку `platform-tools`+`platforms;android-35`+`build-tools;35.0.0` preinstalled sdkmanager'ом.
+  **Теперь все 4 джоба зелёные:** Elixir (test/format/credo/sobelow), Desktop (Rust+TS), Android, iOS.
+- S34 остаётся 🔵: код-паритет достигнут, но **установка на живой iPhone требует Apple Developer ($99/год)** —
+  единственный оставшийся блокер.
+
 ## ⏭️ СЛЕДУЮЩИЙ КВЕСТ
-- 🔒 **iOS на живой iPhone** — нужен Apple Developer ($99/год); сборка идёт на CI (macOS runner).
+- 🔒 **iOS на живой iPhone** — нужен Apple Developer ($99/год); сборка/паритет готовы, CI зелёный.
+- Приёмочный тест видео на 2 физических устройствах.
 - 🔴 **`svc-real` перевести с dev-режима на prod `mix release`** (сейчас mix в dev на сервере).
 - 🔴 **Tauri видео на Windows** — проверить реальное WebRTC-медиа в WebView2 + `setContentProtected` enforce (Linux webkit2gtk WebRTC ненадёжен; D-002 Windows-first).
 - **2-сторонний тест** — desktop ↔ web-call (`/admin/meetings/1/call`) / mobile: встречное видео.
