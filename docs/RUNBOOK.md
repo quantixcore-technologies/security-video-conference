@@ -75,17 +75,19 @@ sudo systemctl restart svc-real.service
 
 **Бэкап:** ежечасно, Borg-репо `/mnt/backup/borg`. Содержимое: весь `/` (минус кэши/tmp) +
 `pg_dumpall` в `var/backups/svc-db/all-databases.sql.gz`. Хранение: 48 ч / 14 д / 8 нед / 12 мес.
-Скрипт `/usr/local/sbin/svc-backup.sh` (в нём же `BORG_PASSPHRASE` — вынести в 600-файл, TODO).
+Скрипт `/usr/local/sbin/svc-backup.sh`. Пароль репозитория — в отдельном файле
+`/etc/borg/passphrase` (600, root:root), скрипт берёт его через `BORG_PASSCOMMAND='cat /etc/borg/passphrase'`
+(в самом скрипте пароля больше нет). При переносе на новый хост восстановить и этот файл.
 
 ```bash
 # Список архивов / последний:
-sudo bash -c 'source <(grep -E "^export (BORG_REPO|BORG_PASSPHRASE)=" /usr/local/sbin/svc-backup.sh); borg list --last 5'
+sudo bash -c 'source <(grep -E "^export (BORG_REPO|BORG_PASSCOMMAND)=" /usr/local/sbin/svc-backup.sh); borg list --last 5'
 ```
 
 **Восстановление БД (проверено 2026-09-16 — счётчики совпали с живыми, без касания прода):**
 ```bash
 sudo bash -c '
-  source <(grep -E "^export (BORG_REPO|BORG_PASSPHRASE)=" /usr/local/sbin/svc-backup.sh)
+  source <(grep -E "^export (BORG_REPO|BORG_PASSCOMMAND)=" /usr/local/sbin/svc-backup.sh)
   cd /tmp && rm -rf rt && mkdir rt && cd rt
   LAST=$(borg list --last 1 --format "{archive}")
   borg extract "::$LAST" var/backups/svc-db/all-databases.sql.gz        # достаём дамп
@@ -120,4 +122,5 @@ sudo bash -c '
 - Один хост, один Postgres (нет HA), медиа зависит от LiveKit Cloud. Для гос-нагрузки — план масштабирования.
 - iOS: код-паритет + CI зелёный, но установка на iPhone требует Apple Developer ($99).
 - Комплаенс O'zDSt/СКЗИ, внешние каналы (SMS/email), MaxMind GeoIP — открытые вопросы заказчику.
-- `req 0.5.18` — LOW-advisory (фикс в req 0.6+, отложено из-за риска для OTA/Swoosh).
+- `mix hex.audit` на 2026-09-16 чист. База advisory экосистемы обновляется постоянно —
+  прогонять `mix hex.audit` периодически и подтягивать патчи зависимостей.
