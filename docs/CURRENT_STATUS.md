@@ -361,8 +361,11 @@
   Закрыты: Phoenix 1.8.14 (HIGH DoS), req 0.7.4, postgrex 0.22.4 (MEDIUM), phoenix_live_view 1.1.33,
   swoosh 1.28.0. Всё пересобрано в prod-релиз и задеплоено с авто-откатом; login/API/процесс `beam.smp`.
   Примечание: advisory-база экосистемы обновляется постоянно — периодически гонять `mix hex.audit`
-  (в runbook). Мелочи из ревью (низкий риск, не сделано): `capture-events` meeting_id из тела;
-  `BORG_PASSPHRASE` вынести в 600-файл.
+  (в runbook).
+- ✅ **Мелочи из ревью закрыты:** (а) `capture-events` теперь проверяет видимость `meeting_id`
+  (та же граница, что join/D-021: чужой meeting_id → 404; без meeting_id — общий детект; +тест,
+  проверено вживую); (б) `BORG_PASSPHRASE` вынесен из `svc-backup.sh` в `/etc/borg/passphrase`
+  (600, root), скрипт через `BORG_PASSCOMMAND` — проверено полным прогоном бэкапа.
 - **Итог сессии 2026-09-16:** прод-режим (mix release), безопасность (ключи/check_origin/CVE/IDOR-join),
   cross-device видео подтверждено, iOS-паритет + CI зелёный, бэкап-restore проверен, аудит чист.
 
