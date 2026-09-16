@@ -7,7 +7,9 @@ import "./styles.css";
 const app = document.querySelector<HTMLDivElement>("#app")!;
 
 const state = {
-  server: "http://localhost:4000",
+  // Standart — jonli server (Windows/macOS foydalanuvchi hech narsa sozlamay ishlatadi).
+  // O'z serveri bo'lган tashkilotlar login ekranida manzilni o'zgartira oladi (self-hosted B2G).
+  server: "https://admin.co1nlist.uz",
   bearer: "",
   username: "",
   meetingId: "1",

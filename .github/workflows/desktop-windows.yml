@@ -1,0 +1,56 @@
+name: Desktop Windows installer
+
+# Собирает Windows-инсталлятор SVC (Tauri v2) — .msi (WiX) + .exe (NSIS).
+# Обычные пользователи на Windows устанавливают отсюда (у нас нет Windows-машины;
+# сборку делает windows-runner GitHub Actions). Артефакт скачивается из вкладки Actions.
+on:
+  push:
+    paths:
+      - "desktop/**"
+      - ".github/workflows/desktop-windows.yml"
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build Windows installer (MSI + NSIS)
+    runs-on: windows-latest
+    timeout-minutes: 45
+    defaults:
+      run:
+        working-directory: desktop
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            desktop/src-tauri/target
+          key: windows-cargo-${{ hashFiles('desktop/src-tauri/Cargo.lock') }}
+          restore-keys: windows-cargo-
+
+      - uses: oven-sh/setup-bun@v2
+
+      - name: Зависимости фронтенда
+        run: bun install --frozen-lockfile
+
+      # tauri build: сначала beforeBuildCommand (vite build → dist), затем cargo release
+      # и упаковка. WebView2 предустановлен на windows-runner; WiX/NSIS Tauri тянет сам.
+      # Инсталлятор без подписи (code-signing cert — платный, отдельно); SmartScreen
+      # покажет предупреждение, но установка проходит.
+      - name: Tauri build (Windows installer)
+        run: bunx tauri build
+
+      - name: Upload installers
+        uses: actions/upload-artifact@v4
+        with:
+          name: svc-windows-installer
+          path: |
+            desktop/src-tauri/target/release/bundle/msi/*.msi
+            desktop/src-tauri/target/release/bundle/nsis/*.exe
+          if-no-files-found: error
