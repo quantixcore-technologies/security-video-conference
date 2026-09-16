@@ -10,12 +10,18 @@ davlat organlari va maxfiylik talab qiladigan tashkilotlar uchun.
 *A sovereign, self-hosted, transport-encrypted (DTLS-SRTP) video conferencing platform
 for government and privacy-critical organizations — end-to-end (SFrame) on the roadmap.*
 
+[![CI](https://github.com/quantixcore-technologies/security-video-conference/actions/workflows/ci.yml/badge.svg)](https://github.com/quantixcore-technologies/security-video-conference/actions/workflows/ci.yml)
+[![iOS](https://github.com/quantixcore-technologies/security-video-conference/actions/workflows/ios.yml/badge.svg)](https://github.com/quantixcore-technologies/security-video-conference/actions/workflows/ios.yml)
+[![Windows](https://github.com/quantixcore-technologies/security-video-conference/actions/workflows/desktop-windows.yml/badge.svg)](https://github.com/quantixcore-technologies/security-video-conference/actions/workflows/desktop-windows.yml)
+[![macOS](https://github.com/quantixcore-technologies/security-video-conference/actions/workflows/desktop-macos.yml/badge.svg)](https://github.com/quantixcore-technologies/security-video-conference/actions/workflows/desktop-macos.yml)
+
 [![Elixir](https://img.shields.io/badge/Elixir-1.18-4B275F?logo=elixir&logoColor=white)](https://elixir-lang.org)
-[![Phoenix](https://img.shields.io/badge/Phoenix-LiveView-FD4F00?logo=phoenixframework&logoColor=white)](https://www.phoenixframework.org)
+[![Phoenix](https://img.shields.io/badge/Phoenix-1.8-FD4F00?logo=phoenixframework&logoColor=white)](https://www.phoenixframework.org)
 [![LiveKit](https://img.shields.io/badge/LiveKit-SFU-00E5A0)](https://livekit.io)
 [![Tauri](https://img.shields.io/badge/Tauri-desktop-24C8DB?logo=tauri&logoColor=white)](https://tauri.app)
-[![Tests](https://img.shields.io/badge/tests-224%20passing-3FB950)](#)
-[![Security](https://img.shields.io/badge/Sobelow-0%20high%2Fmed-3FB950)](#)
+[![Tests](https://img.shields.io/badge/tests-320%20passing-3FB950)](#)
+[![Security](https://img.shields.io/badge/Sobelow%20·%20hex.audit-clean-3FB950)](#)
+[![Clients](https://img.shields.io/badge/clients-web%20·%20Windows%20·%20macOS%20·%20Android-2a78d6)](https://svc.co1nlist.uz/#yuklab)
 
 **🌐 Live demo:** [svc.co1nlist.uz](https://svc.co1nlist.uz) · [svc.neti.uz](https://svc.neti.uz) · **Taqdimot:** [slayd.co1nlist.uz](https://slayd.co1nlist.uz)
 
@@ -132,7 +138,7 @@ mix ecto.setup                 # baza + migratsiyalar + seed
 mix phx.server                 # http://localhost:4000  (admin / AdminPass12345)
 
 # Testlar + sifat darvozasi
-mix test                       # 224 test
+mix test                       # 320 test
 mix precommit                  # compile(warnings-as-errors) · format · credo · sobelow · test
 
 # Desktop klient
@@ -141,7 +147,7 @@ cd desktop && bun run tauri dev
 
 ---
 
-## 📊 Loyiha holati — **32 / ~40 slice** · 224 test · 0 xato
+## 📊 Loyiha holati — **38 / 39 slice** · 320 test · 0 xato · CI 4 platforma yashil
 
 | Epik | Holat |
 |------|-------|
