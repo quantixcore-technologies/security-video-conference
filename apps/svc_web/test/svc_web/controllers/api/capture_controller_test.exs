@@ -98,6 +98,24 @@ defmodule SvcWeb.API.CaptureControllerTest do
     assert body["reaction"] == "none"
   end
 
+  test "meeting_id чужой закрытой встречи (не приглашён) → 404, детект не привязывается",
+       %{conn: conn, org: org} do
+    {:ok, organizer} = mk(org, "org-owner", :manager)
+    {:ok, private} = Meetings.create_meeting(organizer, %{title: "Закрытое"})
+    {:ok, outsider} = mk(org, "outsider", :employee)
+
+    conn =
+      conn
+      |> login(outsider)
+      |> post(~p"/api/capture-events", %{
+        "kind" => "recorder_detected",
+        "platform" => "windows",
+        "meeting_id" => private.id
+      })
+
+    assert json_response(conn, 404)["error"] == "meeting_not_found"
+  end
+
   test "неизвестный kind → 422", %{conn: conn, user: user, meeting: meeting} do
     body =
       conn
