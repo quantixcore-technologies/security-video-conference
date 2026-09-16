@@ -4,11 +4,11 @@
 
 # SVC — Security Video Conference
 
-**Self-hosted, uchidan-uchigacha shifrlangan video-konferensiya platformasi**
+**Self-hosted, suveren, transportda shifrlangan (DTLS-SRTP) video-konferensiya platformasi**
 davlat organlari va maxfiylik talab qiladigan tashkilotlar uchun.
 
-*A sovereign, self-hosted, end-to-end-encrypted video conferencing platform for
-government and privacy-critical organizations.*
+*A sovereign, self-hosted, transport-encrypted (DTLS-SRTP) video conferencing platform
+for government and privacy-critical organizations — end-to-end (SFrame) on the roadmap.*
 
 [![Elixir](https://img.shields.io/badge/Elixir-1.18-4B275F?logo=elixir&logoColor=white)](https://elixir-lang.org)
 [![Phoenix](https://img.shields.io/badge/Phoenix-LiveView-FD4F00?logo=phoenixframework&logoColor=white)](https://www.phoenixframework.org)
@@ -35,7 +35,8 @@ ma’lumotlarni lokalizatsiya qilish qonuniy talablariga ziddir.
 ## ✅ Yechim
 
 **SVC** — barcha ma’lumot va infratuzilma **to‘liq tashkilot nazoratida** bo‘lgan platforma:
-chet el bulutiga bog‘liq emas, o‘z serveringizda ishlaydi, uchidan-uchigacha shifrlangan.
+chet el bulutiga bog‘liq emas, o‘z serveringizda ishlaydi, kanal DTLS-SRTP bilan shifrlanadi
+(uchidan-uchiga SFrame — yo‘l xaritasida).
 
 ---
 
