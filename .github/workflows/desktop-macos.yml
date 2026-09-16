@@ -1,0 +1,55 @@
+name: Desktop macOS build
+
+# Собирает macOS-приложение SVC (Tauri v2) как universal .dmg (Intel + Apple Silicon).
+# У нас нет Mac — сборку делает macos-runner GitHub Actions. Артефакт — из вкладки Actions.
+# ⚠️ Без нотаризации/подписи (нужен Apple Developer $99): Gatekeeper потребует
+#    правый клик → «Открыть» при первом запуске. Подпись — отдельный шаг.
+on:
+  push:
+    paths:
+      - "desktop/**"
+      - ".github/workflows/desktop-macos.yml"
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build macOS app (universal .dmg)
+    runs-on: macos-latest
+    timeout-minutes: 50
+    defaults:
+      run:
+        working-directory: desktop
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-apple-darwin, aarch64-apple-darwin
+
+      - name: Cache cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            desktop/src-tauri/target
+          key: macos-cargo-${{ hashFiles('desktop/src-tauri/Cargo.lock') }}
+          restore-keys: macos-cargo-
+
+      - uses: oven-sh/setup-bun@v2
+
+      - name: Зависимости фронтенда
+        run: bun install --frozen-lockfile
+
+      # Universal-бинарь (обе архитектуры), затем .dmg. WebView (WKWebView) — системный.
+      - name: Tauri build (universal .dmg)
+        run: bunx tauri build --target universal-apple-darwin
+
+      - name: Upload .dmg
+        uses: actions/upload-artifact@v4
+        with:
+          name: svc-macos-app
+          path: |
+            desktop/src-tauri/target/universal-apple-darwin/release/bundle/dmg/*.dmg
+          if-no-files-found: error
