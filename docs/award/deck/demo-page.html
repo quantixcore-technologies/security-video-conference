@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="uz">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SVC — loyiha funksionalligi demosi (video)</title>
+<meta name="description" content="SVC — Security Video Conference: ishlayotgan tizim demosi. Veb-panel, majlislar, native Android ilova, xavfsizlik siyosati.">
+<meta property="og:title" content="SVC — loyiha funksionalligi demosi">
+<meta property="og:description" content="Ishlayotgan tizim demosi: veb-panel, majlislar, Android ilova, anti-capture.">
+<meta property="og:type" content="video.other">
+<meta property="og:video" content="https://svc.co1nlist.uz/demo/svc-demo.mp4">
+<meta property="og:image" content="https://svc.co1nlist.uz/demo/poster.jpg">
+<style>
+  :root{
+    --bg:#0b1220; --panel:#0f172a; --line:#1e293b;
+    --ink:#e2e8f0; --ink2:#94a3b8; --muted:#64748b;
+    --accent:#22c55e; --link:#60a5fa;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:"IBM Plex Sans",system-ui,-apple-system,Segoe UI,Roboto,sans-serif;line-height:1.6}
+  .wrap{max-width:980px;margin:0 auto;padding-block:28px 56px;padding-left:20px;padding-right:20px}
+  header{display:flex;align-items:center;gap:12px;margin-bottom:26px;flex-wrap:wrap}
+  .logo{width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,#10b981,#0ea5e9);
+    display:grid;place-items:center;font-weight:800;color:#04121a;font-size:18px}
+  .brand b{display:block;font-size:16px}
+  .brand span{font-size:12.5px;color:var(--muted);letter-spacing:.4px}
+  h1{font-size:clamp(22px,4vw,32px);line-height:1.25;margin:0 0 8px}
+  h1 .g{color:var(--accent)}
+  .sub{color:var(--ink2);margin:0 0 22px;font-size:15.5px}
+  .player{background:#000;border:1px solid var(--line);border-radius:16px;overflow:hidden;
+    box-shadow:0 18px 50px rgba(0,0,0,.45)}
+  video{display:block;width:100%;max-width:100%;aspect-ratio:16/9;background:#000}
+  .meta{display:flex;flex-wrap:wrap;gap:10px;margin:16px 0 30px}
+  .chip{background:var(--panel);border:1px solid var(--line);border-radius:999px;
+    padding:6px 13px;font-size:13px;color:var(--ink2)}
+  .chip b{color:var(--ink);font-weight:600}
+  .btns{display:flex;flex-wrap:wrap;gap:12px;margin-bottom:34px}
+  .btn{display:inline-flex;align-items:center;gap:8px;padding:11px 18px;border-radius:11px;
+    text-decoration:none;font-weight:600;font-size:14.5px;border:1px solid transparent}
+  .btn-p{background:#2563eb;color:#fff}
+  .btn-g{background:var(--panel);color:var(--ink);border-color:var(--line)}
+  h2{font-size:17px;margin:0 0 14px;color:var(--ink)}
+  .grid{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));margin-bottom:32px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px 18px}
+  .card h3{margin:0 0 8px;font-size:14.5px;color:var(--accent)}
+  .card p{margin:0;font-size:13.5px;color:var(--ink2)}
+  .tl{list-style:none;margin:0;padding:0}
+  .tl li{display:flex;gap:14px;padding:9px 0;border-bottom:1px solid var(--line);font-size:14px}
+  .tl li:last-child{border-bottom:0}
+  .tl time{color:var(--accent);font-variant-numeric:tabular-nums;min-width:52px;font-weight:600}
+  .tl span{color:var(--ink2)}
+  footer{border-top:1px solid var(--line);margin-top:34px;padding-top:20px;
+    color:var(--muted);font-size:13px}
+  a{color:var(--link)}
+  @media (max-width:520px){ .btn{flex:1 1 100%;justify-content:center} }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="logo">S</div>
+    <div class="brand">
+      <b>SVC — Security Video Conference</b>
+      <span>QUANTIXCORE TECHNOLOGIES MChJ · O‘ZBEKISTON</span>
+    </div>
+  </header>
+
+  <h1>Loyiha funksionalligi <span class="g">demosi</span></h1>
+  <p class="sub">Ishlayotgan tizimning yozib olingan demosi: veb boshqaruv paneli, majlislar,
+  native Android ilova va xavfsizlik siyosati. Barchasi haqiqiy serverda ishlaydi.</p>
+
+  <div class="player">
+    <video controls preload="metadata" playsinline poster="poster.jpg">
+      <!-- MP4 (H.264) — iPhone/Safari/Chrome/Edge uchun asosiy.
+           WebM (VP9) — H.264 kodeki yo'q brauzerlar uchun zaxira (masalan Linux'dagi ayrim Firefox). -->
+      <source src="svc-demo.mp4" type="video/mp4">
+      <source src="svc-demo.webm" type="video/webm">
+      Brauzeringiz videoni qo‘llab-quvvatlamaydi —
+      <a href="svc-demo.mp4">faylni yuklab oling</a>.
+    </video>
+  </div>
+
+  <div class="meta">
+    <span class="chip">⏱ Davomiyligi: <b>2 daq 47 s</b></span>
+    <span class="chip">🎞 Sifat: <b>1080p</b></span>
+    <span class="chip">🗣 Ovoz/matn: <b>Ingliz tili</b></span>
+    <span class="chip">📅 Yozilgan: <b>2026</b></span>
+  </div>
+
+  <div class="btns">
+    <a class="btn btn-p" href="svc-demo.mp4" download>⬇ Videoni yuklab olish (MP4, 3.4 MB)</a>
+    <a class="btn btn-g" href="https://admin.co1nlist.uz">🔐 Jonli tizimga kirish</a>
+    <a class="btn btn-g" href="/#yuklab">📱 Ilovalarni yuklab olish</a>
+  </div>
+
+  <h2>Videoda nima ko‘rsatilgan</h2>
+  <ul class="tl">
+    <li><time>0:00</time><span>SVC nima: suveren, o‘z serverida joylashadigan xavfsiz video-konferensiya</span></li>
+    <li><time>0:10</time><span>Kirish modeli: o‘z-o‘zidan ro‘yxatdan o‘tish yo‘q — rollar tayinlanadi (Super admin · Rahbar · Xodim · Xavfsizlik xodimi)</span></li>
+    <li><time>0:22</time><span>Tizimga kirish va boshqaruv paneli: xodimlar, majlislar, topshiriqlar</span></li>
+    <li><time>0:42</time><span>Majlis yaratish: sana, takrorlanish, taklif qilinadigan ishtirokchilar ro‘yxati</span></li>
+    <li><time>1:02</time><span>Majlis maxfiyligi: faqat tashkilotchi va taklif qilinganlar ko‘radi — super admin ham emas</span></li>
+    <li><time>1:12</time><span>O‘zgarmas audit jurnali: har bir sezgir amal yozib boriladi</span></li>
+    <li><time>1:20</time><span>Native Android ilova: brendlangan ekran, kirish, 2FA, Keychain darajasidagi saqlash</span></li>
+    <li><time>1:50</time><span>Telefondan majlis yaratish: taklif ro‘yxati serverda lavozim bo‘yicha cheklanadi</span></li>
+    <li><time>2:10</time><span>Bitta ish joyi: xabarlar, buyruqlar, bo‘lim va profil (ilova yopiq bo‘lsa ham bildirishnoma)</span></li>
+    <li><time>2:20</time><span>Foydalanuvchi profili: rol, bo‘lim, tashkilot; interfeys o‘zbek, rus va ingliz tillarida</span></li>
+    <li><time>2:30</time><span><b style="color:var(--ink)">Anti-capture jonli isbot:</b> ekran-yozuv bo‘sh fayl oladi — «RECORDING BLOCKED» (FLAG_SECURE)</span></li>
+    <li><time>2:40</time><span>Jonli manzillar va texnologiya: Elixir · Phoenix · LiveKit · Kotlin/SwiftUI · PostgreSQL</span></li>
+  </ul>
+
+  <h2>Videodan keyin qo‘shilganlar (tizim rivojlanmoqda)</h2>
+  <div class="grid">
+    <div class="card">
+      <h3>Windows va macOS ilovalari</h3>
+      <p>Native desktop klientlar tayyor va yuklab olinadi (.exe / .msi / .dmg) — video yozilgandan keyin qo‘shildi.</p>
+    </div>
+    <div class="card">
+      <h3>Qurilmalararo video</h3>
+      <p>Telefon ↔ kompyuter o‘rtasida real video/audio qo‘ng‘iroq LiveKit SFU orqali ishlaydi.</p>
+    </div>
+    <div class="card">
+      <h3>Ichki yordamchi</h3>
+      <p>Barcha klientlarda ishlab turgan yordamchi: savol-javob, rollarga mos cheklovlar (LLMsiz, serverdagi bilimlar bazasi).</p>
+    </div>
+  </div>
+
+  <footer>
+    <p><b>Jonli tizim:</b> <a href="https://svc.co1nlist.uz">svc.co1nlist.uz</a> ·
+    <a href="https://admin.co1nlist.uz">admin.co1nlist.uz</a> ·
+    <b>Taqdimot:</b> <a href="https://slayd.co1nlist.uz">slayd.co1nlist.uz</a></p>
+    <p>🇺🇿 QuantixCore Technologies MChJ · SVC — Security Video Conference · Made in Uzbekistan</p>
+  </footer>
+</div>
+</body>
+</html>
