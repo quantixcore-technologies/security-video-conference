@@ -156,7 +156,30 @@ table.cmp td.svc{color:var(--ink);font-weight:700}
   html,body{height:auto;overflow:visible;background:#0a0e1c;-webkit-print-color-adjust:exact;print-color-adjust:exact}
   .bar,.hud,.foot,.hint{display:none !important}
   .deck{position:static}
-  .slide{position:static !important;display:flex !important;width:1280px;height:720px;padding:60px 80px;page-break-after:always;break-after:page;animation:none !important;overflow:hidden !important}
+  .slide{position:static !important;display:flex !important;width:1280px;height:720px;padding:56px 76px;page-break-after:always;break-after:page;animation:none !important;overflow:hidden !important}
+  /* Chop etishda flex bolalari siqilib, matn ULAR ICHIDA kesilardi (PDF 5-sahifa) —
+     siqilishni taqiqlaymiz va zichlikni 720px sahifaga moslaymiz. */
+  .slide>*{flex-shrink:0}
+  /* Kontent sahifaga sig'ishi tekshirilgan → vertikal markazlash xavfsiz */
+  .slide{justify-content:center}
+  .kicker{margin-bottom:13px}
+  h1{font-size:3.3rem}
+  h2{font-size:2.05rem;margin-bottom:13px}
+  .lead{font-size:1rem;line-height:1.45}
+  .list{gap:11px}.li{gap:12px}
+  .li .b{width:34px;height:34px;font-size:1rem;border-radius:9px}
+  .li .t b{font-size:1rem;margin-bottom:2px}
+  .li .t span{font-size:.88rem;line-height:1.38}
+  .split{gap:36px}
+  .solve{gap:9px;margin-top:12px}.solve .s{padding:11px 13px}
+  .solve .s .n{width:30px;height:30px}
+  .warn,.ok-box{padding:14px 16px}.warn p,.ok-box p{font-size:.89rem}
+  .warn .h,.ok-box .h{font-size:.95rem;margin-bottom:6px}
+  .stack{gap:11px}.chip{padding:11px 13px}
+  .tags{margin-top:16px;gap:9px}.tag{padding:7px 12px;font-size:.82rem}
+  .metrics{gap:26px;margin-top:24px}.metric b{font-size:2.2rem}
+  table.cmp th,table.cmp td{padding:8px 12px;font-size:.9rem}
+  .tablewrap{overflow:visible}table.cmp{min-width:0}
   .slide:last-child{page-break-after:auto;break-after:auto}
 }
 </style>
@@ -424,7 +447,7 @@ table.cmp td.svc{color:var(--ink);font-weight:700}
             style="color:var(--accent);text-decoration:underline">demo video</a> ·
       <a href="https://github.com/quantixcore-technologies/security-video-conference"
          style="color:var(--accent)">source on GitHub</a> ·
-      📄 <a href="svc-deck.pdf" style="color:var(--accent)">this deck as PDF</a>
+      📄 <a href="svc-deck-2026-09.pdf" style="color:var(--accent)">this deck as PDF</a>
     </p>
   </section>
 
