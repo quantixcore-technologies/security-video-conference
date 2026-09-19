@@ -9,6 +9,10 @@ defmodule Svc.Documents.Document do
   use Ecto.Schema
   import Ecto.Changeset
 
+  # Резолюция отправителя: что получателю с этим делать. Порядок — по возрастанию
+  # обязательности, UI может опираться на него при сортировке.
+  @actions ~w(information review signature execution)a
+
   @type t :: %__MODULE__{}
 
   schema "documents" do
@@ -18,6 +22,10 @@ defmodule Svc.Documents.Document do
     field :byte_size, :integer
     field :sha256, :string
     field :storage_key, :string
+
+    field :action, Ecto.Enum, values: @actions, default: :information
+    field :note, :string
+    field :due_at, :utc_datetime_usec
 
     field :version, :integer, default: 1
     field :expires_at, :utc_datetime_usec
@@ -33,6 +41,9 @@ defmodule Svc.Documents.Document do
     timestamps(type: :utc_datetime_usec)
   end
 
+  @doc "Возможные резолюции (для <select> в формах и клиентах)."
+  def actions, do: @actions
+
   @doc "Создание документа (все поля кроме получателей — их пишет контекст)."
   def create_changeset(%__MODULE__{} = document, attrs) do
     document
@@ -47,7 +58,10 @@ defmodule Svc.Documents.Document do
       :storage_key,
       :version,
       :parent_id,
-      :expires_at
+      :expires_at,
+      :action,
+      :note,
+      :due_at
     ])
     |> validate_required([
       :org_id,
@@ -60,6 +74,7 @@ defmodule Svc.Documents.Document do
     ])
     |> validate_length(:title, min: 2, max: 300)
     |> validate_length(:filename, min: 1, max: 300)
+    |> validate_length(:note, max: 2000)
     |> validate_number(:byte_size, greater_than: 0)
     |> validate_expiry()
     |> unique_constraint(:storage_key)

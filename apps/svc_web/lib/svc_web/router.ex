@@ -68,6 +68,12 @@ defmodule SvcWeb.Router do
     post "/meetings/:id/join", MeetingController, :join
     post "/capture-events", CaptureController, :create
 
+    # S41: обмен документами в мобильных клиентах (от кого, что делать, срок).
+    get "/documents", DocumentController, :index
+    get "/documents/:id", DocumentController, :show
+    get "/documents/:id/download", DocumentController, :download
+    post "/documents/:id/ack", DocumentController, :acknowledge
+
     # Встроенный помощник (S37) — один источник справки на все три клиента.
     get "/assistant/suggestions", AssistantController, :suggestions
     post "/assistant/ask", AssistantController, :ask

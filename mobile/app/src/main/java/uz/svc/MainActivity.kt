@@ -13,6 +13,8 @@ import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
+import androidx.core.content.FileProvider
+import java.io.File
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -29,6 +31,8 @@ import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Alarm
 import androidx.compose.material.icons.filled.Cancel
+import androidx.compose.material.icons.filled.Description
+import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Groups
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Lock
@@ -49,6 +53,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -700,6 +705,7 @@ class MainActivity : ComponentActivity() {
                     val items = listOf(
                         Triple("Uchrashuvlar", Icons.Default.Videocam, 0),
                         Triple("Xabarlar", Icons.Default.Notifications, unread),
+                        Triple("Hujjatlar", Icons.Default.Description, 0),
                         Triple("Bo'lim", Icons.Default.Groups, 0),
                         Triple("Profil", Icons.Default.Person, 0)
                     )
@@ -731,7 +737,8 @@ class MainActivity : ComponentActivity() {
                 when (tab) {
                     0 -> MeetingsTab(auth)
                     1 -> NotificationsTab(auth, onUnread = { unread = it })
-                    2 -> DepartmentTab(auth)
+                    2 -> DocumentsTab(auth)
+                    3 -> DepartmentTab(auth)
                     else -> ProfileTab(auth, onLogout)
                 }
             }
@@ -1106,6 +1113,207 @@ class MainActivity : ComponentActivity() {
     }
 
     // ── 3-bo'lim: bo'limdoshlar ──
+
+    // ── Hujjatlar (S41) ────────────────────────────────────────────────────────
+    // Xodimga eng kerakli uchta narsa: KIMDAN, NIMA QILISH va QACHONGACHA.
+    // Shuning uchun kartada avval rezolyutsiya va yuboruvchi, keyin fayl nomi.
+    @Composable
+    private fun DocumentsTab(auth: Auth) {
+        var docs by remember { mutableStateOf<List<SvcApi.DocumentItem>?>(null) }
+        var loadError by remember { mutableStateOf<String?>(null) }
+        var reload by remember { mutableStateOf(0) }
+        var busyId by remember { mutableStateOf<Long?>(null) }
+        var toast by remember { mutableStateOf<String?>(null) }
+
+        val context = LocalContext.current
+        val scope = rememberCoroutineScope()
+
+        LaunchedEffect(reload) {
+            loadError = null
+            docs = null
+            runCatching { auth.api.documents(auth.session.token) }
+                .onSuccess { docs = it }
+                .onFailure { loadError = it.message ?: "Xatolik yuz berdi" }
+        }
+
+        val list = docs
+        Column(Modifier.fillMaxSize()) {
+            TabHeader("Hujjatlar", list?.let { "${it.size} ta hujjat" }) { reload++ }
+
+            toast?.let {
+                Surface(color = Panel, modifier = Modifier.fillMaxWidth()) {
+                    Text(it, color = Accent, modifier = Modifier.padding(12.dp),
+                        style = MaterialTheme.typography.bodySmall)
+                }
+            }
+
+            when {
+                loadError != null -> CenterMessage(loadError!!) { reload++ }
+                list == null -> CenterSpinner()
+                list.isEmpty() -> CenterMessage("Hozircha hujjat yo'q") { reload++ }
+                else -> LazyColumn(
+                    Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    items(list, key = { it.id }) { doc ->
+                        DocumentCard(
+                            doc = doc,
+                            busy = busyId == doc.id,
+                            onOpen = {
+                                busyId = doc.id
+                                scope.launch {
+                                    runCatching {
+                                        val bytes = auth.api.downloadDocument(auth.session.token, doc.id)
+                                        openFile(context, doc.filename, bytes)
+                                    }.onFailure { toast = it.message ?: "Fayl ochilmadi" }
+                                    busyId = null
+                                }
+                            },
+                            onAck = {
+                                busyId = doc.id
+                                scope.launch {
+                                    runCatching { auth.api.acknowledgeDocument(auth.session.token, doc.id) }
+                                        .onSuccess { toast = "Belgilandi: tanishdim"; reload++ }
+                                        .onFailure { toast = it.message ?: "Belgilab bo'lmadi" }
+                                    busyId = null
+                                }
+                            }
+                        )
+                    }
+                }
+            }
+        }
+    }
+
+    @Composable
+    private fun DocumentCard(
+        doc: SvcApi.DocumentItem,
+        busy: Boolean,
+        onOpen: () -> Unit,
+        onAck: () -> Unit
+    ) {
+        Surface(color = Panel, shape = RoundedCornerShape(14.dp), modifier = Modifier.fillMaxWidth()) {
+            Column(Modifier.padding(14.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Surface(color = actionColor(doc.action).copy(alpha = 0.18f),
+                        shape = RoundedCornerShape(8.dp)) {
+                        Text(
+                            actionLabelUz(doc.action, doc.actionLabel),
+                            color = actionColor(doc.action),
+                            style = MaterialTheme.typography.labelSmall,
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
+                        )
+                    }
+                    Spacer(Modifier.weight(1f))
+                    doc.dueAt?.let {
+                        Text("muddat: " + prettyDate(it).orEmpty(), color = Danger,
+                            style = MaterialTheme.typography.labelSmall)
+                    }
+                }
+
+                Spacer(Modifier.height(8.dp))
+                Text(doc.title, color = Color.White, fontWeight = FontWeight.SemiBold)
+
+                Text(
+                    if (doc.mine) "Siz yubordingiz" else "Kimdan: ${doc.fromName}",
+                    color = Muted, style = MaterialTheme.typography.bodySmall
+                )
+
+                doc.note?.takeIf { it.isNotBlank() }?.let {
+                    Spacer(Modifier.height(6.dp))
+                    Text(it, color = Color(0xFFCBD5E1), style = MaterialTheme.typography.bodySmall)
+                }
+
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    "${doc.filename} · ${humanSize(doc.byteSize)}",
+                    color = Muted, style = MaterialTheme.typography.labelSmall
+                )
+
+                Spacer(Modifier.height(10.dp))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Button(
+                        onClick = onOpen,
+                        enabled = !busy,
+                        colors = ButtonDefaults.buttonColors(containerColor = Accent)
+                    ) {
+                        Icon(Icons.Default.Download, null, modifier = Modifier.size(16.dp))
+                        Spacer(Modifier.width(6.dp))
+                        Text(if (busy) "Kuting…" else "Ochish")
+                    }
+
+                    if (!doc.mine) {
+                        Spacer(Modifier.width(8.dp))
+                        if (doc.acknowledgedAt != null) {
+                            Text("✓ tanishdingiz", color = Accent,
+                                style = MaterialTheme.typography.labelSmall)
+                        } else {
+                            TextButton(onClick = onAck, enabled = !busy) {
+                                Text("Tanishdim", color = Accent)
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // Rezolyutsiya nomini o'zbekchada ko'rsatamiz: server javobi rus tilida
+    // (u yerda hujjat aylanishi atamalari shunday), ilova esa o'zbek tilida.
+    private fun actionLabelUz(action: String, fallback: String): String = when (action) {
+        "information" -> "Tanishish uchun"
+        "review" -> "Ko'rib chiqish uchun"
+        "signature" -> "Imzolash uchun"
+        "execution" -> "Ijro uchun"
+        else -> fallback.ifBlank { "Hujjat" }
+    }
+
+    private fun actionColor(action: String): Color = when (action) {
+        "signature" -> Color(0xFFF59E0B)
+        "execution" -> Danger
+        "review" -> Color(0xFF38BDF8)
+        else -> Accent
+    }
+
+    private fun humanSize(bytes: Long): String = when {
+        bytes < 1024 -> "$bytes B"
+        bytes < 1024 * 1024 -> "${bytes / 1024} KB"
+        else -> "${"%.1f".format(bytes / 1024.0 / 1024.0)} MB"
+    }
+
+    /**
+     * Faylni keshga yozib, tizim ilovasida ochadi (PDF, rasm va h.k.).
+     * Keshga yozamiz: ilova o'chirilsa fayl ham ketadi va tashqi xotiraga
+     * maxfiy hujjat tushmaydi.
+     */
+    private fun openFile(context: Context, filename: String, bytes: ByteArray) {
+        val safe = filename.substringAfterLast('/').ifBlank { "hujjat" }
+        val dir = File(context.cacheDir, "documents").apply { mkdirs() }
+        val file = File(dir, safe)
+        file.writeBytes(bytes)
+
+        val uri = FileProvider.getUriForFile(context, context.packageName + ".fileprovider", file)
+        val intent = Intent(Intent.ACTION_VIEW).apply {
+            setDataAndType(uri, guessMime(safe))
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK)
+        }
+        context.startActivity(Intent.createChooser(intent, "Hujjatni ochish").apply {
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        })
+    }
+
+    private fun guessMime(name: String): String = when (name.substringAfterLast('.', "").lowercase()) {
+        "pdf" -> "application/pdf"
+        "png" -> "image/png"
+        "jpg", "jpeg" -> "image/jpeg"
+        "doc" -> "application/msword"
+        "docx" -> "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        "xls" -> "application/vnd.ms-excel"
+        "xlsx" -> "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        "txt" -> "text/plain"
+        else -> "*/*"
+    }
 
     @Composable
     private fun DepartmentTab(auth: Auth) {

@@ -44,6 +44,9 @@ defmodule SvcWeb.DocumentLive.Index do
           "title" => params["title"],
           "filename" => filename,
           "content_type" => content_type,
+          "action" => params["action"] || "information",
+          "note" => params["note"],
+          "due_at" => parse_expiry(params["due_at"]),
           "expires_at" => parse_expiry(params["expires_at"]),
           "recipient_ids" => params["recipient_ids"] || []
         }
@@ -189,7 +192,38 @@ defmodule SvcWeb.DocumentLive.Index do
                   class="input input-sm input-bordered w-full mt-1"
                 />
               </label>
+
+              <label class="block">
+                <span class="text-xs text-base-content/60">{gettext("Резолюция")}</span>
+                <select name="document[action]" class="select select-sm select-bordered w-full mt-1">
+                  <option :for={action <- Svc.Documents.Document.actions()} value={action}>
+                    {Svc.Documents.action_label(action)}
+                  </option>
+                </select>
+              </label>
+
+              <label class="block">
+                <span class="text-xs text-base-content/60">{gettext("Срок исполнения")}</span>
+                <input
+                  type="datetime-local"
+                  name="document[due_at]"
+                  class="input input-sm input-bordered w-full mt-1"
+                />
+              </label>
             </div>
+
+            <label class="block">
+              <span class="text-xs text-base-content/60">
+                {gettext("Что сделать (необязательно)")}
+              </span>
+              <textarea
+                name="document[note]"
+                rows="2"
+                maxlength="2000"
+                class="textarea textarea-sm textarea-bordered w-full mt-1"
+                placeholder={gettext("Ознакомиться и подписать до пятницы")}
+              ></textarea>
+            </label>
 
             <div>
               <span class="text-xs text-base-content/60">{gettext("Получатели")}</span>
@@ -263,6 +297,17 @@ defmodule SvcWeb.DocumentLive.Index do
                   <div class="text-xs text-base-content/50">
                     {document.filename}
                     <span :if={document.version > 1}>· v{document.version}</span>
+                  </div>
+                  <div class="mt-1 flex flex-wrap items-center gap-1.5">
+                    <span class="badge badge-xs badge-outline">
+                      {Svc.Documents.action_label(document.action)}
+                    </span>
+                    <span :if={document.due_at} class="text-[11px] text-warning">
+                      {gettext("до")} {short_datetime(document.due_at)}
+                    </span>
+                  </div>
+                  <div :if={document.note} class="text-xs text-base-content/60 mt-1">
+                    {document.note}
                   </div>
                 </td>
                 <td class="px-4 py-2">{document.owner.full_name}</td>

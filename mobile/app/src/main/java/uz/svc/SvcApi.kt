@@ -290,6 +290,66 @@ class SvcApi(private val baseUrl: String) {
         for (i in 0 until arr.length()) add(arr.getString(i))
     }
 
+    // ── Hujjatlar (S41) ────────────────────────────────────────────────────────
+    // Foydalanuvchiga eng muhimi: KIMDAN kelgan, NIMA QILISH kerak va QACHONGACHA.
+    data class DocumentItem(
+        val id: Long,
+        val title: String,
+        val filename: String,
+        val byteSize: Long,
+        val action: String,
+        val actionLabel: String,
+        val note: String?,
+        val dueAt: String?,
+        val fromName: String,
+        val mine: Boolean,
+        val acknowledgedAt: String?
+    )
+
+    suspend fun documents(token: String): List<DocumentItem> =
+        withContext(Dispatchers.IO) {
+            val arr = getJson("/api/documents", token).getJSONArray("documents")
+            buildList {
+                for (i in 0 until arr.length()) {
+                    val d = arr.getJSONObject(i)
+                    add(
+                        DocumentItem(
+                            id = d.getLong("id"),
+                            title = d.optString("title"),
+                            filename = d.optString("filename"),
+                            byteSize = d.optLong("byte_size"),
+                            action = d.optString("action"),
+                            actionLabel = d.optString("action_label"),
+                            note = d.optStringOrNull("note"),
+                            dueAt = d.optStringOrNull("due_at"),
+                            fromName = d.optJSONObject("from")?.optString("full_name").orEmpty(),
+                            mine = d.optBoolean("mine"),
+                            acknowledgedAt = d.optStringOrNull("acknowledged_at")
+                        )
+                    )
+                }
+            }
+        }
+
+    /** Faylni yuklab oladi. Qaytadi: baytlar. Ochish — tashqi ilovada (PDF va h.k.). */
+    suspend fun downloadDocument(token: String, id: Long): ByteArray =
+        withContext(Dispatchers.IO) {
+            val req = Request.Builder()
+                .url("$baseUrl/api/documents/$id/download")
+                .addHeader("Authorization", "Bearer $token")
+                .get()
+                .build()
+
+            http.newCall(req).execute().use { resp ->
+                if (!resp.isSuccessful) error("Fayl yuklanmadi (${resp.code})")
+                resp.body?.bytes() ?: error("Bo'sh javob")
+            }
+        }
+
+    /** "Tanishdim / ijro etdim" belgisi — yuboruvchi buni ko'radi. */
+    suspend fun acknowledgeDocument(token: String, id: Long): Unit =
+        withContext(Dispatchers.IO) { postEmpty("/api/documents/$id/ack", token) }
+
     private fun getJson(path: String, token: String): JSONObject {
         val req = Request.Builder()
             .url("$baseUrl$path")

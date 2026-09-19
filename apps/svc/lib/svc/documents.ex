@@ -86,6 +86,7 @@ defmodule Svc.Documents do
             metadata: %{"recipients" => length(recipient_ids), "bytes" => document.byte_size}
           )
 
+          notify_recipients(document, actor, recipient_ids)
           {:ok, Repo.preload(document, [:recipients, :owner])}
 
         {:error, _step, reason, _changes} ->
@@ -105,6 +106,64 @@ defmodule Svc.Documents do
         {:error, changeset} -> {:halt, {:error, changeset}}
       end
     end)
+  end
+
+  # Получатель должен узнать о документе, не открывая веб-панель: мобильный
+  # клиент забирает уведомления фоном (NotifyWorker), поэтому «от кого» и
+  # «что делать» кладём прямо в текст.
+  defp notify_recipients(%Document{} = document, %User{} = actor, recipient_ids) do
+    users = Repo.all(from u in User, where: u.id in ^recipient_ids)
+
+    Svc.Notifications.notify_many(
+      users,
+      :document,
+      "#{action_label(document.action)}: #{document.title}",
+      body: notification_body(document, actor)
+    )
+  end
+
+  defp notification_body(%Document{} = document, %User{} = actor) do
+    [
+      "От: #{actor.full_name}",
+      document.due_at && "срок: #{Calendar.strftime(document.due_at, "%d.%m.%Y")}",
+      document.note && String.slice(document.note, 0, 200)
+    ]
+    |> Enum.reject(&is_nil/1)
+    |> Enum.join(" · ")
+  end
+
+  @doc "Подпись резолюции для уведомлений и клиентов."
+  def action_label(:information), do: "К сведению"
+  def action_label(:review), do: "На рассмотрение"
+  def action_label(:signature), do: "На подпись"
+  def action_label(:execution), do: "На исполнение"
+  def action_label(_), do: "Документ"
+
+  @doc """
+  Отметка получателя «ознакомился / исполнил».
+
+  Отличается от `opened_at` (скачал): отправителю важно видеть не факт загрузки
+  файла, а подтверждение, что резолюция принята к работе.
+  """
+  def acknowledge(%User{} = actor, id) do
+    with {:ok, document} <- fetch(actor, id) do
+      {count, _} =
+        from(r in Recipient,
+          where:
+            r.document_id == ^document.id and r.user_id == ^actor.id and
+              is_nil(r.acknowledged_at)
+        )
+        |> Repo.update_all(set: [acknowledged_at: DateTime.utc_now()])
+
+      if count > 0 do
+        Svc.Audit.log_action(actor, :document_acknowledge,
+          resource_type: :document,
+          resource_id: document.id
+        )
+      end
+
+      {:ok, count > 0}
+    end
   end
 
   @doc """
