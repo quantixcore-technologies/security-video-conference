@@ -73,6 +73,17 @@ h2 .u{color:var(--accent)}
 .foot{position:fixed;bottom:20px;left:28px;z-index:10;color:var(--muted);font-size:.78rem;letter-spacing:.06em;display:flex;align-items:center;gap:9px}
 .hint{position:fixed;bottom:54px;left:50%;transform:translateX(-50%);z-index:10;color:var(--muted);font-size:.76rem;opacity:.6}
 .dim{color:var(--muted)}
+/* DEMO VIDEO bloki — hakamlar videoni shu yerdan ochadi (havola + QR) */
+.vlink{display:flex;align-items:center;gap:18px;margin-top:20px;padding:14px 18px;border-radius:16px;
+  background:rgba(34,211,238,.07);background:color-mix(in srgb,var(--accent) 10%,transparent);
+  border:1px solid rgba(34,211,238,.38);border:1px solid color-mix(in srgb,var(--accent) 42%,transparent)}
+.vlink img{flex:none;width:96px;height:96px;border-radius:10px;background:#fff;padding:5px}
+.vlink .vk{font-size:.76rem;letter-spacing:.18em;text-transform:uppercase;color:var(--accent);font-weight:800;margin-bottom:5px}
+.vlink .vu{display:block;font-size:1.22rem;font-weight:800;color:var(--ink);text-decoration:underline;
+  text-underline-offset:3px;word-break:break-all}
+.vlink .vs{color:var(--muted);font-size:.86rem;margin-top:5px}
+@media (max-width:600px){.vlink{gap:12px;padding:11px 12px}.vlink img{width:74px;height:74px}.vlink .vu{font-size:1rem}}
+
 /* Tor telefonda jadval o'ngdan qirqilardi (matn butunlay ko'rinmasdi) — endi ichida suriladi */
 .tablewrap{overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;max-width:100%}
 table.cmp{width:100%;border-collapse:collapse;margin-top:10px;font-size:.95rem;min-width:520px}
@@ -198,6 +209,9 @@ table.cmp td.svc{color:var(--ink);font-weight:700}
       <span class="tag"><b>🎥 LiveKit SFU</b></span>
       <span class="tag"><b>📱 Android · 🖥 Windows · 🍏 macOS — live</b></span>
     </div>
+    <div class="tags" style="margin-top:14px">
+      <span class="tag"><b>🎬 Demo video:</b>&nbsp;<a href="https://svc.co1nlist.uz/demo/" style="color:var(--accent);text-decoration:underline">https://svc.co1nlist.uz/demo/</a></span>
+    </div>
   </section>
 
   <!-- 2 · PROBLEM -->
@@ -240,12 +254,14 @@ table.cmp td.svc{color:var(--ink);font-weight:700}
       <span class="tag"><b>🌐 svc.co1nlist.uz — landing &amp; app download</b></span>
       <span class="tag"><b>✅ Authentication &amp; RBAC working</b></span>
     </div>
-    <p class="lead" style="margin-top:26px;font-size:1.02rem">
-      🎬 <b style="color:var(--ink)">Demo video (2:47):</b>
-      <a href="https://svc.co1nlist.uz/demo/"
-         style="color:var(--accent);text-decoration:underline">svc.co1nlist.uz/demo</a>
-      <span style="color:var(--muted)">— opens and plays straight in the browser</span>
-    </p>
+    <div class="vlink">
+      <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAUoAAAFKCAIAAAD0S4FSAAAFHElEQVR42u3dMY7bMBCG0ThQlyInyP0PlhOkSK3cQFiAmszP4XvtYm1L9geqGJCf+76/ARN9dwtA3oC8AXkD8gbkDcgb5A3IG5A3IG9A3oC8Qd6AvAF5A/IG5A3IG052rfzzj5+/ht2Ov39+H/X1132Dz3dy5X3rXnneb9LqDR7OAXkD8gbkDcgbkDfIG5A3EOiqe+nMCbDMqaa6Ka66/33+zM9/7Zo8O+03afUGD+eAvAF5A/IG5A3IG+QNyBsIdHW98Y6TSXWzZV2feWV6bN6eZ/Om5aze4OEckDcgb0DegLwBeYO8AXkDgS634C2Z+4dlzvBh9QbkDcgb5A3IG5A3IG9A3oC84Vim1l5TtxPbylmcK+rm8Ey8Wb0BeQPyBnkD8gbkDcgbkDcgbzhW29Ra15mJXVfUNdO2ou4z7/gNWr0BeQPyBuQNyBvkDcgbkDcgb+AVhVNr9tP6P3dyZaZt3v/6TVq9Qd6AvAF5A/IG5A3IG+QNyBsI97nv2134orpJrDpd82Erd3LlirB6g7wBeQPyBuQNyBuQN8gbkDcQbmmvtR2nuJ49f+bMHcIyzw9dud55u6l1TdpZvcHDOSBvQN6AvAF5A/IGeQPyBgJtudda1w5h866obs+zzFde0fUtrLyv1Rs8nAPyBuQNyBuQNyBvkDcgbyDQ0tRa1x5g8/YtyzzHM5O7YfUG5A3yBuQNyBuQNyBvQN4gb2BrW+619izzpM4dX3ne/z7LvCKrNyBvkDcgb0DegLwBeQPyBnkDw7TttdbFTNtb7/tsx+vNvBtWb0DeIG9A3oC8AXkD8gbkDfIGhincay1z1mre6aJ16u5V5hXN+8VavcHDOSBvQN6AvAF5A/IGeQPyBgINnFrr+lRm2hK+o64TQrvuldUbPJwD8gbkDcgbkDcgb0DeIG9gO9fKP6/M8XTNAO04PVa3Q9i83cW67mTm9Vq9wcM5IG9A3oC8AXkD8gZ5A/IGAoXutWZHtK/L3Hus63TRrkm7rk9l9QYP54C8AXkD8gbkDcgbkDfIG9jO0tRa11zajjuEzZvE6tI1Wbjj79nqDR7OAXkD8gbkDcgbkDfIG5A3EOjqeuOuGaCuz9x1N1bet8vz9XbNLHa1YPUG5A3yBuQNyBuQNyBvQN4gb2CYgXutPes6uXJF5omoO86HZf5yTK0B8gbkDfIG5A3IG5A3IG9A3nCULfda63rluuvd8X0z98PrsnJFTggF5A3IG+QNyBuQNyBvQN6AvOEoS3utnSbzDFAnoiZ8v3VMrQHyBnkD8gbkDcgbkDcgb5A3MEzhCaE7yjz1csf7vOPEW9f8n9UbkDcgb5A3IG9A3oC8AXkD8oajFJ4QOm8CrG4PsMz90jK/wa5f3Y53w+oNHs4BeQPyBuQNyBuQN8gbkDcQ6Op643n7WtV95sz9w7r2S8vcea7uO3JCKCBvkDcgb0DegLwBeQPyBnkDw1xuwVvqZo/q/jdzPqxu7vC080Ot3uDhHJA3IG9A3oC8AXmDvAF5A4FMrb2mbuap65WfZU6Arejal87UGiBvQN4gb0DegLwBeQPyBuQNR2mbWnOOZ/597to9rmsebsdzWq3e4OEckDcgb0DegLwBeQPyBnkD2ymcWsvcT6vuiubNPNVNvK28b+YrZ84sWr3Bwzkgb0DegLwBeQPyBnkD8gYCfe77dhfA6g3IG5A3IG9A3oC8Qd6AvAF5A/IG5A3IG+QNyBuQNyBvQN6AvEHewDT/ANq1Ti8KtexIAAAAAElFTkSuQmCC" alt="QR code for the demo video" width="96" height="96">
+      <div>
+        <div class="vk">🎬 Demo video — project functionality · 2:47</div>
+        <a class="vu" href="https://svc.co1nlist.uz/demo/">https://svc.co1nlist.uz/demo/</a>
+        <div class="vs">Plays in any browser · or scan the QR code with a phone</div>
+      </div>
+    </div>
   </section>
 
   <!-- 5 · MARKET & BUSINESS MODEL -->
