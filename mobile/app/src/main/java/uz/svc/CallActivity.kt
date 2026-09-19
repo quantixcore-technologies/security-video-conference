@@ -25,7 +25,9 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.lifecycleScope
 import io.livekit.android.LiveKit
@@ -95,11 +97,26 @@ class CallActivity : ComponentActivity() {
 
     data class ChatMessage(val sender: String, val text: String, val mine: Boolean)
 
+    /**
+     * E5/D-013: ko'rinadigan per-user watermark (F.I.Sh. + qo'ng'iroq vaqti).
+     * FLAG_SECURE skrinshot va ekran-yozuvni bloklaydi, lekin ekranni YONIDAGI
+     * boshqa telefonga suratga olishni hech qanday OS to'sa olmaydi — watermark
+     * aynan shunday sizib chiqishda kim yozganini aniqlashga xizmat qiladi.
+     * Web va desktop klientlarda bu allaqachon bor edi, Android'da yo'q edi.
+     */
+    private var watermark by mutableStateOf("")
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         // E5 ENFORCE (Android): запрет скриншотов и записи экрана окна звонка.
         window.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
+
+        watermark = intent.getStringExtra("watermark").orEmpty().let { name ->
+            val time = java.text.SimpleDateFormat("dd.MM HH:mm", java.util.Locale.getDefault())
+                .format(java.util.Date())
+            if (name.isBlank()) "" else "$name · $time"
+        }
 
         room = LiveKit.create(applicationContext)
 
@@ -216,8 +233,35 @@ class CallActivity : ComponentActivity() {
                     }
                 }
 
+                // Watermark — videolar ustida, lekin chat panelidan pastda
+                // (chat o'qilishi kerak). Bosishlarni ushlab qolmaydi.
+                WatermarkOverlay(watermark)
+
                 if (chatVisible) {
                     ChatPanel(Modifier.align(Alignment.BottomCenter))
+                }
+            }
+        }
+    }
+
+    /** Ekran bo'ylab takrorlanadigan, qiya va kam ko'rinadigan foydalanuvchi izi. */
+    @Composable
+    private fun WatermarkOverlay(text: String) {
+        if (text.isBlank()) return
+        Column(
+            Modifier
+                .fillMaxSize()
+                .graphicsLayer { rotationZ = -22f; alpha = 0.11f },
+            verticalArrangement = Arrangement.SpaceEvenly
+        ) {
+            repeat(9) {
+                Row(
+                    Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceEvenly
+                ) {
+                    repeat(2) {
+                        Text(text, color = Color.White, fontSize = 12.sp, maxLines = 1)
+                    }
                 }
             }
         }

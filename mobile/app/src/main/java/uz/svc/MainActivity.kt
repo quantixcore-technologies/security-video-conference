@@ -7,6 +7,7 @@ import android.content.pm.PackageManager
 import android.location.LocationManager
 import android.os.Build
 import android.os.Bundle
+import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
@@ -89,6 +90,13 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        // E5 ENFORCE: skrinshot va ekran-yozuvni BUTUN ilovada bloklaymiz, faqat
+        // qo'ng'iroq ekranida emas. Bu yerda ham maxfiy ma'lumot bor: xabarlar,
+        // buyruqlar, majlislar ro'yxati, xodimlar va profil. Ilgari faqat
+        // CallActivity himoyalangan edi va bu ekranlarni bemalol suratga olish mumkin edi.
+        window.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
+
         setContent { MaterialTheme(colorScheme = darkColorScheme()) { App() } }
     }
 
@@ -839,7 +847,12 @@ class MainActivity : ComponentActivity() {
                     contentColor = Color.White,
                     icon = { Icon(Icons.Default.Add, null) },
                     text = { Text("Majlis") },
-                    modifier = Modifier.align(Alignment.BottomEnd).padding(20.dp)
+                    // Yordamchi tugmasi (Scaffold FAB) ham shu burchakda turadi — ikkalasi
+                    // ustma-ust tushib qolgan edi. "Majlis" ni uning USTIGA ko'taramiz:
+                    // 20dp chet + 56dp yordamchi tugmasi + 12dp oraliq.
+                    modifier = Modifier
+                        .align(Alignment.BottomEnd)
+                        .padding(end = 20.dp, bottom = 88.dp)
                 )
             }
         }
@@ -1286,6 +1299,9 @@ class MainActivity : ComponentActivity() {
                         putExtra("url", room.url)
                         putExtra("token", room.token)
                         putExtra("room", room.room)
+                        // E5/D-013: qo'ng'iroq ekranidagi forensik watermark uchun
+                        // (kim yozib olganini aniqlash) — web va desktopda allaqachon bor.
+                        putExtra("watermark", auth.session.fullName)
                     }
                 )
             }
