@@ -86,6 +86,12 @@ defmodule SvcWeb.Layouts do
             on={@active == "tasks"}
           />
           <.nav_item
+            navigate={~p"/admin/documents"}
+            icon="hero-document-text"
+            label={gettext("Документы")}
+            on={@active == "documents"}
+          />
+          <.nav_item
             :if={@current_user && @current_user.role in [:super_admin, :security_officer]}
             navigate={~p"/admin/security"}
             icon="hero-shield-exclamation"
@@ -162,6 +168,17 @@ defmodule SvcWeb.Layouts do
                     class={["gap-2.5 rounded-lg", @active == "tasks" && "bg-primary/10 text-primary"]}
                   >
                     <.icon name="hero-clipboard-document-list" class="size-4" /> {gettext("Поручения")}
+                  </.link>
+                </li>
+                <li>
+                  <.link
+                    navigate={~p"/admin/documents"}
+                    class={[
+                      "gap-2.5 rounded-lg",
+                      @active == "documents" && "bg-primary/10 text-primary"
+                    ]}
+                  >
+                    <.icon name="hero-document-text" class="size-4" /> {gettext("Документы")}
                   </.link>
                 </li>
               </ul>

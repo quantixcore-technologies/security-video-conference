@@ -105,6 +105,9 @@ defmodule SvcWeb.Router do
     get "/meetings/:id/call", CallController, :show
     get "/meetings/:id/ics", MeetingController, :ics
 
+    # Скачивание файла телом ответа — LiveView так не умеет (как и .ics выше).
+    get "/documents/:id/download", DocumentController, :download
+
     live_session :admin,
       on_mount: [
         {SvcWeb.Locale, :default},
@@ -125,6 +128,7 @@ defmodule SvcWeb.Router do
       live "/meetings/:id", MeetingLive.Show, :show
       live "/meetings/:id/edit", MeetingLive.Show, :edit
       live "/meetings/:id/assign-task", MeetingLive.Show, :assign_task
+      live "/documents", DocumentLive.Index, :index
       live "/tasks", TaskLive.Index, :index
       live "/tasks/new", TaskLive.Index, :new
     end

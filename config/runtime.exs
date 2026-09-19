@@ -34,6 +34,13 @@ if System.get_env("PHX_SERVER") do
 end
 
 if config_env() == :prod do
+  # S40: каталог зашифрованных документов. ВНЕ веб-корня (в отличие от фото
+  # сотрудников, которые Plug.Static отдаёт публично) и вне _build — иначе файлы
+  # исчезали бы при каждой пересборке релиза. Попадает в почасовой Borg-бэкап.
+  config :svc,
+         :documents_dir,
+         System.get_env("DOCUMENTS_DIR") || "/home/shuxrat/svc-data/documents"
+
   database_url =
     System.get_env("DATABASE_URL") ||
       raise """
