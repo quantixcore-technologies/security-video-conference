@@ -1,0 +1,196 @@
+<!doctype html>
+<html lang="uz">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SVC — xavfsizlik va muvofiqlik</title>
+<meta name="description" content="SVC platformasida ma'lumot qayerda saqlanadi, qanday shifrlanadi, kim nima qilgani qanday qayd etiladi — va buni qanday tekshirish mumkin.">
+<style>
+  :root{--bg:#0b1220;--panel:#0f172a;--line:#1e293b;--ink:#e2e8f0;--ink2:#94a3b8;
+    --muted:#64748b;--accent:#22c55e;--warn:#f59e0b;--danger:#f87171;--link:#60a5fa}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);line-height:1.65;
+    font-family:"IBM Plex Sans",system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+  .wrap{max-width:900px;margin:0 auto;padding-block:28px 60px;padding-left:20px;padding-right:20px}
+  header{display:flex;align-items:center;gap:12px;margin-bottom:26px;flex-wrap:wrap}
+  .logo{width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,#10b981,#0ea5e9);
+    display:grid;place-items:center;font-weight:800;color:#04121a;font-size:18px}
+  .brand b{display:block;font-size:16px}
+  .brand span{font-size:12.5px;color:var(--muted);letter-spacing:.4px}
+  h1{font-size:clamp(22px,4vw,30px);margin:0 0 8px;line-height:1.25}
+  h1 .g{color:var(--accent)}
+  .lead{color:var(--ink2);font-size:15.5px;margin:0 0 26px}
+  h2{font-size:17px;margin:32px 0 12px;padding-top:18px;border-top:1px solid var(--line)}
+  h2 .n{color:var(--accent);font-variant-numeric:tabular-nums;margin-right:8px}
+  table{width:100%;border-collapse:collapse;font-size:14px;margin:12px 0}
+  th,td{text-align:left;padding:9px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+  th{color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.06em;font-weight:600}
+  td.k{color:var(--ink);white-space:nowrap}
+  .ok{color:var(--accent)} .warn{color:var(--warn)} .no{color:var(--danger)}
+  .box{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px 18px;margin:14px 0}
+  .box.honest{border-color:rgba(245,158,11,.4);background:linear-gradient(180deg,rgba(245,158,11,.08),transparent)}
+  .box h3{margin:0 0 8px;font-size:14.5px;color:var(--warn)}
+  .box p,.box li{font-size:14px;color:var(--ink2);margin:6px 0}
+  code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:13px;color:var(--ink)}
+  a{color:var(--link)}
+  ul{padding-left:20px;margin:8px 0}
+  footer{border-top:1px solid var(--line);margin-top:36px;padding-top:18px;color:var(--muted);font-size:13px}
+  .chk{background:rgba(34,197,94,.08);border:1px solid rgba(34,197,94,.3);border-radius:10px;
+    padding:10px 12px;font-size:13.5px;color:var(--ink2);margin-top:10px}
+  .chk b{color:var(--accent)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="logo">S</div>
+    <div class="brand">
+      <b>SVC — Security Video Conference</b>
+      <span>QUANTIXCORE TECHNOLOGIES MChJ · O‘ZBEKISTON</span>
+    </div>
+  </header>
+
+  <h1>Xavfsizlik va <span class="g">muvofiqlik</span></h1>
+  <p class="lead">Bu sahifada va’da emas, <b>amalda nima qilinganligi</b> yozilgan: ma’lumot qayerda
+  saqlanadi, nima bilan shifrlanadi, kim nima qilgani qanday qayd etiladi. Har bir bandda
+  <b>qanday tekshirish mumkinligi</b> ko‘rsatilgan. Hali qilinmagan narsalar oxirgi bo‘limda
+  ochiq sanab o‘tilgan.</p>
+
+  <h2><span class="n">1.</span> Ma’lumot qayerda saqlanadi</h2>
+  <table>
+    <tr><th>Nima</th><th>Qayerda</th></tr>
+    <tr><td class="k">Baza, fayllar, jurnallar</td>
+        <td><b class="ok">O‘zbekistonda</b> — Urganch, «Uzbektelekom» tarmog‘idagi server (AS8193).
+            Chet el bulut xizmatlarida ma’lumot saqlanmaydi.</td></tr>
+    <tr><td class="k">Hujjat fayllari</td>
+        <td>Serverning o‘zida, <b>shifrlangan</b> holda, veb-ildizdan tashqarida (to‘g‘ridan-to‘g‘ri URL bilan olib bo‘lmaydi).</td></tr>
+    <tr><td class="k">Zaxira nusxalar</td>
+        <td>O‘sha serverdagi alohida diskda, shifrlangan (Borg), soatlik.</td></tr>
+    <tr><td class="k">Video-qo‘ng‘iroq oqimi</td>
+        <td><b class="warn">Hozircha LiveKit Cloud orqali</b> — pastdagi «Ochiq kamchiliklar»ga qarang.</td></tr>
+  </table>
+
+  <h2><span class="n">2.</span> Shifrlash</h2>
+  <table>
+    <tr><th>Nima</th><th>Qanday</th></tr>
+    <tr><td class="k">Video/audio kanali</td><td>WebRTC · <b>DTLS-SRTP</b> (transport shifri)</td></tr>
+    <tr><td class="k">Veb va API</td><td>HTTPS/TLS, tashqi kirish faqat himoyalangan perimetr orqali</td></tr>
+    <tr><td class="k">Hujjat fayllari</td><td><b>AES-256-GCM</b> (diskda ochiq matn yo‘q; buzilgan fayl berilmaydi — SHA-256 nazorati)</td></tr>
+    <tr><td class="k">Parollar</td><td><b>Argon2id</b> (qaytarib bo‘lmaydigan xesh)</td></tr>
+    <tr><td class="k">2FA maxfiy kalitlari</td><td>Bazada shifrlangan holda</td></tr>
+  </table>
+  <div class="chk"><b>Tekshirish:</b> hujjat yuklang, so‘ng serverdagi faylni oching — ichida ochiq matn bo‘lmaydi.
+    Kod: <code>Svc.Documents.Storage</code>.</div>
+
+  <h2><span class="n">3.</span> Kirish nazorati</h2>
+  <ul>
+    <li><b>Beshta rol:</b> Super administrator · HR administrator · Rahbar · Xodim · Xavfsizlik xodimi.</li>
+    <li><b>O‘z-o‘zidan ro‘yxatdan o‘tish yo‘q</b> — foydalanuvchini faqat administrator qo‘shadi.</li>
+    <li><b>Ikki bosqichli kirish (2FA)</b> — TOTP qo‘llab-quvvatlanadi (Google Authenticator va h.k.); foydalanuvchi uni profilida yoqadi. <b>Majburiy qilish hali yoqilmagan</b> — pastdagi ochiq kamchiliklarga qarang.</li>
+    <li><b>Parolni tanlashdan himoya:</b> 5 xato urinishdan keyin 15 daqiqaga blok.</li>
+    <li><b>Majlis maxfiyligi:</b> majlisni faqat tashkilotchi va taklif qilinganlar ko‘radi —
+        <b>hatto super administrator ham</b> boshqaning majlisiga kira olmaydi.</li>
+    <li><b>Hujjat maxfiyligi:</b> faqat yuboruvchi va ro‘yxatdagi qabul qiluvchilar. Administrator
+        hujjatni <b>bekor qila oladi, lekin o‘qiy olmaydi</b>.</li>
+    <li><b>Tashkilotlar ajratilgan:</b> bir serverdagi turli idoralar bir-birining ma’lumotini ko‘rmaydi.</li>
+  </ul>
+  <div class="chk"><b>Tekshirish:</b> demo sahifasidagi ikkita akkaunt bilan kiring va birovning hujjatini
+    to‘g‘ridan-to‘g‘ri havola bilan ochib ko‘ring — «topilmadi» javobini olasiz.</div>
+
+  <h2><span class="n">4.</span> Auditlanuvchanlik</h2>
+  <p class="lead" style="margin:6px 0 10px">Jurnal <b>o‘zgarmas</b> (append-only): yozuvni tahrirlash
+  imkoniyati kodda umuman yo‘q.</p>
+  <p style="font-size:14px;color:var(--ink2);margin:0">Qayd etiladi: tizimga kirish va muvaffaqiyatsiz
+  urinishlar · foydalanuvchi yaratish · majlisga qo‘shilish · majlis jurnalini ko‘rish · hujjat
+  yuklash, ochish, bekor qilish va «tanishdim» belgisi · ekran-yozuv urinishlari · geo-tekshiruvlar.</p>
+  <div class="chk"><b>Tekshirish:</b> <code>demo.admin</code> bilan kiring → «Xavfsizlik» bo‘limi.</div>
+
+  <h2><span class="n">5.</span> Nusxa olishdan himoya — halol jadval</h2>
+  <table>
+    <tr><th>Himoya</th><th>Android</th><th>Windows</th><th>macOS</th><th>iOS</th><th>Brauzer</th></tr>
+    <tr><td class="k">Skrinshot/ekran-yozuv bloki</td>
+        <td class="ok">✅ butun ilova</td><td class="ok">✅</td><td class="warn">qisman</td>
+        <td class="no">✗ aniqlash</td><td class="no">✗ imkonsiz</td></tr>
+    <tr><td class="k">Foydalanuvchi izi (watermark)</td>
+        <td class="ok">✅</td><td class="ok">✅</td><td class="ok">✅</td><td class="no">—</td><td class="ok">✅</td></tr>
+    <tr><td class="k">Rekorder dasturlarini aniqlash</td>
+        <td class="no">—</td><td class="ok">✅</td><td class="ok">✅</td><td class="no">—</td><td class="no">—</td></tr>
+    <tr><td class="k">Ovoz yozishni bloklash</td>
+        <td class="no">✗</td><td class="no">✗</td><td class="no">✗</td><td class="no">✗</td><td class="no">✗</td></tr>
+  </table>
+  <div class="box honest">
+    <h3>Nega ba’zi joyda «✗»</h3>
+    <p>Brauzerda skrinshotni <b>hech bir mahsulot</b> (Zoom ham) bloklay olmaydi — bu operatsion tizim
+    darajasidagi cheklov. iOS’da Apple bunday imkon bermaydi, shuning uchun biz <b>aniqlaymiz va qayd
+    etamiz</b>. Ovozni yonidagi ikkinchi telefonga yozishni esa hech qanday dastur to‘sa olmaydi —
+    shuning uchun biz <b>watermark + audit + tashkiliy siyosat</b>ga tayanamiz. Buni yashirmaymiz.</p>
+  </div>
+
+  <h2><span class="n">6.</span> Zaxira va tiklash</h2>
+  <ul>
+    <li>Soatlik shifrlangan zaxira (Borg): 48 soat · 14 kun · 8 hafta · 12 oy saqlanadi.</li>
+    <li><b>Tiklash amalda sinab ko‘rilgan</b> (2026-09-16): zaxiradan alohida bazaga tiklandi va
+        yozuvlar soni jonli baza bilan aynan mos chiqdi.</li>
+    <li>Zaxira paroli alohida, faqat administrator o‘qiy oladigan faylda.</li>
+  </ul>
+
+  <h2><span class="n">7.</span> Uzluksiz ishlash</h2>
+  <ul>
+    <li><b>Har 2 daqiqada</b> avtomatik tekshiruv: servis o‘chsa — o‘zi tiklaydi; sayt javob bermasa —
+        ilovani qayta ishga tushiradi va tuzalmasa <b>oldingi versiyaga qaytaradi</b>.</li>
+    <li>Disk to‘lsa tozalaydi, zaxira eskirsa qayta yuritadi, tunnel uzilsa qayta ulaydi.</li>
+    <li>24/7 kuzatuv: har qanday nosozlik darhol Telegram orqali xabar qilinadi.</li>
+  </ul>
+
+  <h2><span class="n">8.</span> Ishlab chiqish sifati</h2>
+  <table>
+    <tr><th>Nima</th><th>Holat</th></tr>
+    <tr><td class="k">Avtomatik testlar</td><td><b class="ok">359 ta</b>, har bir o‘zgarishda ishlaydi</td></tr>
+    <tr><td class="k">Statik xavfsizlik tahlili</td><td>Har bir o‘zgarishda; jiddiy topilmalar <b class="ok">0</b></td></tr>
+    <tr><td class="k">Bog‘liqliklar zaifligi</td><td>Muntazam audit; hozir <b class="ok">toza</b></td></tr>
+    <tr><td class="k">Yig‘ilish (CI)</td><td>4 platforma: server · Android · Windows/macOS · iOS — <b class="ok">yashil</b></td></tr>
+    <tr><td class="k">Kod</td><td>Ochiq: <a href="https://github.com/quantixcore-technologies/security-video-conference">GitHub</a></td></tr>
+  </table>
+
+  <h2><span class="n">9.</span> Ochiq kamchiliklar (yashirmaymiz)</h2>
+  <div class="box honest">
+    <h3>Hali qilinmagan</h3>
+    <ul>
+      <li><b>Video oqimi hozircha LiveKit Cloud orqali o‘tadi</b> — signalizatsiya, baza va hujjatlar
+          bizning serverimizda qoladi, lekin qo‘ng‘iroq kadrlari chet el infratuzilmasidan o‘tadi.
+          Yechim tayyor: LiveKit’ni <b>o‘z serverida</b> ko‘tarish (arxitektura shunga mo‘ljallangan) —
+          buyurtmachining talabiga ko‘ra yoqiladi.</li>
+      <li><b>Uchidan-uchiga shifrlash (E2EE/SFrame)</b> — yo‘l xaritasida. Hozir kanal shifrlangan,
+          lekin server kadrlarni ko‘ra oladi (bu ataylab: kelajakdagi tahlil modullari uchun).</li>
+      <li><b>E-IMZO bilan hujjat imzolash</b> — integratsiya rejalashtirilgan, hali yo‘q.</li>
+      <li><b>Davlat sertifikati / ekspertizasi</b> olinmagan; mustaqil penetratsion test o‘tkazilmagan.</li>
+      <li><b>2FA majburiy emas:</b> kodda «rahbariyat uchun majburiy» qoidasi yozilgan, lekin kirish jarayonida hali qo‘llanilmaydi — 2FA yoqmagan administrator parol bilan kiraveradi. Majburiy yoqish keyingi ish rejasida.</li>
+      <li><b>Zaxiralash klasteri (HA)</b> yo‘q — bitta server, bitta baza.</li>
+      <li><b>iOS ilovasi</b> yozilgan va yig‘iladi, lekin tarqatish uchun Apple Developer akkaunti kerak.</li>
+    </ul>
+  </div>
+
+  <h2><span class="n">10.</span> O‘zbekiston me’yorlariga muvofiqlik</h2>
+  <p style="font-size:14px;color:var(--ink2);margin:0 0 10px">Aniq normativ hujjatlar ro‘yxati va
+  ularning talablari <b>buyurtmachi bilan birgalikda</b> qat’iylashtiriladi — biz taxmin qilib,
+  bo‘lmagan sertifikatni da’vo qilmaymiz. Arxitektura darajasida quyidagilar allaqachon bajarilgan:</p>
+  <table>
+    <tr><th>Odatiy talab</th><th>Bizda</th></tr>
+    <tr><td class="k">Ma’lumotni mamlakat hududida saqlash</td><td class="ok">✅ Server O‘zbekistonda</td></tr>
+    <tr><td class="k">Chet el xizmatlariga bog‘liq bo‘lmaslik</td><td class="warn">Qisman — video oqimi (yuqoriga qarang)</td></tr>
+    <tr><td class="k">Kirishni cheklash va rollar</td><td class="ok">✅ RBAC + 2FA</td></tr>
+    <tr><td class="k">Amallarni qayd etish</td><td class="ok">✅ O‘zgarmas audit jurnali</td></tr>
+    <tr><td class="k">Ma’lumotni shifrlash</td><td class="ok">✅ Kanal va fayllar</td></tr>
+    <tr><td class="k">Zaxira va tiklash tartibi</td><td class="ok">✅ Sinab ko‘rilgan</td></tr>
+    <tr><td class="k">Elektron imzo (E-IMZO)</td><td class="no">✗ Rejada</td></tr>
+  </table>
+
+  <footer>
+    <p><b>Tekshirish uchun:</b> <a href="/demo/">demo sahifasi va kirish ma’lumotlari</a> ·
+       <a href="https://admin.co1nlist.uz">jonli tizim</a> ·
+       <a href="https://github.com/quantixcore-technologies/security-video-conference">manba kodi</a></p>
+    <p>🇺🇿 QuantixCore Technologies MChJ · SVC — Security Video Conference · Yangilangan: 2026-09-20</p>
+  </footer>
+</div>
+</body>
+</html>

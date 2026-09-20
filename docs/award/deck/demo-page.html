@@ -50,6 +50,19 @@
   .tl li:last-child{border-bottom:0}
   .tl time{color:var(--accent);font-variant-numeric:tabular-nums;min-width:52px;font-weight:600}
   .tl span{color:var(--ink2)}
+  .try{background:linear-gradient(180deg,rgba(16,185,129,.10),rgba(16,185,129,.03));
+    border:1px solid rgba(16,185,129,.35);border-radius:16px;padding:20px;margin:30px 0}
+  .try h2{margin:0 0 6px;font-size:18px;color:var(--accent)}
+  .try .sub{color:var(--ink2);font-size:14px;margin:0 0 16px}
+  .creds{display:flex;flex-wrap:wrap;gap:12px;margin-bottom:16px}
+  .cred{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px 14px;min-width:200px}
+  .cred b{display:block;font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px}
+  .cred code{font-size:15px;color:var(--ink);font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+  .cred span{display:block;font-size:12px;color:var(--ink2);margin-top:4px}
+  ol.tour{margin:0;padding-left:20px;color:var(--ink2);font-size:14px;line-height:1.7}
+  ol.tour b{color:var(--ink)}
+  .warn-note{margin-top:14px;font-size:12.5px;color:var(--muted)}
+
   footer{border-top:1px solid var(--line);margin-top:34px;padding-top:20px;
     color:var(--muted);font-size:13px}
   a{color:var(--link)}
@@ -92,6 +105,47 @@
     <a class="btn btn-p" href="svc-demo.mp4" download>⬇ Videoni yuklab olish (MP4, 3.4 MB)</a>
     <a class="btn btn-g" href="https://admin.co1nlist.uz">🔐 Jonli tizimga kirish</a>
     <a class="btn btn-g" href="/#yuklab">📱 Ilovalarni yuklab olish</a>
+    <a class="btn btn-g" href="/security/">🛡 Xavfsizlik va muvofiqlik</a>
+  </div>
+
+  <div class="try">
+    <h2>🔑 Tizimni o‘zingiz sinab ko‘ring</h2>
+    <p class="sub">Demo uchun alohida tashkilot ajratilgan — haqiqiy foydalanuvchilar ma’lumotlariga ta’sir qilmaydi.</p>
+
+    <div class="creds">
+      <div class="cred">
+        <b>Manzil</b>
+        <code>admin.co1nlist.uz</code>
+        <span>brauzerda ochiladi</span>
+      </div>
+      <div class="cred">
+        <b>Rahbar sifatida</b>
+        <code>demo / DemoSvc2026!</code>
+        <span>majlis yaratadi, hujjat yuboradi</span>
+      </div>
+      <div class="cred">
+        <b>Xodim sifatida</b>
+        <code>demo.xodim / DemoSvc2026!</code>
+        <span>hujjat oladi, tanishdim deb belgilaydi</span>
+      </div>
+      <div class="cred">
+        <b>Administrator sifatida</b>
+        <code>demo.admin / DemoSvc2026!</code>
+        <span>xavfsizlik va audit jurnali</span>
+      </div>
+    </div>
+
+    <ol class="tour">
+      <li><b>Hujjatlar</b> → «Buyruq №7» — kimdan kelgani, rezolyutsiyasi («Imzolash uchun») va muddati ko‘rinadi.
+          Yangi hujjat yuborib ko‘ring: qabul qiluvchini tanlang, rezolyutsiya va muddat qo‘ying.</li>
+      <li><b>Majlislar</b> → «Bo‘lim yig‘ilishi» — majlisni faqat tashkilotchi va taklif qilinganlar ko‘radi.</li>
+      <li><b>demo.admin</b> bilan kiring → <b>Xavfsizlik</b> bo‘limi: audit jurnali — har bir kirish, hujjat yuklash va ochish yozib boriladi; ekran-yozuv urinishlari ham shu yerda.</li>
+      <li><b>Ikkinchi akkaunt bilan kiring</b> (demo.xodim) — hujjat unga kelganini va «tanishdim» belgisini ko‘rasiz.</li>
+      <li><b>Ilovani yuklab oling</b> (Android/Windows/macOS) — haqiqiy video-qo‘ng‘iroq va ekran-yozuvdan himoya faqat native ilovada ishlaydi.</li>
+    </ol>
+
+    <p class="warn-note">Eslatma: bu ochiq demo — kiritilgan ma’lumotlarni boshqa sinovchilar ham ko‘rishi mumkin.
+      Maxfiy hujjat yuklamang. Video-qo‘ng‘iroq uchun ikkita qurilma (yoki ikkita akkaunt) kerak.</p>
   </div>
 
   <h2>Videoda nima ko‘rsatilgan</h2>
