@@ -1,7 +1,7 @@
 defmodule SvcWeb.SessionController do
   use SvcWeb, :controller
 
-  alias Svc.{Accounts, Audit, Orgs}
+  alias Svc.{Accounts, Audit}
   alias SvcWeb.UserAuth
 
   def new(conn, _params) do
@@ -9,9 +9,10 @@ defmodule SvcWeb.SessionController do
   end
 
   def create(conn, %{"user" => %{"username" => username, "password" => password}}) do
-    org = Orgs.default_organization()
-
-    case org && Accounts.authenticate(org.id, username, password) do
+    # Организация определяется по самому пользователю (см. Accounts.authenticate/2):
+    # раньше вход шёл только в организацию с наименьшим id, и вторая организация
+    # на сервере войти не могла.
+    case Accounts.authenticate(username, password) do
       {:ok, user} ->
         Audit.log(:login_success, org_id: user.org_id, actor_id: user.id, ip: remote_ip(conn))
 
@@ -26,15 +27,11 @@ defmodule SvcWeb.SessionController do
 
       {:error, reason} ->
         Audit.log(:login_failure,
-          org_id: org && org.id,
           metadata: %{username: username, reason: reason},
           ip: remote_ip(conn)
         )
 
         render(conn, :new, error_message: error_text(reason))
-
-      nil ->
-        render(conn, :new, error_message: gettext("Система не инициализирована."))
     end
   end
 

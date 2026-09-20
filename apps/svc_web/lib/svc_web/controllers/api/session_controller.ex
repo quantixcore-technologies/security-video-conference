@@ -5,13 +5,14 @@ defmodule SvcWeb.API.SessionController do
   """
   use SvcWeb, :controller
 
-  alias Svc.{Accounts, Audit, Orgs}
+  alias Svc.{Accounts, Audit}
   alias SvcWeb.UserAuth
 
   def create(conn, %{"username" => username, "password" => password}) do
-    org = Orgs.default_organization()
-
-    case org && Accounts.authenticate(org.id, username, password) do
+    # Организация определяется по самому пользователю (см. Accounts.authenticate/2):
+    # раньше вход шёл только в организацию с наименьшим id, и вторая организация
+    # на сервере войти не могла.
+    case Accounts.authenticate(username, password) do
       {:ok, %{totp_enabled: true} = user} ->
         # Пароль верный, но включена 2FA: выдаём промежуточный токен (5 мин),
         # клиент обменивает его на bearer после ввода TOTP-кода (POST /api/login/totp).
@@ -22,16 +23,14 @@ defmodule SvcWeb.API.SessionController do
         json(conn, token_payload(user))
 
       {:error, reason} ->
+        # org_id неизвестен: при неудачном входе мы намеренно не выясняем, в какой
+        # организации есть такой логин (иначе по журналу можно перебирать).
         Audit.log(:login_failure,
-          org_id: org && org.id,
           metadata: %{username: username, reason: reason},
           ip: remote_ip(conn)
         )
 
         conn |> put_status(:unauthorized) |> json(%{error: to_string(reason)})
-
-      nil ->
-        conn |> put_status(:service_unavailable) |> json(%{error: "not_initialized"})
     end
   end
 

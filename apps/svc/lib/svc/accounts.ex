@@ -94,6 +94,54 @@ defmodule Svc.Accounts do
     end
   end
 
+  @doc """
+  Вход без указания организации (веб и мобильные клиенты).
+
+  Логин раньше шёл только в `Orgs.default_organization/0`, то есть в организацию
+  с наименьшим id. Данные у нас мультитенантные (D-005), а вход — нет: вторая
+  организация на том же сервере не могла войти в принципе. Для платформы, которую
+  ставят нескольким ведомствам, это дефект, а не ограничение.
+
+  Имя пользователя уникально В ПРЕДЕЛАХ организации, поэтому тёзки в разных
+  организациях возможны. Разбираем это паролем: перебираем всех пользователей с
+  таким именем и пускаем того, чей хеш сошёлся. Это не раскрывает, в какой
+  организации есть такой логин: ответ одинаков и при отсутствии пользователя.
+  """
+  def authenticate(username, password) when is_binary(username) and is_binary(password) do
+    candidates =
+      Repo.all(from u in User, where: u.username == ^String.downcase(username))
+
+    case candidates do
+      [] ->
+        # Постоянное время ответа: иначе по задержке видно, существует ли логин.
+        Argon2.no_user_verify()
+        {:error, :invalid_credentials}
+
+      users ->
+        users
+        |> Enum.map(&check_candidate(&1, password))
+        |> pick_result()
+    end
+  end
+
+  # Успех важнее отказов: если тёзка в другой организации ввёл свой пароль,
+  # он должен попасть именно к себе.
+  defp pick_result(results) do
+    Enum.find(results, &match?({:ok, _}, &1)) ||
+      Enum.find(results, &match?({:error, :locked}, &1)) ||
+      Enum.find(results, &match?({:error, :disabled}, &1)) ||
+      {:error, :invalid_credentials}
+  end
+
+  defp check_candidate(%User{} = user, password) do
+    cond do
+      locked?(user) -> {:error, :locked}
+      user.status == :disabled -> {:error, :disabled}
+      Argon2.verify_pass(password, user.hashed_password) -> {:ok, reset_failed(user)}
+      true -> register_failed(user) && {:error, :invalid_credentials}
+    end
+  end
+
   def locked?(%User{locked_until: nil}), do: false
   def locked?(%User{locked_until: until}), do: DateTime.compare(until, DateTime.utc_now()) == :gt
 
