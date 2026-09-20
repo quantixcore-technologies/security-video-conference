@@ -37,6 +37,9 @@ struct HomeView: View {
                     .tabItem { Label("Xabarlar", systemImage: "bell.fill") }
                     .badge(unread)
 
+                DocumentsView(session: session)
+                    .tabItem { Label("Hujjatlar", systemImage: "doc.text.fill") }
+
                 DepartmentView(session: session)
                     .tabItem { Label("Bo'lim", systemImage: "person.3.fill") }
 

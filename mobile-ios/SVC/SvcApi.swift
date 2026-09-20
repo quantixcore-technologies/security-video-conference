@@ -114,6 +114,34 @@ enum LoginResult {
 }
 
 /// Yordamchi bazasidagi bitta yozuv (S39) — server bilan bir xil: id/topic/question/answer.
+/// Hujjat (S41). Xodimga eng kerakli uchtasi: KIMDAN, NIMA QILISH, QACHONGACHA.
+struct DocumentItem: Decodable, Identifiable {
+    struct Sender: Decodable {
+        let id: Int64?
+        let fullName: String?
+    }
+
+    let id: Int64
+    let title: String
+    let filename: String
+    let byteSize: Int64
+    let action: String
+    let actionLabel: String?
+    let note: String?
+    let dueAt: String?
+    let from: Sender?
+    let mine: Bool?
+    let acknowledgedAt: String?
+
+    var isMine: Bool { mine ?? false }
+    var senderName: String { from?.fullName ?? "" }
+    var isAcknowledged: Bool { acknowledgedAt != nil }
+}
+
+struct DocumentsPage: Decodable {
+    let documents: [DocumentItem]
+}
+
 struct AssistantEntry: Decodable, Identifiable, Hashable {
     let id: String
     let topic: String
@@ -360,6 +388,23 @@ actor SvcApi {
         (any as? [Any])?.compactMap { entry($0) } ?? []
     }
 
+    // MARK: Hujjatlar (S41)
+
+    func documents(token: String) async throws -> [DocumentItem] {
+        let data = try await getData("/api/documents", token: token)
+        return try decoder.decode(DocumentsPage.self, from: data).documents
+    }
+
+    /// Faylni yuklab oladi. Mazmun xotirada — hujjat limiti 25 MB.
+    func downloadDocument(token: String, id: Int64) async throws -> Data {
+        try await getData("/api/documents/\(id)/download", token: token)
+    }
+
+    /// "Tanishdim / ijro etdim" — yuboruvchi buni ko'radi ("yuklab oldi"dan farqli).
+    func acknowledgeDocument(token: String, id: Int64) async throws {
+        _ = try await postJSON("/api/documents/\(id)/ack", body: [:], token: token)
+    }
+
     // MARK: HTTP
 
     private func url(_ path: String) -> URL {
@@ -413,6 +458,20 @@ enum Labels {
         case "employee": return "Xodim"
         case "security_officer": return "Xavfsizlik ofitseri"
         default: return r
+        }
+    }
+
+    /// Rezolyutsiya nomi o'zbekchada: server hujjat aylanishi atamalarini rus
+    /// tilida qaytaradi, ilova esa o'zbek tilida.
+    static func documentAction(_ action: String, fallback: String?) -> String {
+        switch action {
+        case "information": return "Tanishish uchun"
+        case "review": return "Ko'rib chiqish uchun"
+        case "signature": return "Imzolash uchun"
+        case "execution": return "Ijro uchun"
+        default:
+            let f = fallback ?? ""
+            return f.isEmpty ? "Hujjat" : f
         }
     }
 
