@@ -57,4 +57,15 @@ defmodule SvcWeb.SessionControllerTest do
   test "GET /admin без аутентификации → /login", %{conn: conn} do
     assert get(conn, ~p"/admin") |> redirected_to() == ~p"/login"
   end
+
+  test "на странице входа есть кнопка-глаз для показа пароля (S43)", %{conn: conn} do
+    html = conn |> get(~p"/login") |> html_response(200)
+
+    # Поле пароля адресуемо скриптом и кнопка-переключатель на месте:
+    # без неё пароль на телефоне набирается вслепую.
+    assert html =~ ~s(id="login-password")
+    assert html =~ "data-password-toggle"
+    assert html =~ "hero-eye"
+    assert html =~ "hero-eye-slash"
+  end
 end

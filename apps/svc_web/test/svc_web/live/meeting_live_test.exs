@@ -116,4 +116,64 @@ defmodule SvcWeb.MeetingLiveTest do
     {:ok, _lv, html} = conn |> login(emp) |> live(~p"/admin/meetings")
     refute html =~ "Приватное совещание"
   end
+
+  # ── S43: встречу открывает человек и он же её закрывает ──
+
+  describe "открытие/завершение встречи (S43)" do
+    test "организатор видит «Начать встречу», после открытия — «Завершить»", %{
+      conn: conn,
+      mgr: mgr
+    } do
+      {:ok, meeting} = Meetings.create_meeting(mgr, %{title: "Планёрка"})
+      {:ok, lv, html} = conn |> login(mgr) |> live(~p"/admin/meetings/#{meeting.id}")
+
+      assert html =~ "Начать встречу"
+      refute html =~ "Завершить встречу"
+
+      html = lv |> element("button[phx-click=open_meeting]") |> render_click()
+      assert html =~ "Завершить встречу"
+      refute html =~ "Начать встречу"
+
+      opened = Meetings.get_meeting!(mgr.org_id, meeting.id)
+      assert opened.status == :live
+      assert opened.started_by_id == mgr.id
+    end
+
+    test "назначенный сотрудник кнопок управления не видит", %{
+      conn: conn,
+      mgr: mgr,
+      emp: emp
+    } do
+      {:ok, meeting} = Meetings.create_meeting(mgr, %{title: "Совещание"})
+      {:ok, _} = Attendance.add_invitee(meeting, emp)
+
+      {:ok, _lv, html} = conn |> login(emp) |> live(~p"/admin/meetings/#{meeting.id}")
+      refute html =~ "Начать встречу"
+      refute html =~ "phx-click=\"open_meeting\""
+    end
+
+    test "завершение пишет итог, время и автора в историю", %{conn: conn, mgr: mgr} do
+      {:ok, meeting} =
+        Meetings.create_meeting(mgr, %{title: "Отчётная", purpose: "Итоги квартала"})
+
+      {:ok, lv, _html} = conn |> login(mgr) |> live(~p"/admin/meetings/#{meeting.id}")
+      lv |> element("button[phx-click=open_meeting]") |> render_click()
+      lv |> element("button[phx-click=show_close]") |> render_click()
+
+      html =
+        lv
+        |> form("form[phx-submit=close_meeting]", %{"summary" => "Решено ускорить отчёт"})
+        |> render_submit()
+
+      assert html =~ "История встречи"
+      assert html =~ "Решено ускорить отчёт"
+      assert html =~ "Итоги квартала"
+      assert html =~ mgr.full_name
+
+      closed = Meetings.get_meeting!(mgr.org_id, meeting.id)
+      assert closed.status == :ended
+      assert closed.ended_by_id == mgr.id
+      assert closed.summary == "Решено ускорить отчёт"
+    end
+  end
 end

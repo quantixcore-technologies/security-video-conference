@@ -3,6 +3,7 @@ defmodule SvcWeb.MeetingLive.Show do
   use SvcWeb, :live_view
 
   alias Svc.{Meetings, Attendance, Authz, Audit}
+  alias Svc.Meetings.Meeting
 
   @impl true
   def mount(_params, _session, socket), do: {:ok, socket}
@@ -10,7 +11,9 @@ defmodule SvcWeb.MeetingLive.Show do
   @impl true
   def handle_params(%{"id" => id}, _uri, socket) do
     actor = socket.assigns.current_user
-    meeting = Meetings.get_meeting!(actor.org_id, id)
+
+    meeting =
+      actor.org_id |> Meetings.get_meeting!(id) |> Svc.Repo.preload([:started_by, :ended_by])
 
     # D-016: чужую встречу (не свою и куда не назначен) видеть нельзя — даже super_admin.
     unless Meetings.can_view_meeting?(actor, meeting),
@@ -30,6 +33,9 @@ defmodule SvcWeb.MeetingLive.Show do
      |> assign(:page_title, meeting.title)
      |> assign(:meeting, meeting)
      |> assign(:can_organize, Meetings.can_organize?(actor))
+     |> assign(:can_open, Meetings.can_control?(actor, meeting))
+     |> assign(:can_close, Meetings.can_close?(actor, meeting))
+     |> assign(:closing, false)
      |> assign(:records, records)
      |> assign(:summary, Enum.frequencies_by(records, & &1.status))
      |> assign(:roster, Attendance.list_invitees_with_users(meeting.id))
@@ -83,13 +89,64 @@ defmodule SvcWeb.MeetingLive.Show do
     end
   end
 
-  def handle_event("end_meeting", _params, socket) do
+  # S43. Встречу ОТКРЫВАЕТ человек — фиксируем, кто и во сколько.
+  def handle_event("open_meeting", _params, socket) do
     actor = socket.assigns.current_user
-    {:ok, updated} = Meetings.end_meeting(socket.assigns.meeting)
-    Audit.log_action(actor, :meeting_end, resource_type: :meeting, resource_id: updated.id)
 
-    {:noreply,
-     socket |> assign(:meeting, updated) |> put_flash(:info, gettext("Встреча завершена."))}
+    case Meetings.open_meeting(actor, socket.assigns.meeting) do
+      {:ok, updated} ->
+        {:noreply,
+         socket
+         |> assign_meeting(
+           Svc.Repo.preload(updated, [:started_by, :ended_by], force: true),
+           actor
+         )
+         |> put_flash(:info, gettext("Встреча открыта."))}
+
+      {:error, :unauthorized} ->
+        {:noreply,
+         put_flash(socket, :error, gettext("Открыть встречу может только организатор."))}
+
+      {:error, _reason} ->
+        {:noreply, put_flash(socket, :error, gettext("Встреча уже открыта или завершена."))}
+    end
+  end
+
+  def handle_event("show_close", _params, socket), do: {:noreply, assign(socket, :closing, true)}
+
+  def handle_event("cancel_close", _params, socket),
+    do: {:noreply, assign(socket, :closing, false)}
+
+  # Закрывает тот, кто открыл (или организатор, если открывший отвалился).
+  def handle_event("close_meeting", params, socket) do
+    actor = socket.assigns.current_user
+    attrs = %{summary: params["summary"]}
+
+    case Meetings.close_meeting(actor, socket.assigns.meeting, attrs) do
+      {:ok, updated} ->
+        {:noreply,
+         socket
+         |> assign_meeting(
+           Svc.Repo.preload(updated, [:started_by, :ended_by], force: true),
+           actor
+         )
+         |> assign(:closing, false)
+         |> put_flash(:info, gettext("Встреча завершена."))}
+
+      {:error, :unauthorized} ->
+        {:noreply,
+         put_flash(
+           socket,
+           :error,
+           gettext("Завершить встречу может тот, кто её открыл, или организатор.")
+         )}
+
+      {:error, :not_live} ->
+        {:noreply, put_flash(socket, :error, gettext("Встреча не идёт."))}
+
+      {:error, _} ->
+        {:noreply, put_flash(socket, :error, gettext("Не удалось завершить встречу."))}
+    end
   end
 
   def handle_event("rsvp", %{"status" => status}, socket) do
@@ -145,6 +202,13 @@ defmodule SvcWeb.MeetingLive.Show do
 
   defp drop_blank_assignee(%{"assignee_id" => ""} = params), do: Map.delete(params, "assignee_id")
   defp drop_blank_assignee(params), do: params
+
+  defp assign_meeting(socket, meeting, actor) do
+    socket
+    |> assign(:meeting, meeting)
+    |> assign(:can_open, Meetings.can_control?(actor, meeting))
+    |> assign(:can_close, Meetings.can_close?(actor, meeting))
+  end
 
   defp notify_organizer_rsvp(meeting, actor, status) do
     organizer = Svc.Accounts.get_user!(meeting.org_id, meeting.organizer_id)
@@ -246,17 +310,101 @@ defmodule SvcWeb.MeetingLive.Show do
             <.icon name="hero-pencil-square" class="size-4" /> {gettext("Изменить")}
           </.link>
           <button
-            :if={@can_organize and @meeting.status != :ended}
-            phx-click="end_meeting"
-            data-confirm={gettext("Завершить встречу? Будет рассчитана посещаемость.")}
+            :if={@can_open and @meeting.status == :planned}
+            phx-click="open_meeting"
+            class="btn btn-success btn-sm gap-1.5"
+            title={gettext("Открыть встречу — будет записано, кто и когда её начал")}
+          >
+            <.icon name="hero-play-circle" class="size-4" /> {gettext("Начать встречу")}
+          </button>
+          <button
+            :if={@can_close and @meeting.status == :live}
+            phx-click="show_close"
             class="btn btn-ghost btn-sm gap-1.5 text-error"
           >
-            <.icon name="hero-stop-circle" class="size-4" /> {gettext("Завершить")}
+            <.icon name="hero-stop-circle" class="size-4" /> {gettext("Завершить встречу")}
           </button>
           <.link href={~p"/admin/meetings/#{@meeting.id}/call"} class="btn btn-primary btn-sm gap-2">
             <.icon name="hero-video-camera" class="size-4" /> {gettext("Войти в звонок")}
           </.link>
         </div>
+      </div>
+      
+    <!-- S43: форма завершения — итог встречи попадает в историю -->
+      <form
+        :if={@closing and @meeting.status == :live}
+        phx-submit="close_meeting"
+        class="rounded-xl border border-error/30 bg-error/5 p-5 mt-6"
+      >
+        <h3 class="font-medium mb-1 flex items-center gap-2">
+          <.icon name="hero-stop-circle" class="size-4 text-error" /> {gettext("Завершение встречи")}
+        </h3>
+        <p class="text-sm text-base-content/55 mb-3">
+          {gettext("Итог останется в истории встречи. Поле можно оставить пустым.")}
+        </p>
+        <textarea
+          name="summary"
+          rows="3"
+          class="textarea textarea-bordered w-full"
+          placeholder={gettext("Что решили по итогам встречи")}
+        ></textarea>
+        <div class="flex items-center gap-2 mt-3">
+          <button type="submit" class="btn btn-error btn-sm gap-1.5">
+            <.icon name="hero-check" class="size-4" /> {gettext("Завершить встречу")}
+          </button>
+          <button type="button" phx-click="cancel_close" class="btn btn-ghost btn-sm">
+            {gettext("Отмена")}
+          </button>
+        </div>
+      </form>
+      
+    <!-- S43: фактическая история — когда реально шла, кто открыл/закрыл, зачем -->
+      <div
+        :if={@live_action == :show and (@meeting.started_at || @meeting.purpose)}
+        class="rounded-xl border border-base-300 bg-base-100/50 p-5 mt-6"
+      >
+        <h3 class="font-medium mb-4 flex items-center gap-2">
+          <.icon name="hero-clock" class="size-4 text-primary" /> {gettext("История встречи")}
+        </h3>
+        <dl class="grid gap-x-6 gap-y-3 sm:grid-cols-2">
+          <div :if={@meeting.started_at}>
+            <dt class="text-xs uppercase tracking-wide text-base-content/45">
+              {gettext("Фактически шла")}
+            </dt>
+            <dd class="tabular mt-0.5">
+              {fmt_local(@meeting.started_at)} — {if @meeting.ended_at,
+                do: Calendar.strftime(local(@meeting.ended_at), "%H:%M"),
+                else: gettext("идёт")}
+              <span :if={Meeting.duration_seconds(@meeting)} class="text-base-content/50">
+                ({dur(Meeting.duration_seconds(@meeting))})
+              </span>
+            </dd>
+          </div>
+          <div :if={@meeting.started_by}>
+            <dt class="text-xs uppercase tracking-wide text-base-content/45">
+              {gettext("Открыл встречу")}
+            </dt>
+            <dd class="mt-0.5">{@meeting.started_by.full_name}</dd>
+          </div>
+          <div :if={@meeting.ended_by}>
+            <dt class="text-xs uppercase tracking-wide text-base-content/45">
+              {gettext("Завершил встречу")}
+            </dt>
+            <dd class="mt-0.5">{@meeting.ended_by.full_name}</dd>
+          </div>
+          <div :if={@meeting.purpose} class="sm:col-span-2">
+            <dt class="text-xs uppercase tracking-wide text-base-content/45">
+              {gettext("Повод для встречи")}
+            </dt>
+            <dd class="mt-0.5 whitespace-pre-line">{@meeting.purpose}</dd>
+          </div>
+          <div :if={@meeting.summary} class="sm:col-span-2">
+            <dt class="text-xs uppercase tracking-wide text-base-content/45">
+              {gettext("Итог")}
+            </dt>
+            <dd class="mt-0.5 whitespace-pre-line">{@meeting.summary}</dd>
+          </div>
+        </dl>
       </div>
 
       <div
@@ -270,6 +418,13 @@ defmodule SvcWeb.MeetingLive.Show do
         </h3>
         <.form for={@form} phx-submit="save" class="space-y-3">
           <.input field={@form[:title]} type="text" label={gettext("Название")} required />
+          <.input
+            field={@form[:purpose]}
+            type="textarea"
+            rows="2"
+            label={gettext("Повод для встречи")}
+            placeholder={gettext("Зачем собираемся — останется в истории встречи")}
+          />
           <div class="grid grid-cols-2 gap-3">
             <.input field={@form[:scheduled_start]} type="datetime-local" label={gettext("Начало")} />
             <.input field={@form[:scheduled_end]} type="datetime-local" label={gettext("Конец")} />
@@ -529,8 +684,18 @@ defmodule SvcWeb.MeetingLive.Show do
   defp fmt(nil), do: "—"
   defp fmt(dt), do: Calendar.strftime(dt, "%d.%m %H:%M")
 
+  # UTC+5 (Asia/Tashkent, без перехода на летнее время).
+  defp local(dt), do: DateTime.add(dt, 5 * 3600, :second)
+  defp fmt_local(nil), do: "—"
+  defp fmt_local(dt), do: dt |> local() |> Calendar.strftime("%d.%m %H:%M")
+
   defp dur(0), do: "—"
-  defp dur(s), do: gettext("%{count} мин", count: div(s, 60))
+  defp dur(s) when s < 60, do: gettext("%{count} сек", count: s)
+
+  defp dur(s) when s < 3600, do: gettext("%{count} мин", count: div(s, 60))
+
+  defp dur(s),
+    do: gettext("%{h} ч %{m} мин", h: div(s, 3600), m: div(rem(s, 3600), 60))
 
   defp mst_label(:planned), do: gettext("Запланирована")
   defp mst_label(:live), do: gettext("Идёт")

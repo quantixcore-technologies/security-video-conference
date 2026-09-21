@@ -9,14 +9,9 @@ defmodule SvcWeb.API.MeetingController do
 
     meetings =
       for m <- Meetings.list_visible_meetings(user) do
-        %{
-          id: m.id,
-          title: m.title,
-          status: m.status,
-          type: m.type,
-          scheduled_start: m.scheduled_start,
-          scheduled_end: m.scheduled_end
-        }
+        m
+        |> meeting_json(user)
+        |> Map.merge(%{type: m.type, scheduled_end: m.scheduled_end})
       end
 
     json(conn, %{meetings: meetings, can_organize: Meetings.can_organize?(user)})
@@ -40,6 +35,7 @@ defmodule SvcWeb.API.MeetingController do
       attrs = %{
         title: String.trim(params["title"] || ""),
         recording_policy: "off",
+        purpose: trim_or_nil(params["purpose"]),
         scheduled_start: parse_dt(params["scheduled_start"])
       }
 
@@ -104,6 +100,108 @@ defmodule SvcWeb.API.MeetingController do
   defp changeset_errors(cs) do
     Ecto.Changeset.traverse_errors(cs, fn {msg, _} -> msg end)
   end
+
+  @doc """
+  Майлисни очиш (S43): статус `live` бўлади, ким ва қачон очгани ёзилади.
+
+  Веб-хук автоматик очишидан фарқи — бу ерда аниқ ОДАМ бор, шунинг учун
+  `started_by` тўлади: майлисни ёпишга биринчи навбатда ўша одам ҳақли.
+  """
+  def open(conn, %{"id" => id}) do
+    control(conn, id, &Meetings.open_meeting(&1, &2))
+  end
+
+  @doc "Майлисни якунлаш: очган одам ёпади, натижа (`summary`) тарихга ёзилади."
+  def close(conn, %{"id" => id} = params) do
+    attrs = %{summary: trim_or_nil(params["summary"])}
+    control(conn, id, &Meetings.close_meeting(&1, &2, attrs))
+  end
+
+  # Очиш/ёпиш учун умумий қобиқ: кўринмайдиган майлис — 404 (мавжудлигини
+  # ошкор қилмаймиз, join'даги қоиданинг ўзи), ҳуқуқ йўқ бўлса — 403.
+  defp control(conn, id, fun) do
+    user = conn.assigns.current_user
+
+    with meeting when not is_nil(meeting) <- fetch_meeting(user.org_id, id),
+         true <- Meetings.can_view_meeting?(user, meeting) do
+      case fun.(user, meeting) do
+        {:ok, updated} ->
+          json(conn, meeting_json(updated, user))
+
+        {:error, :unauthorized} ->
+          conn |> put_status(:forbidden) |> json(%{error: "forbidden"})
+
+        {:error, %Ecto.Changeset{} = cs} ->
+          conn
+          |> put_status(:unprocessable_entity)
+          |> json(%{error: "invalid", details: changeset_errors(cs)})
+
+        {:error, reason} ->
+          conn |> put_status(:conflict) |> json(%{error: to_string(reason)})
+      end
+    else
+      _ -> conn |> put_status(:not_found) |> json(%{error: "meeting_not_found"})
+    end
+  end
+
+  @doc "Тугаган майлислар тарихи: қачондан қачонгача, нима учун, ким очиб ким ёпган."
+  def history(conn, params) do
+    user = conn.assigns.current_user
+    limit = params["limit"] |> parse_limit()
+
+    items =
+      for m <- Meetings.history(user, limit: limit) do
+        m
+        |> meeting_json(user)
+        |> Map.merge(%{
+          organizer_name: name_of(m.organizer),
+          started_by_name: name_of(m.started_by),
+          ended_by_name: name_of(m.ended_by)
+        })
+      end
+
+    json(conn, %{meetings: items})
+  end
+
+  defp parse_limit(nil), do: 50
+
+  defp parse_limit(v) do
+    case Integer.parse(to_string(v)) do
+      {n, _} when n > 0 -> min(n, 200)
+      _ -> 50
+    end
+  end
+
+  defp name_of(%Svc.Accounts.User{full_name: name}), do: name
+  defp name_of(_), do: nil
+
+  # Клиентлар (Android/iOS/Tauri) учун майлиснинг ягона кўриниши.
+  defp meeting_json(m, user) do
+    %{
+      id: m.id,
+      title: m.title,
+      status: m.status,
+      purpose: m.purpose,
+      summary: m.summary,
+      scheduled_start: m.scheduled_start,
+      started_at: m.started_at,
+      ended_at: m.ended_at,
+      duration_seconds: Svc.Meetings.Meeting.duration_seconds(m),
+      can_open: m.status == :planned and Meetings.can_control?(user, m),
+      can_close: m.status == :live and Meetings.can_close?(user, m)
+    }
+  end
+
+  defp trim_or_nil(nil), do: nil
+
+  defp trim_or_nil(s) when is_binary(s) do
+    case String.trim(s) do
+      "" -> nil
+      trimmed -> trimmed
+    end
+  end
+
+  defp trim_or_nil(_), do: nil
 
   def join(conn, %{"id" => id} = params) do
     user = conn.assigns.current_user

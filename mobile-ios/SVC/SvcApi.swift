@@ -52,6 +52,28 @@ struct MeetingItem: Decodable, Identifiable {
     let status: String?
     let type: String?
     let scheduledStart: String?
+    // S43 — majlis tarixi: nima uchun yig'ilgan, qachon ochilib yopilgan, natija.
+    let purpose: String?
+    let summary: String?
+    let startedAt: String?
+    let endedAt: String?
+    let durationSeconds: Int?
+    let startedByName: String?
+    let endedByName: String?
+    /// Serverning ruxsat hisobi — tugmani kimga ko'rsatishni bilish uchun
+    /// (server har bir so'rovda baribir qayta tekshiradi).
+    let canOpen: Bool?
+    let canClose: Bool?
+
+    var mayOpen: Bool { canOpen ?? false }
+    var mayClose: Bool { canClose ?? false }
+
+    /// "21.09 15:40 — 16:25" — majlis haqiqatda qachon bo'lgani.
+    var sessionRange: String? {
+        guard let from = Labels.localDateTime(startedAt) else { return nil }
+        guard let to = Labels.localTime(endedAt) else { return from }
+        return "\(from) — \(to)"
+    }
 
     var displayTitle: String {
         let t = title ?? ""
@@ -257,12 +279,41 @@ actor SvcApi {
         return try decoder.decode(MeetingsPage.self, from: data)
     }
 
-    func createMeeting(token: String, title: String, inviteeIds: [Int64]) async throws -> Int64 {
-        let json = try await postJSON(
-            "/api/meetings",
-            body: ["title": title, "invitee_ids": inviteeIds.map { NSNumber(value: $0) }],
-            token: token
-        )
+    /// S43. Majlisni OCHISH — kim va qachon ochgani serverda qoladi.
+    /// Ochgan xodim keyin uni yakunlaydi.
+    func openMeeting(token: String, meetingId: Int64) async throws {
+        _ = try await postJSON("/api/meetings/\(meetingId)/open", body: [:], token: token)
+    }
+
+    /// S43. Majlisni YAKUNLASH — natija tarixga yoziladi.
+    func closeMeeting(token: String, meetingId: Int64, summary: String?) async throws {
+        var body: [String: Any] = [:]
+        if let s = summary?.trimmingCharacters(in: .whitespacesAndNewlines), !s.isEmpty {
+            body["summary"] = s
+        }
+        _ = try await postJSON("/api/meetings/\(meetingId)/close", body: body, token: token)
+    }
+
+    /// S43. Tugagan majlislar tarixi.
+    func meetingHistory(token: String) async throws -> [MeetingItem] {
+        let data = try await getData("/api/meetings/history", token: token)
+        return try decoder.decode(MeetingsPage.self, from: data).meetings
+    }
+
+    func createMeeting(
+        token: String,
+        title: String,
+        inviteeIds: [Int64],
+        purpose: String? = nil
+    ) async throws -> Int64 {
+        var body: [String: Any] = [
+            "title": title,
+            "invitee_ids": inviteeIds.map { NSNumber(value: $0) }
+        ]
+        if let p = purpose?.trimmingCharacters(in: .whitespacesAndNewlines), !p.isEmpty {
+            body["purpose"] = p
+        }
+        let json = try await postJSON("/api/meetings", body: body, token: token)
         guard let n = json["id"] as? NSNumber else { throw ApiError.badResponse }
         return n.int64Value
     }
@@ -489,6 +540,35 @@ enum Labels {
     static func date(_ iso: String?) -> String? {
         guard let iso, iso.count >= 16 else { return nil }
         return String(iso.prefix(16)).replacingOccurrences(of: "T", with: " ")
+    }
+
+    /// UTC ISO → qurilma mintaqasi bo'yicha "21.09 15:40".
+    /// `date(_:)` dan farqi: u rejalashtirilgan (naiv) vaqt uchun, bu esa
+    /// haqiqiy UTC belgisi uchun — aks holda soat 5 soatga surilib ko'rinadi.
+    static func localDateTime(_ iso: String?) -> String? { formatLocal(iso, "dd.MM HH:mm") }
+
+    static func localTime(_ iso: String?) -> String? { formatLocal(iso, "HH:mm") }
+
+    private static func formatLocal(_ iso: String?, _ pattern: String) -> String? {
+        guard let iso, iso.count >= 19 else { return nil }
+        let parser = DateFormatter()
+        parser.locale = Locale(identifier: "en_US_POSIX")
+        parser.timeZone = TimeZone(identifier: "UTC")
+        parser.dateFormat = "yyyy-MM-dd'T'HH:mm:ss"
+        guard let date = parser.date(from: String(iso.prefix(19))) else { return nil }
+
+        let out = DateFormatter()
+        out.locale = Locale(identifier: "en_US_POSIX")
+        out.dateFormat = pattern
+        return out.string(from: date)
+    }
+
+    /// "45 daqiqa" / "1 soat 20 daqiqa".
+    static func duration(_ seconds: Int?) -> String? {
+        guard let s = seconds, s > 0 else { return nil }
+        if s < 60 { return "\(s) soniya" }
+        if s < 3600 { return "\(s / 60) daqiqa" }
+        return "\(s / 3600) soat \((s % 3600) / 60) daqiqa"
     }
 
     /// Bildirishnoma turiga mos SF Symbol nomi.

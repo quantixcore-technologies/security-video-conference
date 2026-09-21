@@ -99,4 +99,100 @@ defmodule SvcWeb.API.MeetingControllerTest do
     assert is_nil(check.gps_lat)
     assert is_nil(check.gps_lon)
   end
+
+  # ── S43: майлисни очиш/ёпиш ва тарих ──
+
+  describe "open/close (S43)" do
+    test "организатор открывает, тот же человек закрывает", %{
+      conn: conn,
+      user: user,
+      meeting: meeting
+    } do
+      opened =
+        conn |> login(user) |> post(~p"/api/meetings/#{meeting.id}/open") |> json_response(200)
+
+      assert opened["status"] == "live"
+      assert is_binary(opened["started_at"])
+      assert opened["can_open"] == false
+      assert opened["can_close"] == true
+
+      closed =
+        build_conn()
+        |> login(user)
+        |> post(~p"/api/meetings/#{meeting.id}/close", %{"summary" => "Задачи розданы"})
+        |> json_response(200)
+
+      assert closed["status"] == "ended"
+      assert closed["summary"] == "Задачи розданы"
+      assert is_integer(closed["duration_seconds"])
+      assert closed["can_close"] == false
+    end
+
+    test "приглашённый сотрудник открыть не может → 403", %{
+      conn: conn,
+      org: org,
+      meeting: meeting
+    } do
+      {:ok, emp} = mk(org, "emp-open", :employee)
+      Attendance.add_invitee(meeting, emp)
+
+      conn = conn |> login(emp) |> post(~p"/api/meetings/#{meeting.id}/open")
+      assert json_response(conn, 403)["error"] == "forbidden"
+    end
+
+    test "повторное открытие → 409", %{conn: conn, user: user, meeting: meeting} do
+      {:ok, _} = Meetings.open_meeting(user, meeting)
+
+      conn = conn |> login(user) |> post(~p"/api/meetings/#{meeting.id}/open")
+      assert json_response(conn, 409)["error"] == "already_live"
+    end
+
+    test "чужая встреча → 404, а не 403 (не раскрываем существование)", %{meeting: meeting} do
+      {:ok, other_org} = Orgs.create_organization(%{name: "Чужое-43", slug: "ch43"})
+      {:ok, other} = mk(other_org, "other43", :manager)
+
+      conn = build_conn() |> login(other) |> post(~p"/api/meetings/#{meeting.id}/open")
+      assert json_response(conn, 404)["error"] == "meeting_not_found"
+    end
+
+    test "список встреч отдаёт can_open для организатора", %{
+      conn: conn,
+      user: user
+    } do
+      body = conn |> login(user) |> get(~p"/api/meetings") |> json_response(200)
+      assert [m] = body["meetings"]
+      assert m["can_open"] == true
+      assert m["can_close"] == false
+    end
+  end
+
+  describe "history (S43)" do
+    test "отдаёт завершённые с временем, поводом и именами", %{
+      conn: conn,
+      user: user,
+      meeting: meeting
+    } do
+      {:ok, _} = Meetings.update_meeting(meeting, %{purpose: "Квартальный отчёт"})
+      meeting = Meetings.get_meeting!(user.org_id, meeting.id)
+      {:ok, live} = Meetings.open_meeting(user, meeting)
+      {:ok, _} = Meetings.close_meeting(user, live, %{summary: "Отчёт принят"})
+
+      body = conn |> login(user) |> get(~p"/api/meetings/history") |> json_response(200)
+
+      assert [entry] = body["meetings"]
+      assert entry["purpose"] == "Квартальный отчёт"
+      assert entry["summary"] == "Отчёт принят"
+      assert entry["started_by_name"] == user.full_name
+      assert entry["ended_by_name"] == user.full_name
+      assert is_binary(entry["started_at"])
+      assert is_binary(entry["ended_at"])
+    end
+
+    test "идущая встреча в историю не попадает", %{conn: conn, user: user, meeting: meeting} do
+      {:ok, _} = Meetings.open_meeting(user, meeting)
+
+      body = conn |> login(user) |> get(~p"/api/meetings/history") |> json_response(200)
+      assert body["meetings"] == []
+    end
+  end
 end

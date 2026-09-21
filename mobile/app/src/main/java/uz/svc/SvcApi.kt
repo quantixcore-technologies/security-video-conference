@@ -161,11 +161,17 @@ class SvcApi(private val baseUrl: String) {
     }
 
     /** Majlis yaratish (POST /api/meetings) — super_admin/manager. Yaratilgan majlis id. */
-    suspend fun createMeeting(token: String, title: String, inviteeIds: List<Long>): Long =
+    suspend fun createMeeting(
+        token: String,
+        title: String,
+        inviteeIds: List<Long>,
+        purpose: String? = null
+    ): Long =
         withContext(Dispatchers.IO) {
             val payload = JSONObject()
                 .put("title", title)
                 .put("invitee_ids", JSONArray(inviteeIds))
+            purpose?.takeIf { it.isNotBlank() }?.let { payload.put("purpose", it) }
 
             val req = Request.Builder()
                 .url("$baseUrl/api/meetings")
@@ -384,7 +390,37 @@ class SvcApi(private val baseUrl: String) {
         val title: String,
         val status: String,
         val type: String,
-        val scheduledStart: String?
+        val scheduledStart: String?,
+        // S43 — majlis tarixi: qachon ochilgan/yopilgan, nima uchun, natija.
+        val purpose: String? = null,
+        val summary: String? = null,
+        val startedAt: String? = null,
+        val endedAt: String? = null,
+        val durationSeconds: Long? = null,
+        val organizerName: String? = null,
+        val startedByName: String? = null,
+        val endedByName: String? = null,
+        // Server hisoblaydi: tugmani kimga ko'rsatish (server baribir qayta tekshiradi).
+        val canOpen: Boolean = false,
+        val canClose: Boolean = false
+    )
+
+    private fun parseMeeting(m: JSONObject) = MeetingItem(
+        id = m.getLong("id"),
+        title = m.optString("title"),
+        status = m.optString("status"),
+        type = m.optString("type"),
+        scheduledStart = m.optStringOrNull("scheduled_start"),
+        purpose = m.optStringOrNull("purpose"),
+        summary = m.optStringOrNull("summary"),
+        startedAt = m.optStringOrNull("started_at"),
+        endedAt = m.optStringOrNull("ended_at"),
+        durationSeconds = if (m.isNull("duration_seconds")) null else m.optLong("duration_seconds"),
+        organizerName = m.optStringOrNull("organizer_name"),
+        startedByName = m.optStringOrNull("started_by_name"),
+        endedByName = m.optStringOrNull("ended_by_name"),
+        canOpen = m.optBoolean("can_open"),
+        canClose = m.optBoolean("can_close")
     )
 
     /** Список встреч организации пользователя — экран после логина (без ввода ID). */
@@ -403,20 +439,68 @@ class SvcApi(private val baseUrl: String) {
                 }
                 val arr = JSONObject(text).getJSONArray("meetings")
                 buildList {
-                    for (i in 0 until arr.length()) {
-                        val m = arr.getJSONObject(i)
-                        add(
-                            MeetingItem(
-                                id = m.getLong("id"),
-                                title = m.optString("title"),
-                                status = m.optString("status"),
-                                type = m.optString("type"),
-                                scheduledStart =
-                                    if (m.isNull("scheduled_start")) null
-                                    else m.getString("scheduled_start")
-                            )
-                        )
-                    }
+                    for (i in 0 until arr.length()) add(parseMeeting(arr.getJSONObject(i)))
+                }
+            }
+        }
+
+    /**
+     * S43. Majlisni OCHISH: kim va qachon ochgani serverda yoziladi.
+     * Ochgan xodim keyin uni yopishi kerak — shu sababli tugma faqat unga ko'rinadi.
+     */
+    suspend fun openMeeting(token: String, meetingId: Long): MeetingItem =
+        control(token, "$baseUrl/api/meetings/$meetingId/open", JSONObject())
+
+    /** S43. Majlisni YAKUNLASH: yakuniy izoh tarixga yoziladi. */
+    suspend fun closeMeeting(token: String, meetingId: Long, summary: String?): MeetingItem =
+        control(
+            token,
+            "$baseUrl/api/meetings/$meetingId/close",
+            JSONObject().apply { summary?.takeIf { it.isNotBlank() }?.let { put("summary", it) } }
+        )
+
+    private suspend fun control(token: String, url: String, payload: JSONObject): MeetingItem =
+        withContext(Dispatchers.IO) {
+            val req = Request.Builder()
+                .url(url)
+                .addHeader("Authorization", "Bearer $token")
+                .post(payload.toString().toRequestBody(json))
+                .build()
+
+            http.newCall(req).execute().use { resp ->
+                val text = resp.body?.string().orEmpty()
+                if (!resp.isSuccessful) {
+                    val err = runCatching { JSONObject(text).optString("error") }.getOrNull()
+                    error(controlError(resp.code, err))
+                }
+                parseMeeting(JSONObject(text))
+            }
+        }
+
+    private fun controlError(code: Int, err: String?) = when (err) {
+        "forbidden" -> "Bu majlisni boshqarishga ruxsatingiz yo'q"
+        "already_live" -> "Majlis allaqachon ochilgan"
+        "already_ended" -> "Majlis allaqachon yakunlangan"
+        "not_live" -> "Majlis hali boshlanmagan"
+        "meeting_not_found" -> "Majlis topilmadi"
+        else -> "Amal bajarilmadi ($code)"
+    }
+
+    /** S43. Tugagan majlislar tarixi: qachondan qachongacha, nima uchun, kim ochib kim yopgan. */
+    suspend fun meetingHistory(token: String): List<MeetingItem> =
+        withContext(Dispatchers.IO) {
+            val req = Request.Builder()
+                .url("$baseUrl/api/meetings/history")
+                .addHeader("Authorization", "Bearer $token")
+                .get()
+                .build()
+
+            http.newCall(req).execute().use { resp ->
+                val text = resp.body?.string().orEmpty()
+                if (!resp.isSuccessful) error("Majlislar tarixini olib bo'lmadi (${resp.code})")
+                val arr = JSONObject(text).getJSONArray("meetings")
+                buildList {
+                    for (i in 0 until arr.length()) add(parseMeeting(arr.getJSONObject(i)))
                 }
             }
         }

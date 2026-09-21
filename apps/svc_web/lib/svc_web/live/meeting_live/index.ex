@@ -64,6 +64,7 @@ defmodule SvcWeb.MeetingLive.Index do
     attrs = %{
       title: params["title"],
       recording_policy: params["recording_policy"] || "off",
+      purpose: params["purpose"],
       scheduled_start: parse_dt(params["scheduled_start"]),
       scheduled_end: parse_dt(params["scheduled_end"])
     }
@@ -257,6 +258,13 @@ defmodule SvcWeb.MeetingLive.Index do
         </h3>
         <.form for={@form} phx-submit="save" class="space-y-3">
           <.input field={@form[:title]} type="text" label={gettext("Название")} required />
+          <.input
+            field={@form[:purpose]}
+            type="textarea"
+            rows="2"
+            label={gettext("Повод для встречи")}
+            placeholder={gettext("Зачем собираемся — останется в истории встречи")}
+          />
           <div class="grid grid-cols-2 gap-3">
             <.input field={@form[:scheduled_start]} type="datetime-local" label={gettext("Начало")} />
             <.input field={@form[:scheduled_end]} type="datetime-local" label={gettext("Конец")} />

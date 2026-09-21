@@ -165,8 +165,105 @@ defmodule Svc.Meetings do
     )
   end
 
-  def start_meeting(%Meeting{} = m), do: update_status(m, :live)
-  def end_meeting(%Meeting{} = m), do: update_status(m, :ended)
+  # Автоматические переходы от LiveKit-вебхука (комната поднялась/опустела):
+  # здесь нет человека, поэтому фиксируем только время, без started_by/ended_by.
+  def start_meeting(%Meeting{} = m) do
+    m
+    |> Ecto.Changeset.change(%{
+      status: :live,
+      started_at: m.started_at || DateTime.utc_now()
+    })
+    |> Repo.update()
+  end
+
+  def end_meeting(%Meeting{} = m) do
+    m
+    |> Ecto.Changeset.change(%{status: :ended, ended_at: m.ended_at || DateTime.utc_now()})
+    |> Repo.update()
+  end
+
+  @doc """
+  Майлисни ОДАМ очади (S43): ким очгани ва аниқ вақти ёзилади.
+
+  Очиш ҳуқуқи — ташкилотчида (ёки ташкилотнинг super_admin'ида, ташкилотчи
+  етиб келмаган ҳолат учун). Аллақачон очиқ майлисни қайта очиб бўлмайди.
+  """
+  def open_meeting(%User{} = actor, %Meeting{} = meeting) do
+    cond do
+      not can_control?(actor, meeting) ->
+        {:error, :unauthorized}
+
+      meeting.status == :live ->
+        {:error, :already_live}
+
+      meeting.status == :ended ->
+        {:error, :already_ended}
+
+      true ->
+        result = meeting |> Meeting.start_changeset(actor) |> Repo.update()
+
+        with {:ok, updated} <- result do
+          Svc.Audit.log_action(actor, :meeting_open,
+            resource_type: :meeting,
+            resource_id: updated.id
+          )
+
+          {:ok, updated}
+        end
+    end
+  end
+
+  @doc """
+  Майлисни якунлаш. **Кимки очган бўлса — ўша ёпади** (буюртмачи талаби).
+
+  Истисно: ташкилотчи ва ташкилот super_admin'и ҳам ёпа олади — очган одам
+  алоқадан узилиб қолса, майлис абадий «эфирда» қолиб кетмаслиги керак.
+  """
+  def close_meeting(%User{} = actor, %Meeting{} = meeting, attrs \\ %{}) do
+    cond do
+      meeting.status != :live ->
+        {:error, :not_live}
+
+      not can_close?(actor, meeting) ->
+        {:error, :unauthorized}
+
+      true ->
+        result = meeting |> Meeting.finish_changeset(actor, attrs) |> Repo.update()
+
+        with {:ok, updated} <- result do
+          Svc.Audit.log_action(actor, :meeting_close,
+            resource_type: :meeting,
+            resource_id: updated.id,
+            metadata: %{"duration_seconds" => Meeting.duration_seconds(updated)}
+          )
+
+          {:ok, updated}
+        end
+    end
+  end
+
+  @doc "Майлисни оча оладими: ташкилотчи ёки ташкилот super_admin'и."
+  def can_control?(%User{id: id}, %Meeting{organizer_id: id}), do: true
+
+  def can_control?(%User{role: :super_admin, org_id: org_id}, %Meeting{org_id: org_id}), do: true
+
+  def can_control?(%User{}, %Meeting{}), do: false
+
+  @doc "Ёпа оладими: очган одам, ташкилотчи ёки super_admin."
+  def can_close?(%User{id: id}, %Meeting{started_by_id: id}) when not is_nil(id), do: true
+  def can_close?(%User{} = actor, %Meeting{} = meeting), do: can_control?(actor, meeting)
+
+  @doc "Тугаган майлислар тарихи: қачон, қанча вақт, нима учун, натижа."
+  def history(%User{} = actor, opts \\ []) do
+    limit = Keyword.get(opts, :limit, 50)
+
+    visible_query(actor.id, actor.org_id)
+    |> where([m], m.status == :ended)
+    |> order_by([m], desc: coalesce(m.ended_at, m.updated_at))
+    |> limit(^limit)
+    |> preload([:organizer, :started_by, :ended_by])
+    |> Repo.all()
+  end
 
   @doc "Редактирование встречи (название/время/политика записи)."
   def update_meeting(%Meeting{} = m, attrs) do
@@ -182,10 +279,6 @@ defmodule Svc.Meetings do
 
   @doc "Changeset для формы редактирования встречи (LiveView)."
   def change_meeting(%Meeting{} = m, attrs \\ %{}), do: Meeting.update_changeset(m, attrs)
-
-  defp update_status(meeting, status) do
-    meeting |> Ecto.Changeset.change(status: status) |> Repo.update()
-  end
 
   @doc """
   Может ли пользователь организовывать/управлять встречами.

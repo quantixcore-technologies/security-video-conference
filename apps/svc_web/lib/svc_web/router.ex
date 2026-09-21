@@ -66,6 +66,11 @@ defmodule SvcWeb.Router do
     post "/meetings", MeetingController, :create
     get "/assignable", MeetingController, :assignable
     post "/meetings/:id/join", MeetingController, :join
+
+    # S43: майлисни одам очади ва ўша одам ёпади + тугаганлари тарихи
+    get "/meetings/history", MeetingController, :history
+    post "/meetings/:id/open", MeetingController, :open
+    post "/meetings/:id/close", MeetingController, :close
     post "/capture-events", CaptureController, :create
 
     # S41: обмен документами в мобильных клиентах (от кого, что делать, срок).

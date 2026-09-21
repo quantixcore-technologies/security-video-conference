@@ -10,6 +10,8 @@ struct CreateMeetingView: View {
     @Environment(\.dismiss) private var dismiss
 
     @State private var title = ""
+    // S43: majlis nima uchun chaqirilgani — tarixda shu yozuv qoladi.
+    @State private var purpose = ""
     @State private var people: [Colleague]?
     @State private var selected: Set<Int64> = []
     @State private var busy = false
@@ -25,6 +27,23 @@ struct CreateMeetingView: View {
                         .background(Theme.panel)
                         .foregroundColor(.white)
                         .clipShape(RoundedRectangle(cornerRadius: 12))
+
+                    TextField("", text: $purpose, axis: .vertical)
+                        .lineLimit(2...4)
+                        .padding(14)
+                        .background(Theme.panel)
+                        .foregroundColor(.white)
+                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                        .padding(.top, 12)
+                        .overlay(alignment: .topLeading) {
+                            if purpose.isEmpty {
+                                Text("Majlis nima uchun? — tarixda saqlanadi")
+                                    .foregroundColor(Theme.muted)
+                                    .padding(.horizontal, 19)
+                                    .padding(.top, 27)
+                                    .allowsHitTesting(false)
+                            }
+                        }
 
                     Text("Ishtirokchilar")
                         .font(.subheadline.weight(.semibold))
@@ -146,7 +165,8 @@ struct CreateMeetingView: View {
             _ = try await state.api.createMeeting(
                 token: session.token,
                 title: title.trimmingCharacters(in: .whitespaces),
-                inviteeIds: Array(selected)
+                inviteeIds: Array(selected),
+                purpose: purpose.trimmingCharacters(in: .whitespaces)
             )
             onCreated()
             dismiss()

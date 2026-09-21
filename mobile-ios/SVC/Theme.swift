@@ -8,6 +8,8 @@ enum Theme {
     static let accent = Color(red: 0x10 / 255, green: 0xB9 / 255, blue: 0x81 / 255)  // #10B981
     static let muted = Color(red: 0x64 / 255, green: 0x74 / 255, blue: 0x8B / 255)   // #64748B
     static let danger = Color(red: 0xDC / 255, green: 0x26 / 255, blue: 0x26 / 255)  // #DC2626
+    // "Majlisni boshlash" tugmasi — accent'dan farqli, to'qroq yashil (Android bilan bir xil).
+    static let success = Color(red: 0x1E / 255, green: 0x7A / 255, blue: 0x4A / 255) // #1E7A4A
 }
 
 extension View {

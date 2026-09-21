@@ -780,21 +780,33 @@ class MainActivity : ComponentActivity() {
     @Composable
     private fun MeetingsTab(auth: Auth) {
         var meetings by remember { mutableStateOf<List<SvcApi.MeetingItem>?>(null) }
+        var history by remember { mutableStateOf<List<SvcApi.MeetingItem>?>(null) }
         var loadError by remember { mutableStateOf<String?>(null) }
         var joinError by remember { mutableStateOf<String?>(null) }
         var busyId by remember { mutableStateOf<Long?>(null) }
         var reload by remember { mutableStateOf(0) }
         var showCreate by rememberSaveable { mutableStateOf(false) }
+        // S43: "Joriy" / "Tarix" — o'tgan majlislar qachon bo'lgani shu yerda.
+        var showHistory by rememberSaveable { mutableStateOf(false) }
+        // Yakunlash oynasi: natija tarixga yoziladi.
+        var closing by remember { mutableStateOf<SvcApi.MeetingItem?>(null) }
 
         // Majlis yaratish huquqi: super_admin / manager (D-015).
         val canOrganize = auth.session.role in listOf("super_admin", "manager")
 
-        LaunchedEffect(reload) {
+        LaunchedEffect(reload, showHistory) {
             loadError = null
-            meetings = null
-            runCatching { auth.api.meetings(auth.session.token) }
-                .onSuccess { meetings = it }
-                .onFailure { loadError = it.message ?: "Xatolik yuz berdi" }
+            if (showHistory) {
+                history = null
+                runCatching { auth.api.meetingHistory(auth.session.token) }
+                    .onSuccess { history = it }
+                    .onFailure { loadError = it.message ?: "Xatolik yuz berdi" }
+            } else {
+                meetings = null
+                runCatching { auth.api.meetings(auth.session.token) }
+                    .onSuccess { meetings = it }
+                    .onFailure { loadError = it.message ?: "Xatolik yuz berdi" }
+            }
         }
 
         if (showCreate) {
@@ -807,10 +819,41 @@ class MainActivity : ComponentActivity() {
             return
         }
 
-        val list = meetings
+        closing?.let { target ->
+            CloseMeetingDialog(
+                meeting = target,
+                onDismiss = { closing = null },
+                onConfirm = { summary ->
+                    closing = null
+                    joinError = null
+                    busyId = target.id
+                    lifecycleScope.launch {
+                        runCatching {
+                            auth.api.closeMeeting(auth.session.token, target.id, summary)
+                        }
+                            .onSuccess { reload++ }
+                            .onFailure { joinError = it.message ?: "Majlis yakunlanmadi" }
+                        busyId = null
+                    }
+                }
+            )
+        }
+
+        val list = if (showHistory) history else meetings
         Box(Modifier.fillMaxSize()) {
             Column(Modifier.fillMaxSize()) {
-                TabHeader("Uchrashuvlar", auth.session.fullName.ifBlank { null }) { reload++ }
+                TabHeader(
+                    if (showHistory) "Majlislar tarixi" else "Uchrashuvlar",
+                    auth.session.fullName.ifBlank { null }
+                ) { reload++ }
+
+                Row(
+                    Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 10.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    ListFilterChip("Joriy", !showHistory) { showHistory = false }
+                    ListFilterChip("Tarix", showHistory) { showHistory = true }
+                }
 
                 joinError?.let {
                     Text(
@@ -822,32 +865,54 @@ class MainActivity : ComponentActivity() {
                 when {
                     loadError != null -> CenterMessage(loadError!!) { reload++ }
                     list == null -> CenterSpinner()
-                    list.isEmpty() -> CenterMessage("Hozircha uchrashuvlar yo'q", null)
+                    list.isEmpty() -> CenterMessage(
+                        if (showHistory) "Tarix hali bo'sh" else "Hozircha uchrashuvlar yo'q",
+                        null
+                    )
                     else -> LazyColumn(
                         Modifier.fillMaxSize(),
                         contentPadding = PaddingValues(16.dp, 16.dp, 16.dp, 88.dp),
                         verticalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
                         items(list, key = { it.id }) { m ->
-                            MeetingCard(
-                                m,
-                                busy = busyId == m.id,
-                                enabled = busyId == null,
-                                onJoin = {
-                                    joinError = null
-                                    busyId = m.id
-                                    lifecycleScope.launch {
-                                        joinAndGo(auth, m.id.toString()) { msg -> joinError = msg }
-                                        busyId = null
-                                    }
-                                }
-                            )
+                            if (showHistory) {
+                                MeetingHistoryCard(m)
+                            } else {
+                                MeetingCard(
+                                    m,
+                                    busy = busyId == m.id,
+                                    enabled = busyId == null,
+                                    onJoin = {
+                                        joinError = null
+                                        busyId = m.id
+                                        lifecycleScope.launch {
+                                            joinAndGo(auth, m.id.toString()) { msg -> joinError = msg }
+                                            busyId = null
+                                        }
+                                    },
+                                    onOpen = {
+                                        joinError = null
+                                        busyId = m.id
+                                        lifecycleScope.launch {
+                                            runCatching {
+                                                auth.api.openMeeting(auth.session.token, m.id)
+                                            }
+                                                .onSuccess { reload++ }
+                                                .onFailure {
+                                                    joinError = it.message ?: "Majlis ochilmadi"
+                                                }
+                                            busyId = null
+                                        }
+                                    },
+                                    onClose = { closing = m }
+                                )
+                            }
                         }
                     }
                 }
             }
 
-            if (canOrganize) {
+            if (canOrganize && !showHistory) {
                 ExtendedFloatingActionButton(
                     onClick = { showCreate = true },
                     containerColor = Accent,
@@ -865,11 +930,112 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    @Composable
+    private fun ListFilterChip(label: String, selected: Boolean, onClick: () -> Unit) {
+        FilterChip(
+            selected = selected,
+            onClick = onClick,
+            label = { Text(label) },
+            colors = FilterChipDefaults.filterChipColors(
+                containerColor = Panel,
+                labelColor = Muted,
+                selectedContainerColor = Accent,
+                selectedLabelColor = Color.White
+            )
+        )
+    }
+
+    /** S43: majlisni yakunlash — natija (nima hal qilindi) tarixga yoziladi. */
+    @Composable
+    private fun CloseMeetingDialog(
+        meeting: SvcApi.MeetingItem,
+        onDismiss: () -> Unit,
+        onConfirm: (String?) -> Unit
+    ) {
+        var summary by remember { mutableStateOf("") }
+
+        AlertDialog(
+            onDismissRequest = onDismiss,
+            containerColor = Panel,
+            title = { Text("Majlisni yakunlash", color = Color.White) },
+            text = {
+                Column {
+                    Text(
+                        meeting.title.ifBlank { "Uchrashuv №${meeting.id}" },
+                        color = Color.White, fontWeight = FontWeight.SemiBold
+                    )
+                    Spacer(Modifier.height(10.dp))
+                    OutlinedTextField(
+                        summary, { summary = it },
+                        label = { Text("Natija (ixtiyoriy)") },
+                        placeholder = { Text("Nima hal qilindi") },
+                        minLines = 2,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    Spacer(Modifier.height(6.dp))
+                    Text(
+                        "Yozganingiz majlis tarixida saqlanadi.",
+                        color = Muted, style = MaterialTheme.typography.bodySmall
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { onConfirm(summary.trim().ifBlank { null }) }) {
+                    Text("Yakunlash", color = Accent)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = onDismiss) { Text("Bekor qilish", color = Muted) }
+            }
+        )
+    }
+
+    /** Tugagan majlis: qachondan qachongacha, nima uchun, kim ochib kim yopgan. */
+    @Composable
+    private fun MeetingHistoryCard(m: SvcApi.MeetingItem) {
+        Surface(color = Panel, shape = RoundedCornerShape(14.dp), modifier = Modifier.fillMaxWidth()) {
+            Column(Modifier.padding(16.dp)) {
+                Text(
+                    m.title.ifBlank { "Uchrashuv №${m.id}" },
+                    color = Color.White, fontWeight = FontWeight.SemiBold
+                )
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    listOfNotNull(sessionRange(m), durationLabel(m.durationSeconds))
+                        .joinToString(" · ")
+                        .ifBlank { statusLabel(m.status) },
+                    color = Accent, style = MaterialTheme.typography.bodySmall
+                )
+                m.purpose?.let {
+                    Spacer(Modifier.height(8.dp))
+                    Text("Sabab: $it", color = Color.White, style = MaterialTheme.typography.bodySmall)
+                }
+                m.summary?.let {
+                    Spacer(Modifier.height(6.dp))
+                    Text("Natija: $it", color = Color.White, style = MaterialTheme.typography.bodySmall)
+                }
+                val people = listOfNotNull(
+                    m.startedByName?.let { "Ochdi: $it" },
+                    m.endedByName?.let { "Yakunladi: $it" }
+                )
+                if (people.isNotEmpty()) {
+                    Spacer(Modifier.height(8.dp))
+                    Text(
+                        people.joinToString(" · "),
+                        color = Muted, style = MaterialTheme.typography.bodySmall
+                    )
+                }
+            }
+        }
+    }
+
     // ── Majlis yaratish ekrani (super_admin/manager) ──
 
     @Composable
     private fun CreateMeetingScreen(auth: Auth, onBack: () -> Unit, onCreated: () -> Unit) {
         var title by remember { mutableStateOf("") }
+        // S43: majlis nima uchun chaqirilgani — tarixda shu yozuv qoladi.
+        var purpose by remember { mutableStateOf("") }
         var people by remember { mutableStateOf<List<SvcApi.Colleague>?>(null) }
         var selected by remember { mutableStateOf(setOf<Long>()) }
         var busy by remember { mutableStateOf(false) }
@@ -901,6 +1067,14 @@ class MainActivity : ComponentActivity() {
                         title, { title = it },
                         label = { Text("Majlis nomi") },
                         singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    Spacer(Modifier.height(12.dp))
+                    OutlinedTextField(
+                        purpose, { purpose = it },
+                        label = { Text("Majlis nima uchun?") },
+                        placeholder = { Text("Muhokama mavzusi — tarixda saqlanadi") },
+                        minLines = 2,
                         modifier = Modifier.fillMaxWidth()
                     )
                     Spacer(Modifier.height(18.dp))
@@ -954,7 +1128,12 @@ class MainActivity : ComponentActivity() {
                             busy = true
                             lifecycleScope.launch {
                                 runCatching {
-                                    auth.api.createMeeting(auth.session.token, title.trim(), selected.toList())
+                                    auth.api.createMeeting(
+                                        auth.session.token,
+                                        title.trim(),
+                                        selected.toList(),
+                                        purpose.trim().ifBlank { null }
+                                    )
                                 }.onSuccess {
                                     busy = false
                                     onCreated()
@@ -977,30 +1156,72 @@ class MainActivity : ComponentActivity() {
     }
 
     @Composable
-    private fun MeetingCard(m: SvcApi.MeetingItem, busy: Boolean, enabled: Boolean, onJoin: () -> Unit) {
+    private fun MeetingCard(
+        m: SvcApi.MeetingItem,
+        busy: Boolean,
+        enabled: Boolean,
+        onJoin: () -> Unit,
+        onOpen: () -> Unit,
+        onClose: () -> Unit
+    ) {
         Surface(color = Panel, shape = RoundedCornerShape(14.dp), modifier = Modifier.fillMaxWidth()) {
-            Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                Column(Modifier.weight(1f)) {
-                    Text(
-                        m.title.ifBlank { "Uchrashuv №${m.id}" },
-                        color = Color.White, fontWeight = FontWeight.SemiBold
-                    )
-                    Spacer(Modifier.height(3.dp))
-                    Text(
-                        listOfNotNull(statusLabel(m.status), prettyDate(m.scheduledStart))
-                            .joinToString(" · "),
-                        color = Muted, style = MaterialTheme.typography.bodySmall
-                    )
+            Column(Modifier.padding(16.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Column(Modifier.weight(1f)) {
+                        Text(
+                            m.title.ifBlank { "Uchrashuv №${m.id}" },
+                            color = Color.White, fontWeight = FontWeight.SemiBold
+                        )
+                        Spacer(Modifier.height(3.dp))
+                        Text(
+                            listOfNotNull(
+                                statusLabel(m.status),
+                                prettyDate(m.scheduledStart),
+                                m.startedAt?.let { "boshlandi ${prettyTimeLocal(it)}" }
+                            ).joinToString(" · "),
+                            color = Muted, style = MaterialTheme.typography.bodySmall
+                        )
+                    }
+                    Spacer(Modifier.width(12.dp))
+                    Button(
+                        onClick = onJoin,
+                        enabled = enabled,
+                        colors = ButtonDefaults.buttonColors(containerColor = Accent, contentColor = Color.White),
+                        contentPadding = PaddingValues(horizontal = 18.dp, vertical = 8.dp)
+                    ) {
+                        if (busy) CircularProgressIndicator(Modifier.size(18.dp), color = Color.White, strokeWidth = 2.dp)
+                        else Text("Kirish")
+                    }
                 }
-                Spacer(Modifier.width(12.dp))
-                Button(
-                    onClick = onJoin,
-                    enabled = enabled,
-                    colors = ButtonDefaults.buttonColors(containerColor = Accent, contentColor = Color.White),
-                    contentPadding = PaddingValues(horizontal = 18.dp, vertical = 8.dp)
-                ) {
-                    if (busy) CircularProgressIndicator(Modifier.size(18.dp), color = Color.White, strokeWidth = 2.dp)
-                    else Text("Kirish")
+
+                m.purpose?.let {
+                    Spacer(Modifier.height(8.dp))
+                    Text("Sabab: $it", color = Muted, style = MaterialTheme.typography.bodySmall)
+                }
+
+                // S43: majlisni ochgan xodim uni yakunlaydi — shuning uchun tugmalar
+                // faqat o'sha odamga ko'rinadi (serverdagi can_open/can_close).
+                if (m.canOpen || m.canClose) {
+                    Spacer(Modifier.height(12.dp))
+                    if (m.canOpen) {
+                        Button(
+                            onClick = onOpen,
+                            enabled = enabled,
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = Color(0xFF1E7A4A), contentColor = Color.White
+                            ),
+                            modifier = Modifier.fillMaxWidth()
+                        ) { Text("Majlisni boshlash") }
+                    } else {
+                        OutlinedButton(
+                            onClick = onClose,
+                            enabled = enabled,
+                            colors = ButtonDefaults.outlinedButtonColors(
+                                contentColor = MaterialTheme.colorScheme.error
+                            ),
+                            modifier = Modifier.fillMaxWidth()
+                        ) { Text("Majlisni yakunlash") }
+                    }
                 }
             }
         }
@@ -1492,6 +1713,36 @@ class MainActivity : ComponentActivity() {
         "finished", "ended", "completed" -> "Yakunlangan"
         "canceled", "cancelled" -> "Bekor qilingan"
         else -> status
+    }
+
+    /** UTC ISO → qurilma vaqti bo'yicha "21.09 15:40". minSdk 24 uchun java.time yo'q. */
+    private fun prettyLocal(iso: String?): String? = formatLocal(iso, "dd.MM HH:mm")
+
+    /** Faqat soat: "15:40". */
+    private fun prettyTimeLocal(iso: String?): String? = formatLocal(iso, "HH:mm")
+
+    private fun formatLocal(iso: String?, pattern: String): String? {
+        if (iso.isNullOrBlank()) return null
+        return runCatching {
+            val src = java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", java.util.Locale.US)
+                .apply { timeZone = java.util.TimeZone.getTimeZone("UTC") }
+            val date = src.parse(iso.take(19)) ?: return null
+            java.text.SimpleDateFormat(pattern, java.util.Locale.US).format(date)
+        }.getOrNull()
+    }
+
+    /** "21.09 15:40 — 16:25" ko'rinishidagi majlis oralig'i. */
+    private fun sessionRange(m: SvcApi.MeetingItem): String? {
+        val from = prettyLocal(m.startedAt) ?: return null
+        val to = prettyTimeLocal(m.endedAt)
+        return if (to == null) from else "$from — $to"
+    }
+
+    private fun durationLabel(seconds: Long?): String? = when {
+        seconds == null || seconds <= 0 -> null
+        seconds < 60 -> "$seconds soniya"
+        seconds < 3600 -> "${seconds / 60} daqiqa"
+        else -> "${seconds / 3600} soat ${(seconds % 3600) / 60} daqiqa"
     }
 
     /** "2026-09-02T14:30:00.000000Z" → "2026-09-02 14:30" (ko'rsatish uchun). */

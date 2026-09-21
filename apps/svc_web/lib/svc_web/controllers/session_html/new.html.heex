@@ -35,14 +35,30 @@
           <span class="text-xs font-medium text-base-content/60 mb-1.5 block">
             {gettext("Пароль")}
           </span>
-          <input
-            type="password"
-            name="user[password]"
-            required
-            autocomplete="current-password"
-            placeholder="••••••••••••"
-            class="input input-bordered w-full bg-base-200/40"
-          />
+          <div class="relative">
+            <input
+              id="login-password"
+              type="password"
+              name="user[password]"
+              required
+              autocomplete="current-password"
+              placeholder="••••••••••••"
+              class="input input-bordered w-full bg-base-200/40 pr-11"
+            />
+            <button
+              type="button"
+              data-password-toggle
+              aria-pressed="false"
+              aria-label={gettext("Показать пароль")}
+              title={gettext("Показать пароль")}
+              class="absolute inset-y-0 right-0 flex items-center px-3 text-base-content/45 hover:text-base-content transition"
+            >
+              <span data-eye-show><.icon name="hero-eye" class="size-5" /></span>
+              <span data-eye-hide class="hidden">
+                <.icon name="hero-eye-slash" class="size-5" />
+              </span>
+            </button>
+          </div>
         </label>
         <button type="submit" class="btn btn-primary w-full gap-2">
           <.icon name="hero-arrow-right-end-on-rectangle" class="size-4" /> {gettext("Войти")}
@@ -55,3 +71,22 @@
     </p>
   </div>
 </div>
+
+<script>
+  // Кнопка-глаз: показать/скрыть пароль при вводе. Без неё на телефоне
+  // пароль набирается вслепую, и это главная причина ошибок входа.
+  (function () {
+    var btn = document.querySelector("[data-password-toggle]");
+    var input = document.getElementById("login-password");
+    if (!btn || !input) return;
+
+    btn.addEventListener("click", function () {
+      var shown = input.type === "text";
+      input.type = shown ? "password" : "text";
+      btn.setAttribute("aria-pressed", String(!shown));
+      btn.querySelector("[data-eye-show]").classList.toggle("hidden", !shown);
+      btn.querySelector("[data-eye-hide]").classList.toggle("hidden", shown);
+      input.focus();
+    });
+  })();
+</script>
