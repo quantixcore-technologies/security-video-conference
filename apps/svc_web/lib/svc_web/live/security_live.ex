@@ -272,6 +272,7 @@ defmodule SvcWeb.SecurityLive do
   defp dec_dot(:block), do: "bg-error"
   defp dec_dot(:flag), do: "bg-warning"
 
+  defp kind_icon(:rejoin_blocked), do: "hero-arrow-right-on-rectangle"
   defp kind_icon(:screenshot_detected), do: "hero-camera"
   defp kind_icon(:recorder_detected), do: "hero-film"
   defp kind_icon(:screen_record_detected), do: "hero-video-camera"
@@ -281,6 +282,7 @@ defmodule SvcWeb.SecurityLive do
   defp kind_label(:recorder_detected), do: gettext("Обнаружен рекордер")
   defp kind_label(:screen_record_detected), do: gettext("Запись экрана")
   defp kind_label(:protection_failed), do: gettext("Сбой защиты")
+  defp kind_label(:rejoin_blocked), do: gettext("Повторный выход из звонка")
 
   defp sev_label(:info), do: gettext("Инфо")
   defp sev_label(:warning), do: gettext("Предупреждение")

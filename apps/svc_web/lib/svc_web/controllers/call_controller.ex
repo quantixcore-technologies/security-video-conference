@@ -15,11 +15,33 @@ defmodule SvcWeb.CallController do
     ip = conn.remote_ip |> :inet.ntoa() |> to_string()
     Geo.gate(user.org_id, ip, meeting_id: meeting.id, user_id: user.id)
 
+    # S45: то же правило, что и в мобильном API — второй выход закрывает вход.
+    case Meetings.join_guard(user, meeting) do
+      {:blocked, _} ->
+        conn
+        |> put_status(:forbidden)
+        |> put_flash(
+          :error,
+          gettext("Вы вышли из звонка второй раз — повторный вход закрыт.")
+        )
+        |> redirect(to: ~p"/admin/meetings/#{meeting.id}")
+
+      guard ->
+        render_call(conn, user, meeting, guard)
+    end
+  rescue
+    Ecto.NoResultsError ->
+      conn |> put_status(:not_found) |> text(gettext("Встреча не найдена"))
+  end
+
+  defp render_call(conn, user, meeting, guard) do
     case LiveKit.join_token(user, meeting) do
       {:ok, token} ->
         Audit.log_action(user, :meeting_join, resource_type: :meeting, resource_id: meeting.id)
 
-        render(conn, :show,
+        conn
+        |> maybe_warn(guard)
+        |> render(:show,
           meeting: meeting,
           token: token,
           livekit_url: LiveKit.url(),
@@ -32,8 +54,16 @@ defmodule SvcWeb.CallController do
         |> put_status(:service_unavailable)
         |> text(gettext("LiveKit недоступен: %{reason}", reason: inspect(reason)))
     end
-  rescue
-    Ecto.NoResultsError ->
-      conn |> put_status(:not_found) |> text(gettext("Встреча не найдена"))
   end
+
+  # Первый выход — предупреждение и ещё одна попытка (S45).
+  defp maybe_warn(conn, {:warn, :last_attempt}) do
+    put_flash(
+      conn,
+      :error,
+      gettext("Это последний вход в звонок: выйдете ещё раз — вернуться уже не сможете.")
+    )
+  end
+
+  defp maybe_warn(conn, _), do: conn
 end

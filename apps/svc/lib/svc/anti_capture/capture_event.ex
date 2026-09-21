@@ -3,7 +3,10 @@ defmodule Svc.AntiCapture.CaptureEvent do
   use Ecto.Schema
   import Ecto.Changeset
 
-  @kinds ~w(screenshot_detected recorder_detected screen_record_detected protection_failed)a
+  # rejoin_blocked (S45) — участник вышел из звонка второй раз, вход закрыт:
+  # это не «захват контента», но такой же повод для службы безопасности.
+  @kinds ~w(screenshot_detected recorder_detected screen_record_detected protection_failed
+            rejoin_blocked)a
   @severities ~w(info warning critical)a
 
   @type t :: %__MODULE__{}

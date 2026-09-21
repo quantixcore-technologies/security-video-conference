@@ -165,7 +165,9 @@ defmodule SvcWeb.MeetingLive.Index do
   defp filter_search(query, ""), do: query
   defp filter_search(query, term), do: where(query, [m], ilike(m.title, ^"%#{term}%"))
 
-  defp filter_status(query, ""), do: query
+  # Заказчик (S45): в списке только то, что ещё предстоит или идёт сейчас.
+  # Завершённые живут в истории — но по явному выбору фильтра их видно.
+  defp filter_status(query, ""), do: where(query, [m], m.status != :ended)
 
   defp filter_status(query, status),
     do: where(query, [m], m.status == ^String.to_existing_atom(status))

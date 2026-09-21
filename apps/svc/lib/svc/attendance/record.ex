@@ -13,6 +13,12 @@ defmodule Svc.Attendance.Record do
     field :joined_at, :utc_datetime_usec
     field :left_at, :utc_datetime_usec
     field :total_seconds, :integer, default: 0
+
+    # S45: сколько раз заходил/выходил и взят ли под подозрение (2-й выход).
+    field :join_count, :integer, default: 0
+    field :leave_count, :integer, default: 0
+    field :flagged, :boolean, default: false
+    field :flagged_at, :utc_datetime_usec
     field :source, Ecto.Enum, values: @sources, default: :livekit_webhook
 
     belongs_to :organization, Svc.Orgs.Organization, foreign_key: :org_id
@@ -34,7 +40,11 @@ defmodule Svc.Attendance.Record do
       :joined_at,
       :left_at,
       :total_seconds,
-      :source
+      :source,
+      :join_count,
+      :leave_count,
+      :flagged,
+      :flagged_at
     ])
     |> validate_required([:org_id, :meeting_id, :user_id, :status])
     |> unique_constraint([:meeting_id, :user_id],

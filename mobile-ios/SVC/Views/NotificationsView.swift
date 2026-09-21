@@ -8,6 +8,12 @@ struct NotificationsView: View {
     @EnvironmentObject private var state: AppState
     @State private var page: NotificationsPage?
     @State private var loadError: String?
+    // S45: xabar ustiga bosilganda majlisga o'tkazamiz.
+    @State private var joinError: String?
+    @State private var joinWarning: String?
+    @State private var joiningId: Int64?
+    @State private var joinedMeetingId: Int64?
+    @State private var room: RoomInfo?
 
     var body: some View {
         NavigationStack {
@@ -28,10 +34,34 @@ struct NotificationsView: View {
         }
         .tint(Theme.accent)
         .task { await load() }
+        .fullScreenCover(item: $room) { info in
+            CallView(room: info, meetingId: joinedMeetingId)
+        }
     }
 
     @ViewBuilder
     private var content: some View {
+        VStack(spacing: 0) {
+            if let joinError {
+                Text(joinError)
+                    .font(.footnote)
+                    .foregroundColor(Theme.danger)
+                    .padding(.horizontal, 20)
+                    .padding(.vertical, 8)
+            }
+            if let joinWarning {
+                Text(joinWarning)
+                    .font(.footnote)
+                    .foregroundColor(Theme.accent)
+                    .padding(.horizontal, 20)
+                    .padding(.vertical, 8)
+            }
+            list
+        }
+    }
+
+    @ViewBuilder
+    private var list: some View {
         if let loadError {
             StateMessage(text: loadError) { Task { await load() } }
         } else if let page {
@@ -51,8 +81,8 @@ struct NotificationsView: View {
                         }
 
                         ForEach(page.notifications) { n in
-                            NotificationRow(item: n) {
-                                Task { await markOne(n) }
+                            NotificationRow(item: n, busy: joiningId == n.id) {
+                                Task { await open(n) }
                             }
                         }
                     }
@@ -77,10 +107,37 @@ struct NotificationsView: View {
         }
     }
 
+    /// Xabarni o'qilgan deb belgilaydi va majlisga tegishli bo'lsa — o'sha majlisga kiradi.
     @MainActor
-    private func markOne(_ n: NotificationItem) async {
-        guard n.isUnread else { return }
-        try? await state.api.markRead(token: session.token, id: n.id)
+    private func open(_ n: NotificationItem) async {
+        joinError = nil
+        joinWarning = nil
+
+        if n.isUnread {
+            try? await state.api.markRead(token: session.token, id: n.id)
+        }
+
+        guard let mid = n.meetingId else {
+            await load()
+            return
+        }
+
+        joiningId = n.id
+        defer { joiningId = nil }
+
+        GeoProvider.shared.request()
+        do {
+            let info = try await state.api.join(
+                token: session.token,
+                meetingId: mid,
+                geo: GeoProvider.shared.current()
+            )
+            joinWarning = info.warning
+            joinedMeetingId = mid
+            room = info
+        } catch {
+            joinError = error.localizedDescription
+        }
         await load()
     }
 
@@ -93,6 +150,7 @@ struct NotificationsView: View {
 
 struct NotificationRow: View {
     let item: NotificationItem
+    var busy: Bool = false
     let onTap: () -> Void
 
     var body: some View {
@@ -123,6 +181,15 @@ struct NotificationRow: View {
                 }
 
                 Spacer(minLength: 0)
+
+                if busy {
+                    ProgressView().tint(Theme.accent).padding(.top, 2)
+                } else if item.meetingId != nil {
+                    Image(systemName: "chevron.right")
+                        .font(.caption)
+                        .foregroundColor(item.isUnread ? Theme.accent : Theme.muted)
+                        .padding(.top, 4)
+                }
 
                 if item.isUnread {
                     Circle().fill(Theme.accent).frame(width: 9, height: 9).padding(.top, 6)

@@ -233,6 +233,7 @@ struct MeetingsView: View {
                 meetingId: m.id,
                 geo: GeoProvider.shared.current()
             )
+            calledNote = info.warning
             joinedMeetingId = m.id
             room = info
         } catch {

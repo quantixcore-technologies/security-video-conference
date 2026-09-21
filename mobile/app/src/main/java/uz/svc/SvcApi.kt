@@ -28,7 +28,13 @@ class SvcApi(private val baseUrl: String) {
 
     data class Session(val token: String, val fullName: String, val role: String)
 
-    data class RoomInfo(val url: String, val token: String, val room: String)
+    data class RoomInfo(
+        val url: String,
+        val token: String,
+        val room: String,
+        /** S45: "oxirgi kirishingiz" ogohlantirishi (bir marta chiqib ketgan bo'lsa). */
+        val warning: String? = null
+    )
 
     /** Результат первого шага логина: либо готовая сессия, либо требование 2FA. */
     sealed class LoginResult {
@@ -203,7 +209,9 @@ class SvcApi(private val baseUrl: String) {
         val title: String,
         val body: String?,
         val readAt: String?,
-        val insertedAt: String?
+        val insertedAt: String?,
+        // S45: bildirishnoma ustiga bosilganda majlisga o'tish uchun.
+        val meetingId: Long?
     )
 
     data class NotificationsPage(val unread: Int, val items: List<NotificationItem>)
@@ -223,7 +231,8 @@ class SvcApi(private val baseUrl: String) {
                             title = n.optString("title"),
                             body = n.optStringOrNull("body"),
                             readAt = n.optStringOrNull("read_at"),
-                            insertedAt = n.optStringOrNull("inserted_at")
+                            insertedAt = n.optStringOrNull("inserted_at"),
+                            meetingId = if (n.isNull("meeting_id")) null else n.optLong("meeting_id")
                         )
                     )
                 }
@@ -565,8 +574,16 @@ class SvcApi(private val baseUrl: String) {
             http.newCall(req).execute().use { resp ->
                 val text = resp.body?.string().orEmpty()
                 if (!resp.isSuccessful) {
-                    val err = runCatching { JSONObject(text).optString("error") }.getOrNull()
-                    error("Uchrashuvga ulanib bo'lmadi (${resp.code}): ${err ?: text}")
+                    val o = runCatching { JSONObject(text) }.getOrNull()
+                    val err = o?.optString("error")
+                    // S45: ikkinchi marta chiqib ketgan odamni qaytib kiritmaymiz.
+                    val msg = o?.optStringOrNull("message")
+                    error(
+                        msg ?: when (err) {
+                            "meeting_not_found" -> "Majlis topilmadi"
+                            else -> "Uchrashuvga ulanib bo'lmadi (${resp.code})"
+                        }
+                    )
                 }
                 val o = JSONObject(text)
                 RoomInfo(
@@ -574,7 +591,8 @@ class SvcApi(private val baseUrl: String) {
                     // 127.0.0.1 — это сам клиент, поэтому подставляем хост сервера.
                     url = rewriteHost(o.getString("url")),
                     token = o.getString("token"),
-                    room = o.getString("room")
+                    room = o.getString("room"),
+                    warning = o.optStringOrNull("warning")
                 )
             }
         }

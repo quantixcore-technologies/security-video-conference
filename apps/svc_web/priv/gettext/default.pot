@@ -54,7 +54,7 @@ msgstr ""
 #: lib/svc_web/components/layouts.ex:162
 #: lib/svc_web/live/dashboard_live.ex:48
 #: lib/svc_web/live/meeting_live/index.ex:36
-#: lib/svc_web/live/meeting_live/index.ex:205
+#: lib/svc_web/live/meeting_live/index.ex:207
 #, elixir-autogen, elixir-format
 msgid "Встречи"
 msgstr ""
@@ -169,7 +169,7 @@ msgstr ""
 msgid "%{count} просрочено"
 msgstr ""
 
-#: lib/svc_web/live/meeting_live/index.ex:352
+#: lib/svc_web/live/meeting_live/index.ex:354
 #, elixir-autogen, elixir-format
 msgid "%{total} встреч · стр. %{page} из %{pages}"
 msgstr ""
@@ -236,7 +236,7 @@ msgstr ""
 msgid "Апрель"
 msgstr ""
 
-#: lib/svc_web/live/meeting_live/index.ex:185
+#: lib/svc_web/live/meeting_live/index.ex:187
 #, elixir-autogen, elixir-format
 msgid "Без записи"
 msgstr ""
@@ -297,7 +297,7 @@ msgstr ""
 msgid "Ваши данные и безопасность аккаунта"
 msgstr ""
 
-#: lib/svc_web/live/meeting_live/index.ex:206
+#: lib/svc_web/live/meeting_live/index.ex:208
 #, elixir-autogen, elixir-format
 msgid "Видеоконференции организации"
 msgstr ""
@@ -384,7 +384,7 @@ msgstr ""
 msgid "Всего"
 msgstr ""
 
-#: lib/svc_web/live/meeting_live/index.ex:213
+#: lib/svc_web/live/meeting_live/index.ex:215
 #, elixir-autogen, elixir-format
 msgid "Встреча"
 msgstr ""
@@ -588,8 +588,8 @@ msgstr ""
 msgid "Заблокирован"
 msgstr ""
 
-#: lib/svc_web/live/meeting_live/index.ex:192
-#: lib/svc_web/live/meeting_live/index.ex:294
+#: lib/svc_web/live/meeting_live/index.ex:194
+#: lib/svc_web/live/meeting_live/index.ex:296
 #: lib/svc_web/live/meeting_live/show.ex:786
 #, elixir-autogen, elixir-format
 msgid "Завершена"
@@ -605,8 +605,8 @@ msgstr ""
 msgid "Записей пока нет"
 msgstr ""
 
-#: lib/svc_web/live/meeting_live/index.ex:241
-#: lib/svc_web/live/meeting_live/index.ex:311
+#: lib/svc_web/live/meeting_live/index.ex:243
+#: lib/svc_web/live/meeting_live/index.ex:313
 #: lib/svc_web/live/meeting_live/show.ex:492
 #, elixir-autogen, elixir-format
 msgid "Запись"
@@ -617,13 +617,13 @@ msgstr ""
 msgid "Запись запрещена · контент watermarked"
 msgstr ""
 
-#: lib/svc_web/live/security_live.ex:282
+#: lib/svc_web/live/security_live.ex:283
 #, elixir-autogen, elixir-format
 msgid "Запись экрана"
 msgstr ""
 
-#: lib/svc_web/live/meeting_live/index.ex:190
-#: lib/svc_web/live/meeting_live/index.ex:290
+#: lib/svc_web/live/meeting_live/index.ex:192
+#: lib/svc_web/live/meeting_live/index.ex:292
 #: lib/svc_web/live/meeting_live/show.ex:784
 #, elixir-autogen, elixir-format
 msgid "Запланирована"
@@ -654,8 +654,8 @@ msgstr ""
 msgid "Здравствуйте, %{name}"
 msgstr ""
 
-#: lib/svc_web/live/meeting_live/index.ex:191
-#: lib/svc_web/live/meeting_live/index.ex:292
+#: lib/svc_web/live/meeting_live/index.ex:193
+#: lib/svc_web/live/meeting_live/index.ex:294
 #: lib/svc_web/live/meeting_live/show.ex:785
 #, elixir-autogen, elixir-format
 msgid "Идёт"
@@ -682,7 +682,7 @@ msgstr ""
 msgid "Изменён сотрудник"
 msgstr ""
 
-#: lib/svc_web/live/security_live.ex:285
+#: lib/svc_web/live/security_live.ex:287
 #, elixir-autogen, elixir-format
 msgid "Инфо"
 msgstr ""
@@ -740,7 +740,7 @@ msgstr ""
 msgid "Критических:"
 msgstr ""
 
-#: lib/svc_web/live/security_live.ex:287
+#: lib/svc_web/live/security_live.ex:289
 #, elixir-autogen, elixir-format
 msgid "Критично"
 msgstr ""
@@ -754,7 +754,7 @@ msgstr ""
 msgid "Логин"
 msgstr ""
 
-#: lib/svc_web/live/meeting_live/index.ex:288
+#: lib/svc_web/live/meeting_live/index.ex:290
 #: lib/svc_web/live/user_live/index.ex:286
 #, elixir-autogen, elixir-format
 msgid "Любой статус"
@@ -793,8 +793,8 @@ msgstr ""
 
 #: lib/svc_web/live/document_live/index.ex:174
 #: lib/svc_web/live/document_live/index.ex:284
-#: lib/svc_web/live/meeting_live/index.ex:225
-#: lib/svc_web/live/meeting_live/index.ex:308
+#: lib/svc_web/live/meeting_live/index.ex:227
+#: lib/svc_web/live/meeting_live/index.ex:310
 #: lib/svc_web/live/meeting_live/show.ex:476
 #, elixir-autogen, elixir-format
 msgid "Название"
@@ -903,14 +903,14 @@ msgstr ""
 msgid "Ничего"
 msgstr ""
 
-#: lib/svc_web/live/meeting_live/index.ex:303
+#: lib/svc_web/live/meeting_live/index.ex:305
 #: lib/svc_web/live/user_live/index.ex:300
 #, elixir-autogen, elixir-format
 msgid "Ничего не найдено"
 msgstr ""
 
 #: lib/svc_web/live/meeting_live/index.ex:48
-#: lib/svc_web/live/meeting_live/index.ex:222
+#: lib/svc_web/live/meeting_live/index.ex:224
 #, elixir-autogen, elixir-format
 msgid "Новая встреча"
 msgstr ""
@@ -952,7 +952,7 @@ msgstr ""
 msgid "Обзор организации и активности"
 msgstr ""
 
-#: lib/svc_web/live/security_live.ex:281
+#: lib/svc_web/live/security_live.ex:282
 #, elixir-autogen, elixir-format
 msgid "Обнаружен рекордер"
 msgstr ""
@@ -964,7 +964,7 @@ msgstr ""
 msgid "Обычный"
 msgstr ""
 
-#: lib/svc_web/live/meeting_live/index.ex:187
+#: lib/svc_web/live/meeting_live/index.ex:189
 #: lib/svc_web/live/meeting_live/show.ex:289
 #, elixir-autogen, elixir-format
 msgid "Обязательно"
@@ -991,7 +991,7 @@ msgstr ""
 msgid "Опоздали"
 msgstr ""
 
-#: lib/svc_web/live/meeting_live/index.ex:186
+#: lib/svc_web/live/meeting_live/index.ex:188
 #: lib/svc_web/live/meeting_live/show.ex:288
 #, elixir-autogen, elixir-format
 msgid "Опционально"
@@ -1037,7 +1037,7 @@ msgstr ""
 msgid "Открыто"
 msgstr ""
 
-#: lib/svc_web/live/meeting_live/index.ex:266
+#: lib/svc_web/live/meeting_live/index.ex:268
 #: lib/svc_web/live/meeting_live/show.ex:412
 #: lib/svc_web/live/meeting_live/show.ex:518
 #: lib/svc_web/live/meeting_live/show.ex:569
@@ -1103,7 +1103,7 @@ msgstr ""
 msgid "Пароль успешно изменён."
 msgstr ""
 
-#: lib/svc_web/live/meeting_live/index.ex:326
+#: lib/svc_web/live/meeting_live/index.ex:328
 #, elixir-autogen, elixir-format
 msgid "План"
 msgstr ""
@@ -1144,7 +1144,7 @@ msgstr ""
 msgid "Поиск по ФИО или логину"
 msgstr ""
 
-#: lib/svc_web/live/meeting_live/index.ex:282
+#: lib/svc_web/live/meeting_live/index.ex:284
 #, elixir-autogen, elixir-format
 msgid "Поиск по названию"
 msgstr ""
@@ -1197,7 +1197,7 @@ msgstr ""
 msgid "Предупредить"
 msgstr ""
 
-#: lib/svc_web/live/security_live.ex:286
+#: lib/svc_web/live/security_live.ex:288
 #, elixir-autogen, elixir-format
 msgid "Предупреждение"
 msgstr ""
@@ -1322,7 +1322,7 @@ msgstr ""
 msgid "Роль"
 msgstr ""
 
-#: lib/svc_web/live/meeting_live/index.ex:247
+#: lib/svc_web/live/meeting_live/index.ex:249
 #, elixir-autogen, elixir-format
 msgid "Ростер (ожидаемые участники)"
 msgstr ""
@@ -1332,7 +1332,7 @@ msgstr ""
 msgid "Сб"
 msgstr ""
 
-#: lib/svc_web/live/security_live.ex:283
+#: lib/svc_web/live/security_live.ex:284
 #, elixir-autogen, elixir-format
 msgid "Сбой защиты"
 msgstr ""
@@ -1367,7 +1367,7 @@ msgstr ""
 msgid "Сетевые / гео-проверки (pre-join)"
 msgstr ""
 
-#: lib/svc_web/live/security_live.ex:280
+#: lib/svc_web/live/security_live.ex:281
 #, elixir-autogen, elixir-format
 msgid "Скриншот"
 msgstr ""
@@ -1413,7 +1413,7 @@ msgstr ""
 msgid "Создан сотрудник"
 msgstr ""
 
-#: lib/svc_web/live/meeting_live/index.ex:264
+#: lib/svc_web/live/meeting_live/index.ex:266
 #: lib/svc_web/live/user_live/index.ex:252
 #, elixir-autogen, elixir-format
 msgid "Создать"
@@ -1425,7 +1425,7 @@ msgstr ""
 msgid "Создать поручение"
 msgstr ""
 
-#: lib/svc_web/live/meeting_live/index.ex:263
+#: lib/svc_web/live/meeting_live/index.ex:265
 #: lib/svc_web/live/meeting_live/show.ex:565
 #: lib/svc_web/live/task_live/index.ex:180
 #: lib/svc_web/live/user_live/index.ex:251
@@ -1500,7 +1500,7 @@ msgid "Срочный"
 msgstr ""
 
 #: lib/svc_web/live/document_live/index.ex:288
-#: lib/svc_web/live/meeting_live/index.ex:310
+#: lib/svc_web/live/meeting_live/index.ex:312
 #: lib/svc_web/live/meeting_live/show.ex:649
 #: lib/svc_web/live/profile_live.ex:142
 #: lib/svc_web/live/user_live/index.ex:309
@@ -1536,7 +1536,7 @@ msgstr ""
 msgid "Телефон (Номер)"
 msgstr ""
 
-#: lib/svc_web/live/meeting_live/index.ex:309
+#: lib/svc_web/live/meeting_live/index.ex:311
 #, elixir-autogen, elixir-format
 msgid "Тип"
 msgstr ""
@@ -1732,7 +1732,7 @@ msgstr ""
 msgid "— не выбран —"
 msgstr ""
 
-#: lib/svc_web/controllers/call_controller.ex:33
+#: lib/svc_web/controllers/call_controller.ex:55
 #, elixir-autogen, elixir-format
 msgid "LiveKit недоступен: %{reason}"
 msgstr ""
@@ -1747,7 +1747,7 @@ msgstr ""
 msgid "Аккаунт отключён."
 msgstr ""
 
-#: lib/svc_web/controllers/call_controller.ex:37
+#: lib/svc_web/controllers/call_controller.ex:34
 #, elixir-autogen, elixir-format
 msgid "Встреча не найдена"
 msgstr ""
@@ -2025,7 +2025,7 @@ msgstr ""
 msgid "Завершить встречу может тот, кто её открыл, или организатор."
 msgstr ""
 
-#: lib/svc_web/live/meeting_live/index.ex:231
+#: lib/svc_web/live/meeting_live/index.ex:233
 #: lib/svc_web/live/meeting_live/show.ex:482
 #, elixir-autogen, elixir-format
 msgid "Зачем собираемся — останется в истории встречи"
@@ -2076,7 +2076,7 @@ msgstr ""
 msgid "Открыть встречу — будет записано, кто и когда её начал"
 msgstr ""
 
-#: lib/svc_web/live/meeting_live/index.ex:230
+#: lib/svc_web/live/meeting_live/index.ex:232
 #: lib/svc_web/live/meeting_live/show.ex:453
 #: lib/svc_web/live/meeting_live/show.ex:481
 #, elixir-autogen, elixir-format
@@ -2164,8 +2164,23 @@ msgstr ""
 msgid "в звонке"
 msgstr ""
 
-#: lib/svc_web/live/meeting_live/index.ex:236
+#: lib/svc_web/live/meeting_live/index.ex:238
 #: lib/svc_web/live/meeting_live/show.ex:487
 #, elixir-autogen, elixir-format
 msgid "Начало встречи"
+msgstr ""
+
+#: lib/svc_web/controllers/call_controller.ex:25
+#, elixir-autogen, elixir-format
+msgid "Вы вышли из звонка второй раз — повторный вход закрыт."
+msgstr ""
+
+#: lib/svc_web/live/security_live.ex:285
+#, elixir-autogen, elixir-format
+msgid "Повторный выход из звонка"
+msgstr ""
+
+#: lib/svc_web/controllers/call_controller.ex:64
+#, elixir-autogen, elixir-format
+msgid "Это последний вход в звонок: выйдете ещё раз — вернуться уже не сможете."
 msgstr ""

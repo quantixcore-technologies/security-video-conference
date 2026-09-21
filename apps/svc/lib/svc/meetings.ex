@@ -75,6 +75,20 @@ defmodule Svc.Meetings do
     Repo.all(visible_query(uid, org_id) |> order_by([m], desc: m.inserted_at))
   end
 
+  @doc """
+  Актуальные встречи актора: запланированные и идущие (S45).
+
+  Завершённые в списке не нужны — для них есть история (`history/2`), иначе
+  список со временем превращается в архив, где текущую встречу не найти.
+  """
+  def list_active_meetings(%User{id: uid, org_id: org_id}) do
+    Repo.all(
+      visible_query(uid, org_id)
+      |> where([m], m.status != :ended)
+      |> order_by([m], asc: fragment("? IS NULL", m.scheduled_start), asc: m.scheduled_start)
+    )
+  end
+
   @doc "Тот же фильтр видимости как выражение (для пагинации/поиска в LiveView)."
   def visible_query(user_id, org_id) do
     invited = from i in Invitee, where: i.user_id == ^user_id, select: i.meeting_id
@@ -301,6 +315,70 @@ defmodule Svc.Meetings do
     ]
     |> Enum.reject(&is_nil/1)
     |> Enum.join(" · ")
+  end
+
+  @doc """
+  Пускать ли участника в звонок (S45) — правило «вышел → предупреждение → закрыто».
+
+  Ведущего (организатор / тот, кто открыл / super_admin) НЕ блокируем: у него
+  обрыв связи означал бы, что встречу некому вести и некому завершить, а
+  «эфир» остался бы висеть. Его выходы всё равно видны в журнале.
+
+  Возвращает `:ok` | `{:warn, :last_attempt}` | `{:blocked, :rejoin_blocked}`.
+  """
+  def join_guard(%User{} = user, %Meeting{} = meeting) do
+    if can_close?(user, meeting) do
+      :ok
+    else
+      case Attendance.rejoin_state(meeting.id, user.id) do
+        {:blocked, _record} ->
+          block_rejoin(user, meeting)
+          {:blocked, :rejoin_blocked}
+
+        other ->
+          other
+      end
+    end
+  end
+
+  # Второй выход: отметка в посещаемости, событие в журнал безопасности,
+  # аудит и уведомление организатору — «взять под подозрение» по требованию заказчика.
+  defp block_rejoin(%User{} = user, %Meeting{} = meeting) do
+    Attendance.flag_suspicious(meeting.id, user.id)
+
+    Svc.AntiCapture.log_event(%{
+      org_id: meeting.org_id,
+      meeting_id: meeting.id,
+      user_id: user.id,
+      kind: :rejoin_blocked,
+      severity: :warning,
+      detail: %{"reason" => "second_leave", "meeting" => meeting.title}
+    })
+
+    Svc.Audit.log_action(user, :meeting_rejoin_blocked,
+      resource_type: :meeting,
+      resource_id: meeting.id
+    )
+
+    notify_organizer_about(meeting, user)
+    :ok
+  end
+
+  defp notify_organizer_about(%Meeting{} = meeting, %User{} = user) do
+    watcher_ids =
+      [meeting.started_by_id, meeting.organizer_id]
+      |> Enum.reject(&is_nil/1)
+      |> Enum.uniq()
+
+    watchers = Repo.all(from u in User, where: u.id in ^watcher_ids)
+
+    Svc.Notifications.notify_many(
+      watchers,
+      :update,
+      "Shubhali harakat: #{user.full_name}",
+      body: "«#{meeting.title}» majlisidan ikkinchi marta chiqib ketdi — qayta kirish yopildi",
+      meeting_id: meeting.id
+    )
   end
 
   @doc "Тугаган майлислар тарихи: қачон, қанча вақт, нима учун, натижа."

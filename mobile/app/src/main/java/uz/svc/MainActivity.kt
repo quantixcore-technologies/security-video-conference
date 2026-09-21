@@ -25,6 +25,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.automirrored.filled.Assignment
 import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.filled.AccountCircle
@@ -897,7 +898,11 @@ class MainActivity : ComponentActivity() {
                                         joinError = null
                                         busyId = m.id
                                         lifecycleScope.launch {
-                                            joinAndGo(auth, m.id.toString()) { msg -> joinError = msg }
+                                            joinAndGo(
+                                                auth,
+                                                m.id.toString(),
+                                                onWarning = { called = it }
+                                            ) { msg -> joinError = msg }
                                             busyId = null
                                         }
                                     },
@@ -1311,6 +1316,8 @@ class MainActivity : ComponentActivity() {
 
     @Composable
     private fun NotificationsTab(auth: Auth, onUnread: (Int) -> Unit) {
+        var joining by remember { mutableStateOf<Long?>(null) }
+        var joinError by remember { mutableStateOf<String?>(null) }
         var page by remember { mutableStateOf<SvcApi.NotificationsPage?>(null) }
         var loadError by remember { mutableStateOf<String?>(null) }
         var reload by remember { mutableStateOf(0) }
@@ -1329,6 +1336,13 @@ class MainActivity : ComponentActivity() {
         val current = page
         Column(Modifier.fillMaxSize()) {
             TabHeader("Xabarlar", current?.let { "${it.unread} ta o'qilmagan" }) { reload++ }
+
+            joinError?.let {
+                Text(
+                    it, color = MaterialTheme.colorScheme.error,
+                    modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp)
+                )
+            }
 
             when {
                 loadError != null -> CenterMessage(loadError!!) { reload++ }
@@ -1352,12 +1366,22 @@ class MainActivity : ComponentActivity() {
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         items(current.items, key = { it.id }) { n ->
-                            NotificationCard(n) {
-                                if (n.readAt == null) {
-                                    lifecycleScope.launch {
-                                        runCatching { auth.api.markNotificationRead(auth.session.token, n.id) }
-                                        reload++
+                            NotificationCard(n, busy = joining == n.id) {
+                                // S45: xabar majlis haqida bo'lsa — ustiga bosilganda
+                                // to'g'ridan-to'g'ri majlisga olib kiradi.
+                                lifecycleScope.launch {
+                                    if (n.readAt == null) {
+                                        runCatching {
+                                            auth.api.markNotificationRead(auth.session.token, n.id)
+                                        }
                                     }
+                                    val mid = n.meetingId
+                                    if (mid != null) {
+                                        joining = n.id
+                                        joinAndGo(auth, mid.toString()) { msg -> joinError = msg }
+                                        joining = null
+                                    }
+                                    reload++
                                 }
                             }
                         }
@@ -1368,7 +1392,11 @@ class MainActivity : ComponentActivity() {
     }
 
     @Composable
-    private fun NotificationCard(n: SvcApi.NotificationItem, onClick: () -> Unit) {
+    private fun NotificationCard(
+        n: SvcApi.NotificationItem,
+        busy: Boolean = false,
+        onClick: () -> Unit
+    ) {
         val unread = n.readAt == null
         Surface(
             color = if (unread) Color(0xFF243449) else Panel,
@@ -1396,6 +1424,17 @@ class MainActivity : ComponentActivity() {
                         Spacer(Modifier.height(2.dp))
                         Text(it, color = Muted, style = MaterialTheme.typography.labelSmall)
                     }
+                }
+                if (busy) {
+                    CircularProgressIndicator(
+                        Modifier.size(18.dp), color = Accent, strokeWidth = 2.dp
+                    )
+                } else if (n.meetingId != null) {
+                    Icon(
+                        Icons.AutoMirrored.Filled.ArrowForward, "Majlisga o'tish",
+                        tint = if (unread) Accent else Muted, modifier = Modifier.size(20.dp)
+                    )
+                    Spacer(Modifier.width(6.dp))
                 }
                 if (unread) {
                     Spacer(Modifier.width(8.dp))
@@ -1870,9 +1909,22 @@ class MainActivity : ComponentActivity() {
         iso?.take(16)?.replace("T", " ")?.takeIf { it.isNotBlank() }
 
     /** Подключается к встрече по сессии и открывает экран звонка. */
-    private suspend fun joinAndGo(auth: Auth, meetingId: String, onError: (String) -> Unit) {
+    private suspend fun joinAndGo(
+        auth: Auth,
+        meetingId: String,
+        onWarning: (String) -> Unit = {},
+        onError: (String) -> Unit
+    ) {
         runCatching { auth.api.join(auth.session.token, meetingId, currentGeo()) }
             .onSuccess { room ->
+                // S45: bir marta chiqib ketgan bo'lsa — oxirgi imkon haqida ogohlantiramiz.
+                // Toast qo'ng'iroq ekraniga o'tgandan keyin ham ko'rinadi.
+                room.warning?.let {
+                    android.widget.Toast.makeText(
+                        this@MainActivity, it, android.widget.Toast.LENGTH_LONG
+                    ).show()
+                    onWarning(it)
+                }
                 startActivity(
                     Intent(this@MainActivity, CallActivity::class.java).apply {
                         putExtra("url", room.url)

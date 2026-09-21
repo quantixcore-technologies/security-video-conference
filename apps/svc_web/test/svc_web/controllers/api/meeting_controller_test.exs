@@ -268,4 +268,65 @@ defmodule SvcWeb.API.MeetingControllerTest do
       assert Calendar.strftime(created.scheduled_start, "%Y-%m-%d %H:%M") == "2026-10-01 09:30"
     end
   end
+
+  describe "повторный вход (S45)" do
+    setup %{org: org, meeting: meeting, user: mgr} do
+      {:ok, emp} = mk(org, "rejoin-emp", :employee)
+      Attendance.add_invitee(meeting, emp)
+      {:ok, live} = Meetings.open_meeting(mgr, meeting)
+      %{emp: emp, meeting: live}
+    end
+
+    test "после первого выхода join отдаёт предупреждение", %{
+      conn: conn,
+      emp: emp,
+      meeting: meeting
+    } do
+      Attendance.record_join(meeting, emp.id, DateTime.utc_now())
+      Attendance.record_leave(meeting, emp.id, DateTime.utc_now())
+
+      body =
+        conn |> login(emp) |> post(~p"/api/meetings/#{meeting.id}/join") |> json_response(200)
+
+      assert is_binary(body["token"])
+      assert body["warning"] =~ "oxirgi kirishingiz"
+    end
+
+    test "после второго выхода — 403 с объяснением", %{
+      conn: conn,
+      emp: emp,
+      meeting: meeting
+    } do
+      for _ <- 1..2 do
+        Attendance.record_join(meeting, emp.id, DateTime.utc_now())
+        Attendance.record_leave(meeting, emp.id, DateTime.utc_now())
+      end
+
+      body =
+        conn |> login(emp) |> post(~p"/api/meetings/#{meeting.id}/join") |> json_response(403)
+
+      assert body["error"] == "rejoin_blocked"
+      assert body["message"] =~ "Qayta kirish yopildi"
+      assert [flagged] = Attendance.flagged_records(meeting.id)
+      assert flagged.user_id == emp.id
+    end
+
+    test "обычный первый вход предупреждения не содержит", %{
+      conn: conn,
+      emp: emp,
+      meeting: meeting
+    } do
+      body =
+        conn |> login(emp) |> post(~p"/api/meetings/#{meeting.id}/join") |> json_response(200)
+
+      assert is_nil(body["warning"])
+    end
+
+    test "завершённых встреч в списке нет", %{conn: conn, user: mgr, meeting: meeting} do
+      {:ok, _} = Meetings.close_meeting(mgr, meeting, %{})
+
+      body = conn |> login(mgr) |> get(~p"/api/meetings") |> json_response(200)
+      assert body["meetings"] == []
+    end
+  end
 end

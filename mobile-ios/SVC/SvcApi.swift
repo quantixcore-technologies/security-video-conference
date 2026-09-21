@@ -97,6 +97,8 @@ struct NotificationItem: Decodable, Identifiable {
     let body: String?
     let readAt: String?
     let insertedAt: String?
+    /// S45: xabar majlisga tegishli bo'lsa — ustiga bosilganda o'sha majlisga kiramiz.
+    let meetingId: Int64?
 
     var isUnread: Bool { readAt == nil }
     var kindValue: String { kind ?? "" }
@@ -125,6 +127,8 @@ struct RoomInfo {
     let url: String
     let token: String
     let room: String
+    /// S45: "oxirgi kirishingiz" ogohlantirishi (bir marta chiqib ketgan bo'lsa).
+    let warning: String?
 }
 
 struct GeoPoint {
@@ -187,9 +191,13 @@ enum ApiError: LocalizedError {
     case http(Int, String?)
     case forbidden
     case badResponse
+    /// Server o'zi tayyorlagan, foydalanuvchiga ko'rsatsa bo'ladigan sabab.
+    case explained(String)
 
     var errorDescription: String? {
         switch self {
+        case let .explained(message):
+            return message
         case .forbidden:
             return "Ruxsat yo'q"
         case .badResponse:
@@ -379,7 +387,12 @@ actor SvcApi {
               let tok = json["token"] as? String,
               let room = json["room"] as? String
         else { throw ApiError.badResponse }
-        return RoomInfo(url: rewriteHost(url), token: tok, room: room)
+        return RoomInfo(
+            url: rewriteHost(url),
+            token: tok,
+            room: room,
+            warning: json["warning"] as? String
+        )
     }
 
     /// Backend loopback (`ws://127.0.0.1:7880`) qaytarishi mumkin — qurilmada bu o'zini
@@ -503,10 +516,15 @@ actor SvcApi {
         let (data, resp) = try await session.data(for: req)
         guard let http = resp as? HTTPURLResponse else { throw ApiError.badResponse }
         guard (200..<300).contains(http.statusCode) else {
-            if http.statusCode == 403 { throw ApiError.forbidden }
             let obj = try? JSONSerialization.jsonObject(with: data)
-            let msg = (obj as? [String: Any])?["error"] as? String
-            throw ApiError.http(http.statusCode, msg)
+            let dict = obj as? [String: Any]
+            // Server tushunarli sabab yuborsa (masalan, S45 — qayta kirish yopilgan),
+            // uni o'zgartirmasdan foydalanuvchiga ko'rsatamiz.
+            if let message = dict?["message"] as? String, !message.isEmpty {
+                throw ApiError.explained(message)
+            }
+            if http.statusCode == 403 { throw ApiError.forbidden }
+            throw ApiError.http(http.statusCode, dict?["error"] as? String)
         }
         return data
     }

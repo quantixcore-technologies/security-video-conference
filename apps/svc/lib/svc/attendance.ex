@@ -89,10 +89,11 @@ defmodule Svc.Attendance do
       user_id: user_id,
       status: status,
       joined_at: joined_at,
+      join_count: 1,
       source: :livekit_webhook
     })
     |> Repo.insert(
-      on_conflict: [set: [joined_at: joined_at, status: status]],
+      on_conflict: [set: [joined_at: joined_at, status: status], inc: [join_count: 1]],
       conflict_target: [:meeting_id, :user_id]
     )
   end
@@ -108,9 +109,77 @@ defmodule Svc.Attendance do
         status = maybe_left_early(meeting, record.status, left_at)
 
         record
-        |> Record.changeset(%{left_at: left_at, total_seconds: secs, status: status})
+        |> Record.changeset(%{
+          left_at: left_at,
+          total_seconds: secs,
+          status: status,
+          leave_count: (record.leave_count || 0) + 1
+        })
         |> Repo.update()
     end
+  end
+
+  @max_joins 2
+
+  @doc """
+  Можно ли участнику (пере)войти в звонок — S45.
+
+  Правило заказчика: вышел один раз — предупреждение и ещё одна попытка;
+  вышел второй раз — вход закрыт, человек под подозрением.
+
+  Возвращает:
+    * `:ok` — первый вход или он всё ещё в комнате (переподключение внутри сессии);
+    * `{:warn, :last_attempt}` — это второй и последний вход;
+    * `{:blocked, record}` — лимит исчерпан.
+
+  Считаем именно ВЫХОДЫ (`leave_count` из вебхука `participant_left`), а не выданные
+  токены: токен можно взять и не подключиться, а обрыв связи не должен наказывать.
+  """
+  def rejoin_state(meeting_id, user_id) do
+    case Repo.get_by(Record, meeting_id: meeting_id, user_id: user_id) do
+      nil ->
+        :ok
+
+      %Record{} = record ->
+        cond do
+          # ещё в комнате: выхода не было или последний вход новее выхода
+          still_inside?(record) -> :ok
+          record.leave_count >= @max_joins -> {:blocked, record}
+          record.leave_count == 1 -> {:warn, :last_attempt}
+          true -> :ok
+        end
+    end
+  end
+
+  defp still_inside?(%Record{left_at: nil}), do: true
+
+  defp still_inside?(%Record{joined_at: nil}), do: false
+
+  defp still_inside?(%Record{joined_at: j, left_at: l}), do: DateTime.compare(j, l) == :gt
+
+  @doc "Берёт участника под подозрение (2-й выход). Идемпотентно."
+  def flag_suspicious(meeting_id, user_id) do
+    case Repo.get_by(Record, meeting_id: meeting_id, user_id: user_id) do
+      nil ->
+        {:error, :no_record}
+
+      %Record{flagged: true} = record ->
+        {:ok, record}
+
+      %Record{} = record ->
+        record
+        |> Record.changeset(%{flagged: true, flagged_at: DateTime.utc_now()})
+        |> Repo.update()
+    end
+  end
+
+  @doc "Участники встречи, взятые под подозрение (для журнала и карточки встречи)."
+  def flagged_records(meeting_id) do
+    Repo.all(
+      from r in Record,
+        where: r.meeting_id == ^meeting_id and r.flagged == true,
+        preload: [:user]
+    )
   end
 
   @doc """

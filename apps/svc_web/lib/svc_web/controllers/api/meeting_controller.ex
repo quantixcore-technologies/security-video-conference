@@ -8,7 +8,7 @@ defmodule SvcWeb.API.MeetingController do
     user = conn.assigns.current_user
 
     meetings =
-      for m <- Meetings.list_visible_meetings(user) do
+      for m <- Meetings.list_active_meetings(user) do
         m
         |> meeting_json(user)
         |> Map.merge(%{
@@ -255,20 +255,47 @@ defmodule SvcWeb.API.MeetingController do
     # Не-видимую отдаём как 404 — не раскрываем сам факт её существования.
     with meeting when not is_nil(meeting) <- fetch_meeting(user.org_id, id),
          true <- Meetings.can_view_meeting?(user, meeting) do
-      # E7 pre-join gate: классификация IP + запись GPS (нативный клиент).
-      # MVP без MMDB: gate возвращает только :allow/:flag (никогда :block — см. Svc.Geo).
-      # flag = пометка для ручной проверки, НЕ отказ → в звонок пускаем. Когда подключим
-      # MaxMind MMDB (locus) и появится :block — компилятор потребует ветку отказа (D-012).
-      case Geo.gate(user.org_id, remote_ip(conn), gate_opts(user, meeting, params)) do
-        {:allow, _reason} -> issue_token(conn, user, meeting)
-        {:flag, _reason} -> issue_token(conn, user, meeting)
+      # S45: вышел из звонка второй раз — обратно не пускаем (см. Meetings.join_guard/2).
+      case Meetings.join_guard(user, meeting) do
+        {:blocked, reason} ->
+          conn
+          |> put_status(:forbidden)
+          |> json(%{
+            error: to_string(reason),
+            message:
+              "Siz majlisdan ikkinchi marta chiqib ketdingiz. Qayta kirish yopildi — " <>
+                "tashkilotchiga xabar berildi."
+          })
+
+        guard ->
+          join_after_guard(conn, user, meeting, params, guard)
       end
     else
       _ -> conn |> put_status(:not_found) |> json(%{error: "meeting_not_found"})
     end
   end
 
-  defp issue_token(conn, user, meeting) do
+  defp join_after_guard(conn, user, meeting, params, guard) do
+    warning =
+      case guard do
+        {:warn, :last_attempt} ->
+          "Diqqat: bu majlisga oxirgi kirishingiz. Yana chiqib ketsangiz, qayta kira olmaysiz."
+
+        _ ->
+          nil
+      end
+
+    # E7 pre-join gate: классификация IP + запись GPS (нативный клиент).
+    # MVP без MMDB: gate возвращает только :allow/:flag (никогда :block — см. Svc.Geo).
+    # flag = пометка для ручной проверки, НЕ отказ → в звонок пускаем. Когда подключим
+    # MaxMind MMDB (locus) и появится :block — компилятор потребует ветку отказа (D-012).
+    case Geo.gate(user.org_id, remote_ip(conn), gate_opts(user, meeting, params)) do
+      {:allow, _reason} -> issue_token(conn, user, meeting, warning)
+      {:flag, _reason} -> issue_token(conn, user, meeting, warning)
+    end
+  end
+
+  defp issue_token(conn, user, meeting, warning) do
     case LiveKit.join_token(user, meeting) do
       {:ok, token} ->
         Audit.log_action(user, :meeting_join,
@@ -279,7 +306,8 @@ defmodule SvcWeb.API.MeetingController do
         json(conn, %{
           url: LiveKit.url(),
           token: token,
-          room: meeting.livekit_room_name
+          room: meeting.livekit_room_name,
+          warning: warning
         })
 
       {:error, reason} ->

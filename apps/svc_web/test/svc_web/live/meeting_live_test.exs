@@ -223,4 +223,16 @@ defmodule SvcWeb.MeetingLiveTest do
       refute html =~ "phx-click=\"call_all\""
     end
   end
+
+  test "завершённой встречи в списке нет — она в истории (S45)", %{conn: conn, mgr: mgr} do
+    {:ok, open_one} = Meetings.create_meeting(mgr, %{title: "Предстоящая планёрка"})
+    {:ok, done} = Meetings.create_meeting(mgr, %{title: "Прошедшая планёрка"})
+    {:ok, live_one} = Meetings.open_meeting(mgr, done)
+    {:ok, _} = Meetings.close_meeting(mgr, live_one, %{})
+
+    {:ok, _lv, html} = conn |> login(mgr) |> live(~p"/admin/meetings")
+
+    assert html =~ open_one.title
+    refute html =~ "Прошедшая планёрка"
+  end
 end
