@@ -39,7 +39,7 @@ defmodule SvcWeb.MeetingLive.Show do
      |> assign(:records, records)
      |> assign(:summary, Enum.frequencies_by(records, & &1.status))
      |> assign(:roster, Attendance.list_invitees_with_users(meeting.id))
-     |> assign(:pending_ids, pending_ids(meeting, actor))
+     |> assign_call_state(meeting, actor)
      |> assign(:my_invitee, Attendance.get_invitee(meeting.id, actor.id))
      |> assign_form(socket.assigns.live_action, meeting)}
   rescue
@@ -217,7 +217,7 @@ defmodule SvcWeb.MeetingLive.Show do
       {:ok, called} ->
         {:noreply,
          socket
-         |> assign(:pending_ids, pending_ids(meeting, actor))
+         |> assign_call_state(meeting, actor)
          |> put_flash(
            :info,
            gettext("Приглашение отправлено: %{count}", count: length(called))
@@ -238,13 +238,24 @@ defmodule SvcWeb.MeetingLive.Show do
     end
   end
 
-  # Кого ещё можно позвать — по id, чтобы решать это прямо в списке ростера.
-  defp pending_ids(meeting, actor) do
-    if meeting.status == :ended do
-      MapSet.new()
-    else
-      meeting |> Meetings.callable_participants(actor) |> MapSet.new(& &1.id)
-    end
+  # Два разных множества, их легко перепутать:
+  #   not_joined — кто ещё не заходил в звонок (отметка «в звонке» у остальных);
+  #   callable   — кого показывать с кнопкой «Позвать» (то же самое минус сам актор:
+  #                звать себя незачем, но и писать про себя «в звонке» неправда).
+  defp assign_call_state(socket, meeting, actor) do
+    not_joined =
+      if meeting.status == :ended,
+        do: [],
+        else: Attendance.pending_invitees(meeting.id)
+
+    callable =
+      if meeting.status == :ended,
+        do: [],
+        else: Meetings.callable_participants(meeting, actor)
+
+    socket
+    |> assign(:not_joined_ids, MapSet.new(not_joined, & &1.user_id))
+    |> assign(:pending_ids, MapSet.new(callable, & &1.id))
   end
 
   defp assign_meeting(socket, meeting, actor) do
@@ -252,7 +263,7 @@ defmodule SvcWeb.MeetingLive.Show do
     |> assign(:meeting, meeting)
     |> assign(:can_open, Meetings.can_control?(actor, meeting))
     |> assign(:can_close, Meetings.can_close?(actor, meeting))
-    |> assign(:pending_ids, pending_ids(meeting, actor))
+    |> assign_call_state(meeting, actor)
   end
 
   defp notify_organizer_rsvp(meeting, actor, status) do
@@ -678,7 +689,7 @@ defmodule SvcWeb.MeetingLive.Show do
             <span class="font-medium">{inv.user.full_name}</span>
             <span class="flex items-center gap-2">
               <span
-                :if={not MapSet.member?(@pending_ids, inv.user_id) and @meeting.status != :planned}
+                :if={@meeting.status == :live and not MapSet.member?(@not_joined_ids, inv.user_id)}
                 class="text-xs text-success inline-flex items-center gap-1"
               >
                 <.icon name="hero-check-circle" class="size-3.5" /> {gettext("в звонке")}
