@@ -20,6 +20,8 @@ struct MeetingsView: View {
     @State private var closingMeeting: MeetingItem?
     @State private var closeSummary = ""
     @State private var controlBusyId: Int64?
+    // S44: "chaqiruv yuborildi" xabari
+    @State private var calledNote: String?
 
     var body: some View {
         NavigationStack {
@@ -89,6 +91,14 @@ struct MeetingsView: View {
                     .padding(.vertical, 8)
             }
 
+            if let calledNote {
+                Text(calledNote)
+                    .font(.footnote)
+                    .foregroundColor(Theme.accent)
+                    .padding(.horizontal, 20)
+                    .padding(.vertical, 8)
+            }
+
             Picker("", selection: $showHistory) {
                 Text("Joriy").tag(false)
                 Text("Tarix").tag(true)
@@ -131,7 +141,8 @@ struct MeetingsView: View {
                                     onClose: {
                                         closeSummary = ""
                                         closingMeeting = m
-                                    }
+                                    },
+                                    onCall: { Task { await call(m) } }
                                 )
                             }
                         }
@@ -170,6 +181,22 @@ struct MeetingsView: View {
         defer { controlBusyId = nil }
         do {
             try await state.api.openMeeting(token: session.token, meetingId: m.id)
+            await load()
+        } catch {
+            joinError = error.localizedDescription
+        }
+    }
+
+    /// S44. Hali kirmaganlarni majlisga chaqirish.
+    @MainActor
+    private func call(_ m: MeetingItem) async {
+        joinError = nil
+        calledNote = nil
+        controlBusyId = m.id
+        defer { controlBusyId = nil }
+        do {
+            let n = try await state.api.nudgeMeeting(token: session.token, meetingId: m.id)
+            calledNote = "Chaqiruv yuborildi: \(n) ta xodim"
             await load()
         } catch {
             joinError = error.localizedDescription
@@ -221,6 +248,7 @@ struct MeetingRow: View {
     let onJoin: () -> Void
     let onOpen: () -> Void
     let onClose: () -> Void
+    let onCall: () -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -286,6 +314,26 @@ struct MeetingRow: View {
                 }
                 .disabled(!enabled)
                 .padding(.top, 12)
+            }
+
+            // S44: kechikayotganlarni chaqirish — hali kirmaganlar bo'lsa.
+            if meeting.mayClose && meeting.pending > 0 {
+                Button(action: onCall) {
+                    HStack(spacing: 8) {
+                        Image(systemName: "bell.badge.fill")
+                        Text("Majlisga chaqirish (\(meeting.pending))")
+                    }
+                    .font(.subheadline.weight(.semibold))
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 10)
+                    .foregroundColor(Theme.accent)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 10)
+                            .stroke(Theme.accent.opacity(0.55), lineWidth: 1)
+                    )
+                }
+                .disabled(!enabled)
+                .padding(.top, 8)
             }
         }
         .padding(16)

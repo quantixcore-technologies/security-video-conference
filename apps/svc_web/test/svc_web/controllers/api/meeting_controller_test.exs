@@ -195,4 +195,77 @@ defmodule SvcWeb.API.MeetingControllerTest do
       assert body["meetings"] == []
     end
   end
+
+  describe "nudge (S44)" do
+    test "зовёт неявившихся и отдаёт их число", %{
+      conn: conn,
+      org: org,
+      user: user,
+      meeting: meeting
+    } do
+      {:ok, emp} = mk(org, "late-api", :employee)
+      Attendance.add_invitee(meeting, emp)
+
+      body =
+        conn |> login(user) |> post(~p"/api/meetings/#{meeting.id}/nudge") |> json_response(200)
+
+      assert body["called"] == 1
+      assert [%{"full_name" => name}] = body["users"]
+      assert name == emp.full_name
+      assert [note] = Svc.Notifications.list_for_user(emp.id)
+      assert note.title =~ "Majlisga chaqiruv"
+    end
+
+    test "повторный вызов подряд → 429", %{conn: conn, org: org, user: user, meeting: meeting} do
+      {:ok, emp} = mk(org, "late-429", :employee)
+      Attendance.add_invitee(meeting, emp)
+
+      conn |> login(user) |> post(~p"/api/meetings/#{meeting.id}/nudge") |> json_response(200)
+
+      again = build_conn() |> login(user) |> post(~p"/api/meetings/#{meeting.id}/nudge")
+      assert json_response(again, 429)["error"] == "too_soon"
+    end
+
+    test "приглашённый сотрудник звать не может → 403", %{
+      conn: conn,
+      org: org,
+      meeting: meeting
+    } do
+      {:ok, emp} = mk(org, "emp-nudge", :employee)
+      Attendance.add_invitee(meeting, emp)
+
+      conn = conn |> login(emp) |> post(~p"/api/meetings/#{meeting.id}/nudge")
+      assert json_response(conn, 403)["error"] == "forbidden"
+    end
+
+    test "список встреч показывает, скольких ещё можно позвать", %{
+      conn: conn,
+      org: org,
+      user: user,
+      meeting: meeting
+    } do
+      {:ok, emp} = mk(org, "pending-count", :employee)
+      Attendance.add_invitee(meeting, emp)
+
+      body = conn |> login(user) |> get(~p"/api/meetings") |> json_response(200)
+      assert [m] = body["meetings"]
+      assert m["pending_count"] == 1
+    end
+
+    test "создание встречи принимает время начала", %{conn: conn, user: user} do
+      body =
+        conn
+        |> login(user)
+        |> post(~p"/api/meetings", %{
+          "title" => "Planerka",
+          "purpose" => "Hisobot",
+          "scheduled_start" => "2026-10-01T09:30"
+        })
+        |> json_response(201)
+
+      created = Meetings.get_meeting!(user.org_id, body["id"])
+      assert created.purpose == "Hisobot"
+      assert Calendar.strftime(created.scheduled_start, "%Y-%m-%d %H:%M") == "2026-10-01 09:30"
+    end
+  end
 end

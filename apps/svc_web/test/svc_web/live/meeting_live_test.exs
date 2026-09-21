@@ -176,4 +176,51 @@ defmodule SvcWeb.MeetingLiveTest do
       assert closed.summary == "Решено ускорить отчёт"
     end
   end
+
+  describe "«позвать на встречу» (S44)" do
+    setup %{mgr: mgr, emp: emp} do
+      {:ok, meeting} =
+        Meetings.create_meeting(mgr, %{
+          title: "Planerka",
+          scheduled_start: DateTime.add(DateTime.utc_now(), 900, :second)
+        })
+
+      {:ok, _} = Attendance.add_invitee(meeting, emp)
+      %{meeting: meeting}
+    end
+
+    test "организатор видит кнопку и зовёт опаздывающего", %{
+      conn: conn,
+      mgr: mgr,
+      emp: emp,
+      meeting: meeting
+    } do
+      {:ok, lv, html} = conn |> login(mgr) |> live(~p"/admin/meetings/#{meeting.id}")
+      assert html =~ "Позвать всех"
+
+      html = lv |> element("button[phx-click=call_all]") |> render_click()
+      assert html =~ "Приглашение отправлено"
+
+      assert [note] = Notifications.list_for_user(emp.id)
+      assert note.kind == :reminder
+      assert note.meeting_id == meeting.id
+    end
+
+    test "того, кто уже в звонке, звать нечем", %{
+      conn: conn,
+      mgr: mgr,
+      emp: emp,
+      meeting: meeting
+    } do
+      Attendance.record_join(meeting, emp.id, DateTime.utc_now())
+
+      {:ok, _lv, html} = conn |> login(mgr) |> live(~p"/admin/meetings/#{meeting.id}")
+      refute html =~ "Позвать всех"
+    end
+
+    test "приглашённый сотрудник кнопки не видит", %{conn: conn, emp: emp, meeting: meeting} do
+      {:ok, _lv, html} = conn |> login(emp) |> live(~p"/admin/meetings/#{meeting.id}")
+      refute html =~ "phx-click=\"call_all\""
+    end
+  end
 end

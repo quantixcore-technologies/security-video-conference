@@ -41,6 +41,28 @@ defmodule Svc.Attendance do
     )
   end
 
+  @doc """
+  Приглашённые, которые ещё НЕ заходили в звонок (S44).
+
+  Именно их зовут кнопкой «позвать на встречу»: тот, кто уже в комнате,
+  уведомление получать не должен. Опаздывающий по определению тот, у кого
+  нет записи посещаемости со временем входа.
+  """
+  def pending_invitees(meeting_id) do
+    joined =
+      from r in Record,
+        where: r.meeting_id == ^meeting_id and not is_nil(r.joined_at),
+        select: r.user_id
+
+    Repo.all(
+      from i in Invitee,
+        where: i.meeting_id == ^meeting_id and i.user_id not in subquery(joined),
+        join: u in assoc(i, :user),
+        preload: [user: u],
+        order_by: u.full_name
+    )
+  end
+
   @doc "Приглашение конкретного пользователя на встречу (или nil)."
   def get_invitee(meeting_id, user_id) do
     Repo.get_by(Invitee, meeting_id: meeting_id, user_id: user_id)

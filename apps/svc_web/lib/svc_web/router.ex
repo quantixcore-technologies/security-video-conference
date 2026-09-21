@@ -71,6 +71,9 @@ defmodule SvcWeb.Router do
     get "/meetings/history", MeetingController, :history
     post "/meetings/:id/open", MeetingController, :open
     post "/meetings/:id/close", MeetingController, :close
+
+    # S44: кечикаётганларни «мажлисга келинг» деб чақириш
+    post "/meetings/:id/nudge", MeetingController, :nudge
     post "/capture-events", CaptureController, :create
 
     # S41: обмен документами в мобильных клиентах (от кого, что делать, срок).

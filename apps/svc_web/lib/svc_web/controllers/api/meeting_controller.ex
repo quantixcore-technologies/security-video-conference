@@ -11,7 +11,16 @@ defmodule SvcWeb.API.MeetingController do
       for m <- Meetings.list_visible_meetings(user) do
         m
         |> meeting_json(user)
-        |> Map.merge(%{type: m.type, scheduled_end: m.scheduled_end})
+        |> Map.merge(%{
+          type: m.type,
+          scheduled_end: m.scheduled_end,
+          # Кого ещё можно позвать — чтобы клиент показал кнопку с числом.
+          pending_count:
+            if(m.status != :ended and Meetings.can_close?(user, m),
+              do: length(Meetings.callable_participants(m, user)),
+              else: 0
+            )
+        })
       end
 
     json(conn, %{meetings: meetings, can_organize: Meetings.can_organize?(user)})
@@ -135,6 +144,39 @@ defmodule SvcWeb.API.MeetingController do
           conn
           |> put_status(:unprocessable_entity)
           |> json(%{error: "invalid", details: changeset_errors(cs)})
+
+        {:error, reason} ->
+          conn |> put_status(:conflict) |> json(%{error: to_string(reason)})
+      end
+    else
+      _ -> conn |> put_status(:not_found) |> json(%{error: "meeting_not_found"})
+    end
+  end
+
+  @doc """
+  «Позвать на встречу» (S44) — уведомление тем, кто ещё не зашёл в звонок.
+
+  `user_ids` (необязательно) — позвать конкретных людей; без него зовём всех
+  неявившихся. Повторный вызов в течение минуты → 429 (защита от спама).
+  """
+  def nudge(conn, %{"id" => id} = params) do
+    user = conn.assigns.current_user
+    ids = params["user_ids"]
+
+    with meeting when not is_nil(meeting) <- fetch_meeting(user.org_id, id),
+         true <- Meetings.can_view_meeting?(user, meeting) do
+      case Meetings.call_participants(user, meeting, user_ids: ids) do
+        {:ok, called} ->
+          json(conn, %{
+            called: length(called),
+            users: Enum.map(called, &%{id: &1.id, full_name: &1.full_name})
+          })
+
+        {:error, :unauthorized} ->
+          conn |> put_status(:forbidden) |> json(%{error: "forbidden"})
+
+        {:error, :too_soon} ->
+          conn |> put_status(:too_many_requests) |> json(%{error: "too_soon"})
 
         {:error, reason} ->
           conn |> put_status(:conflict) |> json(%{error: to_string(reason)})

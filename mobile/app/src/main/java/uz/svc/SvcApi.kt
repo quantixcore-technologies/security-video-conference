@@ -161,17 +161,25 @@ class SvcApi(private val baseUrl: String) {
     }
 
     /** Majlis yaratish (POST /api/meetings) — super_admin/manager. Yaratilgan majlis id. */
+    /**
+     * @param scheduledStart "yyyy-MM-ddTHH:mm" — MAHALLIY devor-soati.
+     * Server rejalashtirilgan vaqtni shu ko'rinishda saqlaydi (veb ham
+     * datetime-local dan xuddi shunday yuboradi), shuning uchun mintaqa
+     * qo'shmaymiz — aks holda majlis 5 soatga surilib ko'rinadi.
+     */
     suspend fun createMeeting(
         token: String,
         title: String,
         inviteeIds: List<Long>,
-        purpose: String? = null
+        purpose: String? = null,
+        scheduledStart: String? = null
     ): Long =
         withContext(Dispatchers.IO) {
             val payload = JSONObject()
                 .put("title", title)
                 .put("invitee_ids", JSONArray(inviteeIds))
             purpose?.takeIf { it.isNotBlank() }?.let { payload.put("purpose", it) }
+            scheduledStart?.takeIf { it.isNotBlank() }?.let { payload.put("scheduled_start", it) }
 
             val req = Request.Builder()
                 .url("$baseUrl/api/meetings")
@@ -402,7 +410,9 @@ class SvcApi(private val baseUrl: String) {
         val endedByName: String? = null,
         // Server hisoblaydi: tugmani kimga ko'rsatish (server baribir qayta tekshiradi).
         val canOpen: Boolean = false,
-        val canClose: Boolean = false
+        val canClose: Boolean = false,
+        // S44: hali majlisga kirmagan taklif qilinganlar soni (chaqirish tugmasi uchun).
+        val pendingCount: Int = 0
     )
 
     private fun parseMeeting(m: JSONObject) = MeetingItem(
@@ -420,7 +430,8 @@ class SvcApi(private val baseUrl: String) {
         startedByName = m.optStringOrNull("started_by_name"),
         endedByName = m.optStringOrNull("ended_by_name"),
         canOpen = m.optBoolean("can_open"),
-        canClose = m.optBoolean("can_close")
+        canClose = m.optBoolean("can_close"),
+        pendingCount = m.optInt("pending_count")
     )
 
     /** Список встреч организации пользователя — экран после логина (без ввода ID). */
@@ -485,6 +496,35 @@ class SvcApi(private val baseUrl: String) {
         "meeting_not_found" -> "Majlis topilmadi"
         else -> "Amal bajarilmadi ($code)"
     }
+
+    /**
+     * S44. Kechikayotganlarni majlisga chaqirish: hali qo'ng'iroqqa kirmagan
+     * xodimlarga bildirishnoma boradi. Qaytaradi — nechta odam chaqirildi.
+     */
+    suspend fun nudgeMeeting(token: String, meetingId: Long): Int =
+        withContext(Dispatchers.IO) {
+            val req = Request.Builder()
+                .url("$baseUrl/api/meetings/$meetingId/nudge")
+                .addHeader("Authorization", "Bearer $token")
+                .post(JSONObject().toString().toRequestBody(json))
+                .build()
+
+            http.newCall(req).execute().use { resp ->
+                val text = resp.body?.string().orEmpty()
+                if (!resp.isSuccessful) {
+                    val err = runCatching { JSONObject(text).optString("error") }.getOrNull()
+                    error(
+                        when (err) {
+                            "too_soon" -> "Chaqiruv endigina yuborildi — bir daqiqa kuting"
+                            "nobody_to_call" -> "Hamma allaqachon majlisda"
+                            "forbidden" -> "Chaqirishga ruxsatingiz yo'q"
+                            else -> "Chaqiruv yuborilmadi (${resp.code})"
+                        }
+                    )
+                }
+                JSONObject(text).optInt("called")
+            }
+        }
 
     /** S43. Tugagan majlislar tarixi: qachondan qachongacha, nima uchun, kim ochib kim yopgan. */
     suspend fun meetingHistory(token: String): List<MeetingItem> =

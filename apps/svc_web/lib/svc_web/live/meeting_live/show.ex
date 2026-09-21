@@ -39,6 +39,7 @@ defmodule SvcWeb.MeetingLive.Show do
      |> assign(:records, records)
      |> assign(:summary, Enum.frequencies_by(records, & &1.status))
      |> assign(:roster, Attendance.list_invitees_with_users(meeting.id))
+     |> assign(:pending_ids, pending_ids(meeting, actor))
      |> assign(:my_invitee, Attendance.get_invitee(meeting.id, actor.id))
      |> assign_form(socket.assigns.live_action, meeting)}
   rescue
@@ -175,6 +176,11 @@ defmodule SvcWeb.MeetingLive.Show do
     end
   end
 
+  # S44. «Позвать на встречу»: уведомление тем, кто ещё не зашёл в звонок.
+  def handle_event("call_all", _params, socket), do: call(socket, nil)
+
+  def handle_event("call_one", %{"user-id" => uid}, socket), do: call(socket, [uid])
+
   def handle_event("create_task", %{"task" => params}, socket) do
     actor = socket.assigns.current_user
     meeting = socket.assigns.meeting
@@ -203,11 +209,50 @@ defmodule SvcWeb.MeetingLive.Show do
   defp drop_blank_assignee(%{"assignee_id" => ""} = params), do: Map.delete(params, "assignee_id")
   defp drop_blank_assignee(params), do: params
 
+  defp call(socket, ids) do
+    actor = socket.assigns.current_user
+    meeting = socket.assigns.meeting
+
+    case Meetings.call_participants(actor, meeting, user_ids: ids) do
+      {:ok, called} ->
+        {:noreply,
+         socket
+         |> assign(:pending_ids, pending_ids(meeting, actor))
+         |> put_flash(
+           :info,
+           gettext("Приглашение отправлено: %{count}", count: length(called))
+         )}
+
+      {:error, :nobody_to_call} ->
+        {:noreply, put_flash(socket, :error, gettext("Все приглашённые уже в звонке."))}
+
+      {:error, :too_soon} ->
+        {:noreply,
+         put_flash(socket, :error, gettext("Приглашение уже отправлено — подождите минуту."))}
+
+      {:error, :already_ended} ->
+        {:noreply, put_flash(socket, :error, gettext("Встреча завершена."))}
+
+      {:error, :unauthorized} ->
+        {:noreply, put_flash(socket, :error, gettext("Недостаточно прав."))}
+    end
+  end
+
+  # Кого ещё можно позвать — по id, чтобы решать это прямо в списке ростера.
+  defp pending_ids(meeting, actor) do
+    if meeting.status == :ended do
+      MapSet.new()
+    else
+      meeting |> Meetings.callable_participants(actor) |> MapSet.new(& &1.id)
+    end
+  end
+
   defp assign_meeting(socket, meeting, actor) do
     socket
     |> assign(:meeting, meeting)
     |> assign(:can_open, Meetings.can_control?(actor, meeting))
     |> assign(:can_close, Meetings.can_close?(actor, meeting))
+    |> assign(:pending_ids, pending_ids(meeting, actor))
   end
 
   defp notify_organizer_rsvp(meeting, actor, status) do
@@ -611,18 +656,45 @@ defmodule SvcWeb.MeetingLive.Show do
         :if={@live_action == :show and @can_organize and @roster != []}
         class="mt-6 rounded-xl border border-base-300 bg-base-100/50 overflow-hidden"
       >
-        <div class="px-5 py-3 border-b border-base-300 flex items-center gap-2">
+        <div class="px-5 py-3 border-b border-base-300 flex items-center gap-2 flex-wrap">
           <.icon name="hero-user-group" class="size-4 text-base-content/45" />
           <span class="text-sm font-medium">{gettext("Приглашённые · ответы (RSVP)")}</span>
+          <span class="flex-1"></span>
+          <button
+            :if={@can_close and MapSet.size(@pending_ids) > 0}
+            phx-click="call_all"
+            class="btn btn-primary btn-xs gap-1.5"
+            title={gettext("Отправить уведомление всем, кто ещё не в звонке")}
+          >
+            <.icon name="hero-bell-alert" class="size-3.5" />
+            {gettext("Позвать всех")} ({MapSet.size(@pending_ids)})
+          </button>
         </div>
         <ul class="divide-y divide-base-300/50 text-sm">
           <li
             :for={inv <- @roster}
-            class="px-5 py-2.5 flex items-center justify-between hover:bg-base-200/40 transition"
+            class="px-5 py-2.5 flex items-center justify-between gap-3 hover:bg-base-200/40 transition"
           >
             <span class="font-medium">{inv.user.full_name}</span>
-            <span class={"px-2.5 py-0.5 rounded-full text-xs font-medium #{rsvp_class(inv.rsvp_status)}"}>
-              {rsvp_label(inv.rsvp_status)}
+            <span class="flex items-center gap-2">
+              <span
+                :if={not MapSet.member?(@pending_ids, inv.user_id) and @meeting.status != :planned}
+                class="text-xs text-success inline-flex items-center gap-1"
+              >
+                <.icon name="hero-check-circle" class="size-3.5" /> {gettext("в звонке")}
+              </span>
+              <button
+                :if={@can_close and MapSet.member?(@pending_ids, inv.user_id)}
+                phx-click="call_one"
+                phx-value-user-id={inv.user_id}
+                class="btn btn-ghost btn-xs gap-1"
+                title={gettext("Позвать на встречу")}
+              >
+                <.icon name="hero-bell-alert" class="size-3.5" /> {gettext("Позвать")}
+              </button>
+              <span class={"px-2.5 py-0.5 rounded-full text-xs font-medium #{rsvp_class(inv.rsvp_status)}"}>
+                {rsvp_label(inv.rsvp_status)}
+              </span>
             </span>
           </li>
         </ul>

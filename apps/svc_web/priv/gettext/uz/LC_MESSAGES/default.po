@@ -97,7 +97,6 @@ msgstr "Profil"
 
 #: lib/svc_web/components/layouts.ex:422
 #: lib/svc_web/controllers/api/assistant_controller.ex:93
-#: lib/svc_web/controllers/api/assistant_controller.ex:93
 #: lib/svc_web/live/profile_live.ex:328
 #: lib/svc_web/live/user_live/index.ex:183
 #: lib/svc_web/live/user_live/show.ex:128
@@ -107,8 +106,7 @@ msgstr "Rahbar"
 
 #: lib/svc_web/components/layouts.ex:423
 #: lib/svc_web/controllers/api/assistant_controller.ex:94
-#: lib/svc_web/controllers/api/assistant_controller.ex:94
-#: lib/svc_web/live/meeting_live/show.ex:591
+#: lib/svc_web/live/meeting_live/show.ex:636
 #: lib/svc_web/live/profile_live.ex:329
 #: lib/svc_web/live/user_live/index.ex:184
 #: lib/svc_web/live/user_live/index.ex:208
@@ -128,7 +126,6 @@ msgid "Сотрудники"
 msgstr "Xodimlar"
 
 #: lib/svc_web/components/layouts.ex:420
-#: lib/svc_web/controllers/api/assistant_controller.ex:91
 #: lib/svc_web/controllers/api/assistant_controller.ex:91
 #: lib/svc_web/live/profile_live.ex:326
 #: lib/svc_web/live/user_live/index.ex:181
@@ -155,7 +152,7 @@ msgstr "Bildirishnomalar"
 msgid "Язык"
 msgstr "Til"
 
-#: lib/svc_web/live/meeting_live/show.ex:695
+#: lib/svc_web/live/meeting_live/show.ex:765
 #, elixir-autogen, elixir-format
 msgid "%{count} мин"
 msgstr "%{count} daq"
@@ -201,7 +198,6 @@ msgid "Август"
 msgstr "Avgust"
 
 #: lib/svc_web/controllers/api/assistant_controller.ex:92
-#: lib/svc_web/controllers/api/assistant_controller.ex:92
 #: lib/svc_web/live/profile_live.ex:327
 #: lib/svc_web/live/user_live/index.ex:182
 #: lib/svc_web/live/user_live/show.ex:127
@@ -238,7 +234,7 @@ msgstr "Aprel"
 msgid "Без записи"
 msgstr "Yozuvsiz"
 
-#: lib/svc_web/live/meeting_live/show.ex:715
+#: lib/svc_web/live/meeting_live/show.ex:785
 #, elixir-autogen, elixir-format
 msgid "Без ответа"
 msgstr "Javobsiz"
@@ -258,7 +254,7 @@ msgstr "Proxy'ni bloklash"
 msgid "Блокировка"
 msgstr "Bloklash"
 
-#: lib/svc_web/live/meeting_live/show.ex:476
+#: lib/svc_web/live/meeting_live/show.ex:521
 #, elixir-autogen, elixir-format
 msgid "Будет привязано к «%{title}» и появится на Kanban-доске."
 msgstr "«%{title}» ga bog‘lanadi va Kanban doskasida paydo bo‘ladi."
@@ -284,7 +280,7 @@ msgstr "Efirda · kamerasiz"
 msgid "Важность"
 msgstr "Muhimlik"
 
-#: lib/svc_web/live/meeting_live/show.ex:169
+#: lib/svc_web/live/meeting_live/show.ex:170
 #, elixir-autogen, elixir-format
 msgid "Ваш ответ записан."
 msgstr "Javobingiz qayd etildi."
@@ -314,13 +310,13 @@ msgstr "2FA yoqildi"
 msgid "Включить 2FA"
 msgstr "2FA-ni yoqish"
 
-#: lib/svc_web/live/meeting_live/show.ex:442
+#: lib/svc_web/live/meeting_live/show.ex:487
 #, elixir-autogen, elixir-format
 msgid "Водяной знак (watermark)"
 msgstr "Suv belgisi (watermark)"
 
-#: lib/svc_web/live/meeting_live/show.ex:550
-#: lib/svc_web/live/meeting_live/show.ex:714
+#: lib/svc_web/live/meeting_live/show.ex:595
+#: lib/svc_web/live/meeting_live/show.ex:784
 #, elixir-autogen, elixir-format
 msgid "Возможно"
 msgstr "Ehtimol"
@@ -330,7 +326,7 @@ msgstr "Ehtimol"
 msgid "Войти"
 msgstr "Kirish"
 
-#: lib/svc_web/live/meeting_live/show.ex:328
+#: lib/svc_web/live/meeting_live/show.ex:373
 #, elixir-autogen, elixir-format
 msgid "Войти в звонок"
 msgstr "Qo‘ng‘iroqqa kirish"
@@ -356,7 +352,7 @@ msgstr "Vaqt"
 msgid "Вс"
 msgstr "Ya"
 
-#: lib/svc_web/live/meeting_live/show.ex:256
+#: lib/svc_web/live/meeting_live/show.ex:301
 #, elixir-autogen, elixir-format
 msgid "Все встречи"
 msgstr "Barcha uchrashuvlar"
@@ -391,23 +387,24 @@ msgstr "Uchrashuv"
 msgid "Встреча «%{title}» создана."
 msgstr "«%{title}» uchrashuvi yaratildi."
 
-#: lib/svc_web/live/meeting_live/show.ex:134
+#: lib/svc_web/live/meeting_live/show.ex:135
+#: lib/svc_web/live/meeting_live/show.ex:234
 #, elixir-autogen, elixir-format
 msgid "Встреча завершена."
 msgstr "Uchrashuv yakunlandi."
 
 #: lib/svc_web/controllers/meeting_controller.ex:22
-#: lib/svc_web/live/meeting_live/show.ex:48
+#: lib/svc_web/live/meeting_live/show.ex:49
 #, elixir-autogen, elixir-format
 msgid "Встреча не найдена."
 msgstr "Uchrashuv topilmadi."
 
-#: lib/svc_web/live/meeting_live/show.ex:84
+#: lib/svc_web/live/meeting_live/show.ex:85
 #, elixir-autogen, elixir-format
 msgid "Встреча обновлена."
 msgstr "Uchrashuv yangilandi."
 
-#: lib/svc_web/live/meeting_live/show.ex:221
+#: lib/svc_web/live/meeting_live/show.ex:266
 #, elixir-autogen, elixir-format
 msgid "Встреча: %{title}"
 msgstr "Uchrashuv: %{title}"
@@ -417,7 +414,7 @@ msgstr "Uchrashuv: %{title}"
 msgid "Вт"
 msgstr "Se"
 
-#: lib/svc_web/live/meeting_live/show.ex:593
+#: lib/svc_web/live/meeting_live/show.ex:638
 #, elixir-autogen, elixir-format
 msgid "Вход"
 msgstr "Kirish"
@@ -444,17 +441,17 @@ msgstr "Siz"
 msgid "Вы вышли"
 msgstr "Siz chiqdingiz"
 
-#: lib/svc_web/live/meeting_live/show.ex:174
+#: lib/svc_web/live/meeting_live/show.ex:175
 #, elixir-autogen, elixir-format
 msgid "Вы не в списке приглашённых."
 msgstr "Siz taklif qilinganlar ro‘yxatida yo‘qsiz."
 
-#: lib/svc_web/live/meeting_live/show.ex:524
+#: lib/svc_web/live/meeting_live/show.ex:569
 #, elixir-autogen, elixir-format
 msgid "Вы приглашены · ваш ответ:"
 msgstr "Siz taklif qilingansiz · javobingiz:"
 
-#: lib/svc_web/live/meeting_live/show.ex:240
+#: lib/svc_web/live/meeting_live/show.ex:285
 #, elixir-autogen, elixir-format
 msgid "Выгнать"
 msgstr "Chiqarib yuborish"
@@ -476,14 +473,14 @@ msgstr "O‘chirilgan"
 msgid "Выполнено"
 msgstr "Bajarildi"
 
-#: lib/svc_web/live/meeting_live/show.ex:501
+#: lib/svc_web/live/meeting_live/show.ex:546
 #: lib/svc_web/live/task_live/index.ex:341
 #: lib/svc_web/live/task_live/index.ex:347
 #, elixir-autogen, elixir-format
 msgid "Высокий"
 msgstr "Yuqori"
 
-#: lib/svc_web/live/meeting_live/show.ex:594
+#: lib/svc_web/live/meeting_live/show.ex:639
 #, elixir-autogen, elixir-format
 msgid "Выход"
 msgstr "Chiqish"
@@ -551,7 +548,7 @@ msgstr "Aniqlashlar native klientdan keladi (Tauri/mobil). Veb qatlami watermark
 "Aniqlashlar nativ mijozdan (Tauri/mobile) keladi. Web-qatlam watermark bilan"
 " himoyalangan."
 
-#: lib/svc_web/live/meeting_live/show.ex:595
+#: lib/svc_web/live/meeting_live/show.ex:640
 #, elixir-autogen, elixir-format
 msgid "Длит."
 msgstr "Davomiy."
@@ -587,7 +584,7 @@ msgstr "Kontentni ushlab olish jurnali"
 msgid "Журнал попыток захвата контента (E5)"
 msgstr "Kontentni ushlab olishga urinishlar jurnali (E5)"
 
-#: lib/svc_web/live/meeting_live/show.ex:579
+#: lib/svc_web/live/meeting_live/show.ex:624
 #, elixir-autogen, elixir-format
 msgid "Журнал посещаемости"
 msgstr "Davomat jurnali"
@@ -599,7 +596,7 @@ msgstr "Bloklangan"
 
 #: lib/svc_web/live/meeting_live/index.ex:227
 #: lib/svc_web/live/meeting_live/index.ex:350
-#: lib/svc_web/live/meeting_live/show.ex:702
+#: lib/svc_web/live/meeting_live/show.ex:772
 #, elixir-autogen, elixir-format
 msgid "Завершена"
 msgstr "Yakunlangan"
@@ -609,14 +606,14 @@ msgstr "Yakunlangan"
 msgid "Завершена встреча"
 msgstr "Uchrashuv yakunlandi"
 
-#: lib/svc_web/live/meeting_live/show.ex:583
+#: lib/svc_web/live/meeting_live/show.ex:628
 #, elixir-autogen, elixir-format
 msgid "Записей пока нет"
 msgstr "Hozircha yozuvlar yo‘q"
 
 #: lib/svc_web/live/meeting_live/index.ex:275
 #: lib/svc_web/live/meeting_live/index.ex:367
-#: lib/svc_web/live/meeting_live/show.ex:435
+#: lib/svc_web/live/meeting_live/show.ex:480
 #, elixir-autogen, elixir-format
 msgid "Запись"
 msgstr "Yozib olish"
@@ -633,7 +630,7 @@ msgstr "Ekran yozuvi"
 
 #: lib/svc_web/live/meeting_live/index.ex:225
 #: lib/svc_web/live/meeting_live/index.ex:346
-#: lib/svc_web/live/meeting_live/show.ex:700
+#: lib/svc_web/live/meeting_live/show.ex:770
 #, elixir-autogen, elixir-format
 msgid "Запланирована"
 msgstr "Rejalashtirilgan"
@@ -665,7 +662,7 @@ msgstr "Assalomu alaykum, %{name}"
 
 #: lib/svc_web/live/meeting_live/index.ex:226
 #: lib/svc_web/live/meeting_live/index.ex:348
-#: lib/svc_web/live/meeting_live/show.ex:701
+#: lib/svc_web/live/meeting_live/show.ex:771
 #, elixir-autogen, elixir-format
 msgid "Идёт"
 msgstr "Davom etmoqda"
@@ -680,7 +677,7 @@ msgstr "Uchrashuv o‘zgartirildi"
 msgid "Изменение"
 msgstr "O‘zgarish"
 
-#: lib/svc_web/live/meeting_live/show.ex:310
+#: lib/svc_web/live/meeting_live/show.ex:355
 #: lib/svc_web/live/user_live/show.ex:182
 #, elixir-autogen, elixir-format
 msgid "Изменить"
@@ -696,7 +693,7 @@ msgstr "Xodim o‘zgartirildi"
 msgid "Инфо"
 msgstr "Ma’lumot"
 
-#: lib/svc_web/live/meeting_live/show.ex:490
+#: lib/svc_web/live/meeting_live/show.ex:535
 #: lib/svc_web/live/task_live/index.ex:167
 #: lib/svc_web/live/task_live/index.ex:307
 #, elixir-autogen, elixir-format
@@ -745,7 +742,7 @@ msgid "Код из приложения-аутентификатора"
 msgstr "Autentifikator ilovasidagi kod"
 
 #: lib/svc_web/live/meeting_live/index.ex:270
-#: lib/svc_web/live/meeting_live/show.ex:430
+#: lib/svc_web/live/meeting_live/show.ex:475
 #, elixir-autogen, elixir-format
 msgid "Конец"
 msgstr "Tugashi"
@@ -810,7 +807,7 @@ msgstr "To‘liq ekran"
 #: lib/svc_web/live/document_live/index.ex:284
 #: lib/svc_web/live/meeting_live/index.ex:260
 #: lib/svc_web/live/meeting_live/index.ex:364
-#: lib/svc_web/live/meeting_live/show.ex:420
+#: lib/svc_web/live/meeting_live/show.ex:465
 #, elixir-autogen, elixir-format
 msgid "Название"
 msgstr "Nomi"
@@ -821,12 +818,12 @@ msgid "Напоминание"
 msgstr "Eslatma"
 
 #: lib/svc_web/live/meeting_live/index.ex:269
-#: lib/svc_web/live/meeting_live/show.ex:429
+#: lib/svc_web/live/meeting_live/show.ex:474
 #, elixir-autogen, elixir-format
 msgid "Начало"
 msgstr "Boshlanishi"
 
-#: lib/svc_web/live/meeting_live/show.ex:491
+#: lib/svc_web/live/meeting_live/show.ex:536
 #: lib/svc_web/live/task_live/index.ex:168
 #: lib/svc_web/live/task_live/index.ex:273
 #, elixir-autogen, elixir-format
@@ -838,8 +835,8 @@ msgstr "Tayinlanmagan"
 msgid "Не повторять"
 msgstr "Takrorlanmasin"
 
-#: lib/svc_web/live/meeting_live/show.ex:561
-#: lib/svc_web/live/meeting_live/show.ex:713
+#: lib/svc_web/live/meeting_live/show.ex:606
+#: lib/svc_web/live/meeting_live/show.ex:783
 #, elixir-autogen, elixir-format
 msgid "Не приду"
 msgstr "Bormayman"
@@ -849,7 +846,7 @@ msgstr "Bormayman"
 msgid "Не удалось сбросить пароль."
 msgstr "Parolni tiklab bo‘lmadi."
 
-#: lib/svc_web/live/meeting_live/show.ex:199
+#: lib/svc_web/live/meeting_live/show.ex:205
 #, elixir-autogen, elixir-format
 msgid "Не удалось создать поручение — проверьте название."
 msgstr "Topshiriqni yaratib bo‘lmadi — nomini tekshiring."
@@ -869,7 +866,7 @@ msgstr "Siyosatni saqlab bo‘lmadi."
 msgid "Неверный код. Попробуйте ещё раз."
 msgstr "Kod noto‘g‘ri. Yana urinib ko‘ring."
 
-#: lib/svc_web/live/meeting_live/show.ex:67
+#: lib/svc_web/live/meeting_live/show.ex:68
 #, elixir-autogen, elixir-format
 msgid "Недостаточно прав для постановки поручений."
 msgstr "Topshiriq berish uchun ruxsat yetarli emas."
@@ -895,6 +892,7 @@ msgid "Недостаточно прав для создания сотрудн�
 msgstr "Xodim yaratish uchun huquqlar yetarli emas."
 
 #: lib/svc_web/live/meeting_live/index.ex:101
+#: lib/svc_web/live/meeting_live/show.ex:237
 #: lib/svc_web/live/task_live/index.ex:70
 #: lib/svc_web/live/user_live/show.ex:51
 #, elixir-autogen, elixir-format
@@ -906,7 +904,7 @@ msgstr "Huquqlar yetarli emas."
 msgid "Непрочитанных: %{count}"
 msgstr "O‘qilmaganlar: %{count}"
 
-#: lib/svc_web/live/meeting_live/show.ex:231
+#: lib/svc_web/live/meeting_live/show.ex:276
 #, elixir-autogen, elixir-format
 msgid "Нет"
 msgstr "Yo‘q"
@@ -921,14 +919,14 @@ msgstr "Bu xodimga ruxsat yo‘q."
 msgid "Неудачный вход"
 msgstr "Muvaffaqiyatsiz kirish"
 
-#: lib/svc_web/live/meeting_live/show.ex:499
+#: lib/svc_web/live/meeting_live/show.ex:544
 #: lib/svc_web/live/task_live/index.ex:339
 #: lib/svc_web/live/task_live/index.ex:345
 #, elixir-autogen, elixir-format
 msgid "Низкий"
 msgstr "Past"
 
-#: lib/svc_web/live/meeting_live/show.ex:238
+#: lib/svc_web/live/meeting_live/show.ex:283
 #, elixir-autogen, elixir-format
 msgid "Ничего"
 msgstr "Hech narsa"
@@ -987,7 +985,7 @@ msgstr "Tashkilot va faoliyat sharhi"
 msgid "Обнаружен рекордер"
 msgstr "Rekorder aniqlandi"
 
-#: lib/svc_web/live/meeting_live/show.ex:500
+#: lib/svc_web/live/meeting_live/show.ex:545
 #: lib/svc_web/live/task_live/index.ex:340
 #: lib/svc_web/live/task_live/index.ex:346
 #, elixir-autogen, elixir-format
@@ -995,7 +993,7 @@ msgid "Обычный"
 msgstr "Oddiy"
 
 #: lib/svc_web/live/meeting_live/index.ex:222
-#: lib/svc_web/live/meeting_live/show.ex:233
+#: lib/svc_web/live/meeting_live/show.ex:278
 #, elixir-autogen, elixir-format
 msgid "Обязательно"
 msgstr "Majburiy"
@@ -1005,24 +1003,24 @@ msgstr "Majburiy"
 msgid "Октябрь"
 msgstr "Oktabr"
 
-#: lib/svc_web/live/meeting_live/show.ex:483
+#: lib/svc_web/live/meeting_live/show.ex:528
 #: lib/svc_web/live/task_live/index.ex:160
 #, elixir-autogen, elixir-format
 msgid "Описание (необязательно)"
 msgstr "Tavsif (ixtiyoriy)"
 
-#: lib/svc_web/live/meeting_live/show.ex:670
+#: lib/svc_web/live/meeting_live/show.ex:740
 #, elixir-autogen, elixir-format
 msgid "Опоздал"
 msgstr "Kechikdi"
 
-#: lib/svc_web/live/meeting_live/show.ex:568
+#: lib/svc_web/live/meeting_live/show.ex:613
 #, elixir-autogen, elixir-format
 msgid "Опоздали"
 msgstr "Kechikkanlar"
 
 #: lib/svc_web/live/meeting_live/index.ex:221
-#: lib/svc_web/live/meeting_live/show.ex:232
+#: lib/svc_web/live/meeting_live/show.ex:277
 #, elixir-autogen, elixir-format
 msgid "Опционально"
 msgstr "Ixtiyoriy"
@@ -1068,9 +1066,9 @@ msgid "Открыто"
 msgstr "Ochiq"
 
 #: lib/svc_web/live/meeting_live/index.ex:322
-#: lib/svc_web/live/meeting_live/show.ex:356
-#: lib/svc_web/live/meeting_live/show.ex:461
-#: lib/svc_web/live/meeting_live/show.ex:512
+#: lib/svc_web/live/meeting_live/show.ex:401
+#: lib/svc_web/live/meeting_live/show.ex:506
+#: lib/svc_web/live/meeting_live/show.ex:557
 #: lib/svc_web/live/notification_live.ex:119
 #: lib/svc_web/live/profile_live.ex:249
 #: lib/svc_web/live/task_live/index.ex:183
@@ -1092,12 +1090,12 @@ msgstr "QR kodni autentifikator ilovasida skanerlang yoki kalitni qo'lda kiritin
 "QR-kodni autentifikator ilovasida skanerlang yoki kalitni qo‘lda kiriting, "
 "so‘ng kod bilan tasdiqlang:"
 
-#: lib/svc_web/live/meeting_live/show.ex:672
+#: lib/svc_web/live/meeting_live/show.ex:742
 #, elixir-autogen, elixir-format
 msgid "Отсутствовал"
 msgstr "Kelmadi"
 
-#: lib/svc_web/live/meeting_live/show.ex:570
+#: lib/svc_web/live/meeting_live/show.ex:615
 #, elixir-autogen, elixir-format
 msgid "Отсутствовали"
 msgstr "Kelmaganlar"
@@ -1107,7 +1105,6 @@ msgstr "Kelmaganlar"
 msgid "Отчёт по исполнителям"
 msgstr "Ijrochilar bo‘yicha hisobot"
 
-#: lib/svc_web/controllers/api/assistant_controller.ex:95
 #: lib/svc_web/controllers/api/assistant_controller.ex:95
 #: lib/svc_web/live/profile_live.ex:330
 #: lib/svc_web/live/user_live/index.ex:185
@@ -1197,18 +1194,18 @@ msgstr "Nomi bo‘yicha qidirish"
 msgid "Покинуть звонок"
 msgstr "Qo‘ng‘iroqdan chiqish"
 
-#: lib/svc_web/live/meeting_live/show.ex:454
+#: lib/svc_web/live/meeting_live/show.ex:499
 #, elixir-autogen, elixir-format
 msgid "Порог опоздания (сек)"
 msgstr "Kechikish chegarasi (son)"
 
-#: lib/svc_web/live/meeting_live/show.ex:303
+#: lib/svc_web/live/meeting_live/show.ex:348
 #: lib/svc_web/live/task_live/index.ex:142
 #, elixir-autogen, elixir-format
 msgid "Поручение"
 msgstr "Topshiriq"
 
-#: lib/svc_web/live/meeting_live/show.ex:193
+#: lib/svc_web/live/meeting_live/show.ex:199
 #, elixir-autogen, elixir-format
 msgid "Поручение «%{title}» создано по итогам встречи."
 msgstr "«%{title}» topshirig‘i uchrashuv yakunlari bo‘yicha yaratildi."
@@ -1218,7 +1215,7 @@ msgstr "«%{title}» topshirig‘i uchrashuv yakunlari bo‘yicha yaratildi."
 msgid "Поручение «%{title}» создано."
 msgstr "«%{title}» topshirig‘i yaratildi."
 
-#: lib/svc_web/live/meeting_live/show.ex:473
+#: lib/svc_web/live/meeting_live/show.ex:518
 #: lib/svc_web/live/task_live/index.ex:260
 #, elixir-autogen, elixir-format
 msgid "Поручение по итогам встречи"
@@ -1230,12 +1227,12 @@ msgstr "Uchrashuv yakunlari bo‘yicha topshiriq"
 msgid "Последний вход"
 msgstr "Oxirgi kirish"
 
-#: lib/svc_web/live/meeting_live/show.ex:301
+#: lib/svc_web/live/meeting_live/show.ex:346
 #, elixir-autogen, elixir-format
 msgid "Поставить поручение по итогам встречи"
 msgstr "Uchrashuv yakunlari bo‘yicha topshiriq berish"
 
-#: lib/svc_web/live/meeting_live/show.ex:239
+#: lib/svc_web/live/meeting_live/show.ex:284
 #, elixir-autogen, elixir-format
 msgid "Предупредить"
 msgstr "Ogohlantirish"
@@ -1255,29 +1252,29 @@ msgstr "Taklif"
 msgid "Приглашение на встречу: %{title}"
 msgstr "Uchrashuvga taklif: %{title}"
 
-#: lib/svc_web/live/meeting_live/show.ex:616
+#: lib/svc_web/live/meeting_live/show.ex:661
 #, elixir-autogen, elixir-format
 msgid "Приглашённые · ответы (RSVP)"
 msgstr "Taklif qilinganlar · javoblar (RSVP)"
 
-#: lib/svc_web/live/meeting_live/show.ex:539
-#: lib/svc_web/live/meeting_live/show.ex:712
+#: lib/svc_web/live/meeting_live/show.ex:584
+#: lib/svc_web/live/meeting_live/show.ex:782
 #, elixir-autogen, elixir-format
 msgid "Приду"
 msgstr "Boraman"
 
-#: lib/svc_web/live/meeting_live/show.ex:497
+#: lib/svc_web/live/meeting_live/show.ex:542
 #: lib/svc_web/live/task_live/index.ex:174
 #, elixir-autogen, elixir-format
 msgid "Приоритет"
 msgstr "Ustuvorlik"
 
-#: lib/svc_web/live/meeting_live/show.ex:669
+#: lib/svc_web/live/meeting_live/show.ex:739
 #, elixir-autogen, elixir-format
 msgid "Присутствовал"
 msgstr "Ishtirok etdi"
 
-#: lib/svc_web/live/meeting_live/show.ex:567
+#: lib/svc_web/live/meeting_live/show.ex:612
 #, elixir-autogen, elixir-format
 msgid "Присутствовали"
 msgstr "Ishtirok etganlar"
@@ -1328,7 +1325,7 @@ msgstr "Ruxsat etilgan"
 msgid "Разрешённые страны (ISO)"
 msgstr "Ruxsat etilgan davlatlar (ISO)"
 
-#: lib/svc_web/live/meeting_live/show.ex:447
+#: lib/svc_web/live/meeting_live/show.ex:492
 #, elixir-autogen, elixir-format
 msgid "Реакция на захват"
 msgstr "Ekranni suratga olishga reaksiya"
@@ -1338,7 +1335,7 @@ msgstr "Ekranni suratga olishga reaksiya"
 msgid "Редактирование"
 msgstr "Tahrirlash"
 
-#: lib/svc_web/live/meeting_live/show.ex:415
+#: lib/svc_web/live/meeting_live/show.ex:460
 #, elixir-autogen, elixir-format
 msgid "Редактирование встречи"
 msgstr "Uchrashuvni tahrirlash"
@@ -1467,14 +1464,14 @@ msgstr "%{count} ta uchrashuvdan iborat seriya yaratildi."
 msgid "Создать"
 msgstr "Yaratish"
 
-#: lib/svc_web/live/meeting_live/show.ex:509
+#: lib/svc_web/live/meeting_live/show.ex:554
 #: lib/svc_web/live/task_live/index.ex:181
 #, elixir-autogen, elixir-format
 msgid "Создать поручение"
 msgstr "Topshiriq yaratish"
 
 #: lib/svc_web/live/meeting_live/index.ex:319
-#: lib/svc_web/live/meeting_live/show.ex:508
+#: lib/svc_web/live/meeting_live/show.ex:553
 #: lib/svc_web/live/task_live/index.ex:180
 #: lib/svc_web/live/user_live/index.ex:251
 #, elixir-autogen, elixir-format
@@ -1506,14 +1503,14 @@ msgstr "Xodim faolsizlantirildi."
 msgid "Сотрудник не найден."
 msgstr "Xodim topilmadi."
 
-#: lib/svc_web/live/meeting_live/show.ex:458
+#: lib/svc_web/live/meeting_live/show.ex:503
 #: lib/svc_web/live/security_live.ex:146
 #: lib/svc_web/live/user_live/show.ex:238
 #, elixir-autogen, elixir-format
 msgid "Сохранить"
 msgstr "Saqlash"
 
-#: lib/svc_web/live/meeting_live/show.ex:457
+#: lib/svc_web/live/meeting_live/show.ex:502
 #: lib/svc_web/live/user_live/show.ex:237
 #, elixir-autogen, elixir-format
 msgid "Сохраняем..."
@@ -1534,13 +1531,13 @@ msgstr "Ro‘yxat sizning rolingiz bilan cheklangan"
 msgid "Ср"
 msgstr "Ch"
 
-#: lib/svc_web/live/meeting_live/show.ex:505
+#: lib/svc_web/live/meeting_live/show.ex:550
 #: lib/svc_web/live/task_live/index.ex:177
 #, elixir-autogen, elixir-format
 msgid "Срок"
 msgstr "Muddat"
 
-#: lib/svc_web/live/meeting_live/show.ex:502
+#: lib/svc_web/live/meeting_live/show.ex:547
 #: lib/svc_web/live/task_live/index.ex:342
 #: lib/svc_web/live/task_live/index.ex:348
 #, elixir-autogen, elixir-format
@@ -1549,7 +1546,7 @@ msgstr "Shoshilinch"
 
 #: lib/svc_web/live/document_live/index.ex:288
 #: lib/svc_web/live/meeting_live/index.ex:366
-#: lib/svc_web/live/meeting_live/show.ex:592
+#: lib/svc_web/live/meeting_live/show.ex:637
 #: lib/svc_web/live/profile_live.ex:142
 #: lib/svc_web/live/user_live/index.ex:309
 #: lib/svc_web/live/user_live/show.ex:233
@@ -1641,12 +1638,12 @@ msgstr "Ishtirokchilar:"
 msgid "Учётные данные"
 msgstr "Hisob ma’lumotlari"
 
-#: lib/svc_web/live/meeting_live/show.ex:569
+#: lib/svc_web/live/meeting_live/show.ex:614
 #, elixir-autogen, elixir-format
 msgid "Ушли раньше"
 msgstr "Erta ketganlar"
 
-#: lib/svc_web/live/meeting_live/show.ex:671
+#: lib/svc_web/live/meeting_live/show.ex:741
 #, elixir-autogen, elixir-format
 msgid "Ушёл раньше"
 msgstr "Erta ketdi"
@@ -1683,13 +1680,13 @@ msgstr "Chat"
 msgid "Чт"
 msgstr "Pa"
 
-#: lib/svc_web/live/meeting_live/show.ex:479
+#: lib/svc_web/live/meeting_live/show.ex:524
 #: lib/svc_web/live/task_live/index.ex:156
 #, elixir-autogen, elixir-format
 msgid "Что нужно сделать"
 msgstr "Nima qilish kerak"
 
-#: lib/svc_web/live/meeting_live/show.ex:293
+#: lib/svc_web/live/meeting_live/show.ex:338
 #, elixir-autogen, elixir-format
 msgid "Экспорт в календарь (.ics)"
 msgstr "Kalendarga eksport (.ics)"
@@ -1724,12 +1721,12 @@ msgstr "tashkilotda jami"
 msgid "выключена"
 msgstr "o‘chirilgan"
 
-#: lib/svc_web/live/meeting_live/show.ex:285
+#: lib/svc_web/live/meeting_live/show.ex:330
 #, elixir-autogen, elixir-format
 msgid "да"
 msgstr "ha"
 
-#: lib/svc_web/live/meeting_live/show.ex:283
+#: lib/svc_web/live/meeting_live/show.ex:328
 #, elixir-autogen, elixir-format
 msgid "запись:"
 msgstr "yozib olish:"
@@ -1754,7 +1751,7 @@ msgstr "mikrofon"
 msgid "напр. 195.158.1.1"
 msgstr "masalan, 195.158.1.1"
 
-#: lib/svc_web/live/meeting_live/show.ex:284
+#: lib/svc_web/live/meeting_live/show.ex:329
 #, elixir-autogen, elixir-format
 msgid "нет"
 msgstr "yo‘q"
@@ -2027,79 +2024,79 @@ msgstr "muddati tugagan"
 msgid "отозван"
 msgstr "bekor qilingan"
 
-#: lib/svc_web/live/meeting_live/show.ex:693
+#: lib/svc_web/live/meeting_live/show.ex:763
 #, elixir-autogen, elixir-format
 msgid "%{count} сек"
 msgstr "%{count} soniya"
 
-#: lib/svc_web/live/meeting_live/show.ex:698
+#: lib/svc_web/live/meeting_live/show.ex:768
 #, elixir-autogen, elixir-format
 msgid "%{h} ч %{m} мин"
 msgstr "%{h} soat %{m} daqiqa"
 
-#: lib/svc_web/live/meeting_live/show.ex:145
+#: lib/svc_web/live/meeting_live/show.ex:146
 #, elixir-autogen, elixir-format
 msgid "Встреча не идёт."
 msgstr "Majlis hozir bormayapti."
 
-#: lib/svc_web/live/meeting_live/show.ex:104
+#: lib/svc_web/live/meeting_live/show.ex:105
 #, elixir-autogen, elixir-format
 msgid "Встреча открыта."
 msgstr "Majlis ochildi."
 
-#: lib/svc_web/live/meeting_live/show.ex:111
+#: lib/svc_web/live/meeting_live/show.ex:112
 #, elixir-autogen, elixir-format
 msgid "Встреча уже открыта или завершена."
 msgstr "Majlis allaqachon ochilgan yoki yakunlangan."
 
-#: lib/svc_web/live/meeting_live/show.ex:340
+#: lib/svc_web/live/meeting_live/show.ex:385
 #, elixir-autogen, elixir-format
 msgid "Завершение встречи"
 msgstr "Majlisni yakunlash"
 
-#: lib/svc_web/live/meeting_live/show.ex:391
+#: lib/svc_web/live/meeting_live/show.ex:436
 #, elixir-autogen, elixir-format
 msgid "Завершил встречу"
 msgstr "Majlisni yakunladi"
 
-#: lib/svc_web/live/meeting_live/show.ex:325
-#: lib/svc_web/live/meeting_live/show.ex:353
+#: lib/svc_web/live/meeting_live/show.ex:370
+#: lib/svc_web/live/meeting_live/show.ex:398
 #, elixir-autogen, elixir-format
 msgid "Завершить встречу"
 msgstr "Majlisni yakunlash"
 
-#: lib/svc_web/live/meeting_live/show.ex:141
+#: lib/svc_web/live/meeting_live/show.ex:142
 #, elixir-autogen, elixir-format
 msgid "Завершить встречу может тот, кто её открыл, или организатор."
 msgstr "Majlisni uni ochgan xodim yoki tashkilotchi yakunlay oladi."
 
 #: lib/svc_web/live/meeting_live/index.ex:266
-#: lib/svc_web/live/meeting_live/show.ex:426
+#: lib/svc_web/live/meeting_live/show.ex:471
 #, elixir-autogen, elixir-format
 msgid "Зачем собираемся — останется в истории встречи"
 msgstr "Nima uchun yig'ilamiz — majlis tarixida saqlanadi"
 
-#: lib/svc_web/live/meeting_live/show.ex:367
+#: lib/svc_web/live/meeting_live/show.ex:412
 #, elixir-autogen, elixir-format
 msgid "История встречи"
 msgstr "Majlis tarixi"
 
-#: lib/svc_web/live/meeting_live/show.ex:403
+#: lib/svc_web/live/meeting_live/show.ex:448
 #, elixir-autogen, elixir-format
 msgid "Итог"
 msgstr "Natija"
 
-#: lib/svc_web/live/meeting_live/show.ex:343
+#: lib/svc_web/live/meeting_live/show.ex:388
 #, elixir-autogen, elixir-format
 msgid "Итог останется в истории встречи. Поле можно оставить пустым."
 msgstr "Natija majlis tarixida saqlanadi. Maydonni bo'sh qoldirish mumkin."
 
-#: lib/svc_web/live/meeting_live/show.ex:318
+#: lib/svc_web/live/meeting_live/show.ex:363
 #, elixir-autogen, elixir-format
 msgid "Начать встречу"
 msgstr "Majlisni boshlash"
 
-#: lib/svc_web/live/meeting_live/show.ex:148
+#: lib/svc_web/live/meeting_live/show.ex:149
 #, elixir-autogen, elixir-format
 msgid "Не удалось завершить встречу."
 msgstr "Majlisni yakunlab bo'lmadi."
@@ -2109,24 +2106,24 @@ msgstr "Majlisni yakunlab bo'lmadi."
 msgid "Ознакомиться и подписать до пятницы"
 msgstr "Juma kunigacha tanishib, imzolash"
 
-#: lib/svc_web/live/meeting_live/show.ex:385
+#: lib/svc_web/live/meeting_live/show.ex:430
 #, elixir-autogen, elixir-format
 msgid "Открыл встречу"
 msgstr "Majlisni ochdi"
 
-#: lib/svc_web/live/meeting_live/show.ex:108
+#: lib/svc_web/live/meeting_live/show.ex:109
 #, elixir-autogen, elixir-format
 msgid "Открыть встречу может только организатор."
 msgstr "Majlisni faqat tashkilotchi ocha oladi."
 
-#: lib/svc_web/live/meeting_live/show.ex:316
+#: lib/svc_web/live/meeting_live/show.ex:361
 #, elixir-autogen, elixir-format
 msgid "Открыть встречу — будет записано, кто и когда её начал"
 msgstr "Majlisni ochish — kim va qachon boshlagani yozib qo'yiladi"
 
 #: lib/svc_web/live/meeting_live/index.ex:265
-#: lib/svc_web/live/meeting_live/show.ex:397
-#: lib/svc_web/live/meeting_live/show.ex:425
+#: lib/svc_web/live/meeting_live/show.ex:442
+#: lib/svc_web/live/meeting_live/show.ex:470
 #, elixir-autogen, elixir-format
 msgid "Повод для встречи"
 msgstr "Majlis sababi"
@@ -2147,12 +2144,12 @@ msgstr "Rezolyutsiya"
 msgid "Срок исполнения"
 msgstr "Ijro muddati"
 
-#: lib/svc_web/live/meeting_live/show.ex:372
+#: lib/svc_web/live/meeting_live/show.ex:417
 #, elixir-autogen, elixir-format
 msgid "Фактически шла"
 msgstr "Haqiqatda bo'lib o'tdi"
 
-#: lib/svc_web/live/meeting_live/show.ex:349
+#: lib/svc_web/live/meeting_live/show.ex:394
 #, elixir-autogen, elixir-format
 msgid "Что решили по итогам встречи"
 msgstr "Majlis yakunida nima hal qilindi"
@@ -2167,7 +2164,47 @@ msgstr "Nima qilish kerak (ixtiyoriy)"
 msgid "до"
 msgstr "gacha"
 
-#: lib/svc_web/live/meeting_live/show.ex:377
+#: lib/svc_web/live/meeting_live/show.ex:422
 #, elixir-autogen, elixir-format
 msgid "идёт"
 msgstr "davom etmoqda"
+
+#: lib/svc_web/live/meeting_live/show.ex:227
+#, elixir-autogen, elixir-format
+msgid "Все приглашённые уже в звонке."
+msgstr "Taklif qilinganlarning barchasi allaqachon majlisda."
+
+#: lib/svc_web/live/meeting_live/show.ex:667
+#, elixir-autogen, elixir-format
+msgid "Отправить уведомление всем, кто ещё не в звонке"
+msgstr "Hali kirmaganlarning barchasiga bildirishnoma yuborish"
+
+#: lib/svc_web/live/meeting_live/show.ex:691
+#, elixir-autogen, elixir-format
+msgid "Позвать"
+msgstr "Chaqirish"
+
+#: lib/svc_web/live/meeting_live/show.ex:670
+#, elixir-autogen, elixir-format
+msgid "Позвать всех"
+msgstr "Hammani chaqirish"
+
+#: lib/svc_web/live/meeting_live/show.ex:689
+#, elixir-autogen, elixir-format
+msgid "Позвать на встречу"
+msgstr "Majlisga chaqirish"
+
+#: lib/svc_web/live/meeting_live/show.ex:223
+#, elixir-autogen, elixir-format
+msgid "Приглашение отправлено: %{count}"
+msgstr "Chaqiruv yuborildi: %{count} ta"
+
+#: lib/svc_web/live/meeting_live/show.ex:231
+#, elixir-autogen, elixir-format
+msgid "Приглашение уже отправлено — подождите минуту."
+msgstr "Chaqiruv endigina yuborildi — bir daqiqa kuting."
+
+#: lib/svc_web/live/meeting_live/show.ex:682
+#, elixir-autogen, elixir-format
+msgid "в звонке"
+msgstr "majlisda"

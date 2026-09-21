@@ -7,6 +7,7 @@ defmodule Svc.Meetings do
   alias Svc.Repo
   alias Svc.Meetings.Meeting
   alias Svc.Accounts.User
+  alias Svc.Attendance
   alias Svc.Attendance.Invitee
 
   @doc "Создаёт встречу от имени организатора (manager/admin/super_admin)."
@@ -252,6 +253,99 @@ defmodule Svc.Meetings do
   @doc "Ёпа оладими: очган одам, ташкилотчи ёки super_admin."
   def can_close?(%User{id: id}, %Meeting{started_by_id: id}) when not is_nil(id), do: true
   def can_close?(%User{} = actor, %Meeting{} = meeting), do: can_control?(actor, meeting)
+
+  # Повторное нажатие кнопки «позвать» не должно превращаться в спам-рассылку.
+  @nudge_cooldown_seconds 60
+
+  @doc """
+  «Позвать на встречу» (S44): точечное уведомление опаздывающим.
+
+  Зовём только тех, кто ещё НЕ заходил в звонок — тот, кто уже в комнате,
+  уведомления получать не должен. `:user_ids` ограничивает список (кнопка
+  напротив конкретного человека); без него — все неявившиеся.
+
+  Право — у того же, кто управляет встречей (организатор, открывший,
+  super_admin). Завершённую встречу звать некуда.
+  """
+  def call_participants(%User{} = actor, %Meeting{} = meeting, opts \\ []) do
+    cond do
+      not can_close?(actor, meeting) ->
+        {:error, :unauthorized}
+
+      meeting.status == :ended ->
+        {:error, :already_ended}
+
+      recently_called?(meeting) ->
+        {:error, :too_soon}
+
+      true ->
+        case nudge_targets(meeting, opts[:user_ids], actor) do
+          [] ->
+            {:error, :nobody_to_call}
+
+          users ->
+            Svc.Notifications.notify_many(users, :reminder, nudge_title(meeting),
+              body: nudge_body(meeting, actor),
+              meeting_id: meeting.id
+            )
+
+            Svc.Audit.log_action(actor, :meeting_nudge,
+              resource_type: :meeting,
+              resource_id: meeting.id,
+              metadata: %{"called" => length(users)}
+            )
+
+            {:ok, users}
+        end
+    end
+  end
+
+  @doc "Кого сейчас можно позвать (для кнопок в UI)."
+  def callable_participants(%Meeting{} = meeting, %User{} = actor) do
+    nudge_targets(meeting, nil, actor)
+  end
+
+  defp nudge_targets(%Meeting{} = meeting, user_ids, %User{} = actor) do
+    meeting.id
+    |> Attendance.pending_invitees()
+    |> Enum.map(& &1.user)
+    # себя звать не надо: кнопку жмёт тот, кто уже на встрече
+    |> Enum.reject(&(&1.id == actor.id))
+    |> filter_ids(user_ids)
+  end
+
+  defp filter_ids(users, nil), do: users
+  defp filter_ids(users, []), do: users
+
+  defp filter_ids(users, ids) do
+    wanted = MapSet.new(ids, &to_string/1)
+    Enum.filter(users, &MapSet.member?(wanted, to_string(&1.id)))
+  end
+
+  defp recently_called?(%Meeting{id: id}) do
+    since = DateTime.add(DateTime.utc_now(), -@nudge_cooldown_seconds, :second)
+
+    Repo.exists?(
+      from l in Svc.Audit.Log,
+        where:
+          l.action == "meeting_nudge" and l.resource_id == ^to_string(id) and
+            l.inserted_at > ^since
+    )
+  end
+
+  # Текст уведомления — по-узбекски: его читают на телефоне рядовые сотрудники,
+  # и это первое, что видно в списке уведомлений мобильного клиента.
+  defp nudge_title(%Meeting{title: title}), do: "Majlisga chaqiruv: #{title}"
+
+  defp nudge_body(%Meeting{} = meeting, %User{full_name: name}) do
+    [
+      "#{name} sizni majlisga kutmoqda",
+      meeting.scheduled_start &&
+        "boshlanishi #{Calendar.strftime(meeting.scheduled_start, "%H:%M")}"
+    ]
+    |> Enum.reject(&is_nil/1)
+    |> Enum.join(" · ")
+  end
 
   @doc "Тугаган майлислар тарихи: қачон, қанча вақт, нима учун, натижа."
   def history(%User{} = actor, opts \\ []) do

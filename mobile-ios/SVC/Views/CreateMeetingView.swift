@@ -12,6 +12,9 @@ struct CreateMeetingView: View {
     @State private var title = ""
     // S43: majlis nima uchun chaqirilgani — tarixda shu yozuv qoladi.
     @State private var purpose = ""
+    // S44: majlis qachon boshlanadi (ixtiyoriy).
+    @State private var hasStart = false
+    @State private var startAt = Date().addingTimeInterval(3600)
     @State private var people: [Colleague]?
     @State private var selected: Set<Int64> = []
     @State private var busy = false
@@ -44,6 +47,30 @@ struct CreateMeetingView: View {
                                     .allowsHitTesting(false)
                             }
                         }
+
+                    VStack(alignment: .leading, spacing: 10) {
+                        Toggle(isOn: $hasStart) {
+                            Text("Majlis qachon boshlanadi")
+                                .font(.subheadline)
+                                .foregroundColor(.white)
+                        }
+                        .tint(Theme.accent)
+
+                        if hasStart {
+                            DatePicker(
+                                "",
+                                selection: $startAt,
+                                displayedComponents: [.date, .hourAndMinute]
+                            )
+                            .labelsHidden()
+                            .datePickerStyle(.compact)
+                            .colorScheme(.dark)
+                        }
+                    }
+                    .padding(14)
+                    .background(Theme.panel)
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                    .padding(.top, 12)
 
                     Text("Ishtirokchilar")
                         .font(.subheadline.weight(.semibold))
@@ -166,7 +193,8 @@ struct CreateMeetingView: View {
                 token: session.token,
                 title: title.trimmingCharacters(in: .whitespaces),
                 inviteeIds: Array(selected),
-                purpose: purpose.trimmingCharacters(in: .whitespaces)
+                purpose: purpose.trimmingCharacters(in: .whitespaces),
+                scheduledStart: hasStart ? Labels.isoLocal(startAt) : nil
             )
             onCreated()
             dismiss()

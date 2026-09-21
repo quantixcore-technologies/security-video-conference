@@ -37,6 +37,8 @@ import androidx.compose.material.icons.filled.Groups
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.NotificationsActive
+import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Password
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Refresh
@@ -790,6 +792,8 @@ class MainActivity : ComponentActivity() {
         var showHistory by rememberSaveable { mutableStateOf(false) }
         // Yakunlash oynasi: natija tarixga yoziladi.
         var closing by remember { mutableStateOf<SvcApi.MeetingItem?>(null) }
+        // S44: "chaqiruv yuborildi" xabari
+        var called by remember { mutableStateOf<String?>(null) }
 
         // Majlis yaratish huquqi: super_admin / manager (D-015).
         val canOrganize = auth.session.role in listOf("super_admin", "manager")
@@ -862,6 +866,13 @@ class MainActivity : ComponentActivity() {
                     )
                 }
 
+                called?.let {
+                    Text(
+                        it, color = Accent,
+                        modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp)
+                    )
+                }
+
                 when {
                     loadError != null -> CenterMessage(loadError!!) { reload++ }
                     list == null -> CenterSpinner()
@@ -904,7 +915,24 @@ class MainActivity : ComponentActivity() {
                                             busyId = null
                                         }
                                     },
-                                    onClose = { closing = m }
+                                    onClose = { closing = m },
+                                    onCall = {
+                                        joinError = null
+                                        busyId = m.id
+                                        lifecycleScope.launch {
+                                            runCatching {
+                                                auth.api.nudgeMeeting(auth.session.token, m.id)
+                                            }
+                                                .onSuccess { n ->
+                                                    called = "Chaqiruv yuborildi: $n ta xodim"
+                                                    reload++
+                                                }
+                                                .onFailure {
+                                                    joinError = it.message ?: "Chaqiruv yuborilmadi"
+                                                }
+                                            busyId = null
+                                        }
+                                    }
                                 )
                             }
                         }
@@ -1036,6 +1064,9 @@ class MainActivity : ComponentActivity() {
         var title by remember { mutableStateOf("") }
         // S43: majlis nima uchun chaqirilgani — tarixda shu yozuv qoladi.
         var purpose by remember { mutableStateOf("") }
+        // S44: majlis qachon boshlanishi. null = vaqt belgilanmagan (darhol).
+        var startAt by remember { mutableStateOf<java.util.Calendar?>(null) }
+        val ctx = LocalContext.current
         var people by remember { mutableStateOf<List<SvcApi.Colleague>?>(null) }
         var selected by remember { mutableStateOf(setOf<Long>()) }
         var busy by remember { mutableStateOf(false) }
@@ -1077,6 +1108,38 @@ class MainActivity : ComponentActivity() {
                         minLines = 2,
                         modifier = Modifier.fillMaxWidth()
                     )
+                    Spacer(Modifier.height(12.dp))
+
+                    // S44: boshlanish vaqti. Qurilmaning o'z kalendar/soat oynasi —
+                    // xodim uchun tanish, Compose DatePicker'iga qaraganda ishonchli.
+                    Surface(
+                        color = Panel,
+                        shape = RoundedCornerShape(12.dp),
+                        onClick = { pickDateTime(ctx, startAt) { startAt = it } },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Row(
+                            Modifier.padding(16.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(Icons.Default.Schedule, null, tint = Accent)
+                            Spacer(Modifier.width(12.dp))
+                            Column(Modifier.weight(1f)) {
+                                Text("Majlis qachon boshlanadi", color = Color.White)
+                                Text(
+                                    startAt?.let { prettyCalendar(it) } ?: "Vaqt belgilanmagan",
+                                    color = if (startAt == null) Muted else Accent,
+                                    style = MaterialTheme.typography.bodySmall
+                                )
+                            }
+                            if (startAt != null) {
+                                TextButton(onClick = { startAt = null }) {
+                                    Text("Tozalash", color = Muted)
+                                }
+                            }
+                        }
+                    }
+
                     Spacer(Modifier.height(18.dp))
                     Text("Ishtirokchilar", color = Color.White, fontWeight = FontWeight.SemiBold)
                     Text(
@@ -1132,7 +1195,8 @@ class MainActivity : ComponentActivity() {
                                         auth.session.token,
                                         title.trim(),
                                         selected.toList(),
-                                        purpose.trim().ifBlank { null }
+                                        purpose.trim().ifBlank { null },
+                                        startAt?.let { isoLocal(it) }
                                     )
                                 }.onSuccess {
                                     busy = false
@@ -1162,7 +1226,8 @@ class MainActivity : ComponentActivity() {
         enabled: Boolean,
         onJoin: () -> Unit,
         onOpen: () -> Unit,
-        onClose: () -> Unit
+        onClose: () -> Unit,
+        onCall: () -> Unit
     ) {
         Surface(color = Panel, shape = RoundedCornerShape(14.dp), modifier = Modifier.fillMaxWidth()) {
             Column(Modifier.padding(16.dp)) {
@@ -1221,6 +1286,21 @@ class MainActivity : ComponentActivity() {
                             ),
                             modifier = Modifier.fillMaxWidth()
                         ) { Text("Majlisni yakunlash") }
+                    }
+                }
+
+                // S44: kechikayotganlarni chaqirish — hali kirmaganlar bo'lsa.
+                if (m.canClose && m.pendingCount > 0) {
+                    Spacer(Modifier.height(8.dp))
+                    OutlinedButton(
+                        onClick = onCall,
+                        enabled = enabled,
+                        colors = ButtonDefaults.outlinedButtonColors(contentColor = Accent),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Icon(Icons.Default.NotificationsActive, null, modifier = Modifier.size(18.dp))
+                        Spacer(Modifier.width(8.dp))
+                        Text("Majlisga chaqirish (${m.pendingCount})")
                     }
                 }
             }
@@ -1714,6 +1794,46 @@ class MainActivity : ComponentActivity() {
         "canceled", "cancelled" -> "Bekor qilingan"
         else -> status
     }
+
+    /** Kalendar → sana va soat oynalari ketma-ket (minSdk 24 uchun platforma dialoglari). */
+    private fun pickDateTime(
+        ctx: android.content.Context,
+        current: java.util.Calendar?,
+        onPicked: (java.util.Calendar) -> Unit
+    ) {
+        val c = (current?.clone() as? java.util.Calendar) ?: java.util.Calendar.getInstance()
+        android.app.DatePickerDialog(
+            ctx,
+            { _, y, mo, d ->
+                c.set(java.util.Calendar.YEAR, y)
+                c.set(java.util.Calendar.MONTH, mo)
+                c.set(java.util.Calendar.DAY_OF_MONTH, d)
+                android.app.TimePickerDialog(
+                    ctx,
+                    { _, h, mi ->
+                        c.set(java.util.Calendar.HOUR_OF_DAY, h)
+                        c.set(java.util.Calendar.MINUTE, mi)
+                        c.set(java.util.Calendar.SECOND, 0)
+                        onPicked(c)
+                    },
+                    c.get(java.util.Calendar.HOUR_OF_DAY),
+                    c.get(java.util.Calendar.MINUTE),
+                    true
+                ).show()
+            },
+            c.get(java.util.Calendar.YEAR),
+            c.get(java.util.Calendar.MONTH),
+            c.get(java.util.Calendar.DAY_OF_MONTH)
+        ).show()
+    }
+
+    /** "21.09.2026, 14:30" — foydalanuvchiga ko'rsatish uchun. */
+    private fun prettyCalendar(c: java.util.Calendar): String =
+        java.text.SimpleDateFormat("dd.MM.yyyy, HH:mm", java.util.Locale.US).format(c.time)
+
+    /** "2026-09-21T14:30" — serverga: mintaqasiz, mahalliy devor-soati (veb bilan bir xil). */
+    private fun isoLocal(c: java.util.Calendar): String =
+        java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm", java.util.Locale.US).format(c.time)
 
     /** UTC ISO → qurilma vaqti bo'yicha "21.09 15:40". minSdk 24 uchun java.time yo'q. */
     private fun prettyLocal(iso: String?): String? = formatLocal(iso, "dd.MM HH:mm")

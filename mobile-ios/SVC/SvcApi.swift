@@ -64,9 +64,12 @@ struct MeetingItem: Decodable, Identifiable {
     /// (server har bir so'rovda baribir qayta tekshiradi).
     let canOpen: Bool?
     let canClose: Bool?
+    /// S44: hali majlisga kirmagan taklif qilinganlar soni.
+    let pendingCount: Int?
 
     var mayOpen: Bool { canOpen ?? false }
     var mayClose: Bool { canClose ?? false }
+    var pending: Int { pendingCount ?? 0 }
 
     /// "21.09 15:40 — 16:25" — majlis haqiqatda qachon bo'lgani.
     var sessionRange: String? {
@@ -300,11 +303,21 @@ actor SvcApi {
         return try decoder.decode(MeetingsPage.self, from: data).meetings
     }
 
+    /// S44. Kechikayotganlarni majlisga chaqirish — qaytaradi nechta odam chaqirilgani.
+    @discardableResult
+    func nudgeMeeting(token: String, meetingId: Int64) async throws -> Int {
+        let json = try await postJSON("/api/meetings/\(meetingId)/nudge", body: [:], token: token)
+        return (json["called"] as? NSNumber)?.intValue ?? 0
+    }
+
+    /// - Parameter scheduledStart: "yyyy-MM-ddTHH:mm" — MAHALLIY devor-soati,
+    ///   mintaqasiz: server rejalashtirilgan vaqtni veb-shakl bilan bir xil saqlaydi.
     func createMeeting(
         token: String,
         title: String,
         inviteeIds: [Int64],
-        purpose: String? = nil
+        purpose: String? = nil,
+        scheduledStart: String? = nil
     ) async throws -> Int64 {
         var body: [String: Any] = [
             "title": title,
@@ -313,6 +326,7 @@ actor SvcApi {
         if let p = purpose?.trimmingCharacters(in: .whitespacesAndNewlines), !p.isEmpty {
             body["purpose"] = p
         }
+        if let s = scheduledStart, !s.isEmpty { body["scheduled_start"] = s }
         let json = try await postJSON("/api/meetings", body: body, token: token)
         guard let n = json["id"] as? NSNumber else { throw ApiError.badResponse }
         return n.int64Value
@@ -561,6 +575,14 @@ enum Labels {
         out.locale = Locale(identifier: "en_US_POSIX")
         out.dateFormat = pattern
         return out.string(from: date)
+    }
+
+    /// Sana → "yyyy-MM-ddTHH:mm" (mintaqasiz, mahalliy devor-soati).
+    static func isoLocal(_ date: Date) -> String {
+        let f = DateFormatter()
+        f.locale = Locale(identifier: "en_US_POSIX")
+        f.dateFormat = "yyyy-MM-dd'T'HH:mm"
+        return f.string(from: date)
     }
 
     /// "45 daqiqa" / "1 soat 20 daqiqa".
