@@ -61,22 +61,17 @@ defmodule SvcWeb.MeetingLive.Index do
   def handle_event("save", %{"meeting" => params}, socket) do
     actor = socket.assigns.current_user
 
+    # Заказчик (2026-09-22): времени ОКОНЧАНИЯ при создании нет — заранее оно
+    # неизвестно; фактическая длительность считается по факту (S43). Серии
+    # («повтор» + «повторений») тоже убраны как лишние в форме.
     attrs = %{
       title: params["title"],
       recording_policy: params["recording_policy"] || "off",
       purpose: params["purpose"],
-      scheduled_start: parse_dt(params["scheduled_start"]),
-      scheduled_end: parse_dt(params["scheduled_end"])
+      scheduled_start: parse_dt(params["scheduled_start"])
     }
 
-    freq = params["repeat"] || "none"
-    count = parse_count(params["repeat_count"])
-
-    if (freq in ["daily", "weekly"] and attrs.scheduled_start) && count > 1 do
-      save_recurring(socket, actor, attrs, freq, count, params["invitee_ids"])
-    else
-      save_single(socket, actor, attrs, params["invitee_ids"])
-    end
+    save_single(socket, actor, attrs, params["invitee_ids"])
   end
 
   def handle_event("filter", %{"q" => q, "status" => status}, socket) do
@@ -99,36 +94,6 @@ defmodule SvcWeb.MeetingLive.Index do
 
       {:error, :unauthorized} ->
         {:noreply, put_flash(socket, :error, gettext("Недостаточно прав."))}
-    end
-  end
-
-  defp save_recurring(socket, actor, attrs, freq, count, invitee_ids) do
-    case Meetings.create_recurring(actor, attrs, freq, count) do
-      {:ok, _group, meetings} ->
-        Enum.each(meetings, fn m ->
-          add_roster(m, invitee_ids, actor)
-          notify_invitees(m, invitee_ids, actor)
-        end)
-
-        {:noreply,
-         socket
-         |> put_flash(
-           :info,
-           gettext("Создана серия из %{count} встреч.", count: length(meetings))
-         )
-         |> push_navigate(to: ~p"/admin/meetings")}
-
-      {:error, _} ->
-        {:noreply, put_flash(socket, :error, gettext("Не удалось создать серию встреч."))}
-    end
-  end
-
-  defp parse_count(nil), do: 1
-
-  defp parse_count(s) do
-    case Integer.parse(to_string(s)) do
-      {n, _} -> n
-      _ -> 1
     end
   end
 
@@ -265,38 +230,17 @@ defmodule SvcWeb.MeetingLive.Index do
             label={gettext("Повод для встречи")}
             placeholder={gettext("Зачем собираемся — останется в истории встречи")}
           />
-          <div class="grid grid-cols-2 gap-3">
-            <.input field={@form[:scheduled_start]} type="datetime-local" label={gettext("Начало")} />
-            <.input field={@form[:scheduled_end]} type="datetime-local" label={gettext("Конец")} />
-          </div>
+          <.input
+            field={@form[:scheduled_start]}
+            type="datetime-local"
+            label={gettext("Начало встречи")}
+          />
           <.input
             field={@form[:recording_policy]}
             type="select"
             label={gettext("Запись")}
             options={policy_options()}
           />
-
-          <div class="grid grid-cols-2 gap-3">
-            <label class="block">
-              <span class="text-sm font-medium mb-1 block">{gettext("Повтор")}</span>
-              <select name="meeting[repeat]" class="select select-bordered w-full">
-                <option value="none">{gettext("Не повторять")}</option>
-                <option value="daily">{gettext("Ежедневно")}</option>
-                <option value="weekly">{gettext("Еженедельно")}</option>
-              </select>
-            </label>
-            <label class="block">
-              <span class="text-sm font-medium mb-1 block">{gettext("Повторений")}</span>
-              <input
-                type="number"
-                name="meeting[repeat_count]"
-                value="1"
-                min="1"
-                max="52"
-                class="input input-bordered w-full"
-              />
-            </label>
-          </div>
 
           <fieldset class="border border-base-300 rounded p-3">
             <legend class="text-sm font-medium px-1">

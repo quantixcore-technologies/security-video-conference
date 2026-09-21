@@ -481,10 +481,11 @@ defmodule SvcWeb.MeetingLive.Show do
             label={gettext("Повод для встречи")}
             placeholder={gettext("Зачем собираемся — останется в истории встречи")}
           />
-          <div class="grid grid-cols-2 gap-3">
-            <.input field={@form[:scheduled_start]} type="datetime-local" label={gettext("Начало")} />
-            <.input field={@form[:scheduled_end]} type="datetime-local" label={gettext("Конец")} />
-          </div>
+          <.input
+            field={@form[:scheduled_start]}
+            type="datetime-local"
+            label={gettext("Начало встречи")}
+          />
           <.input
             field={@form[:recording_policy]}
             type="select"
