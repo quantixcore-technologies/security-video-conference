@@ -329,4 +329,29 @@ defmodule SvcWeb.API.MeetingControllerTest do
       assert body["meetings"] == []
     end
   end
+
+  describe "веб-страница звонка (S45)" do
+    test "после второго выхода — редирект на встречу с объяснением, не пустая страница", %{
+      conn: conn,
+      org: org,
+      user: mgr,
+      meeting: meeting
+    } do
+      {:ok, emp} = mk(org, "web-rejoin", :employee)
+      Attendance.add_invitee(meeting, emp)
+      {:ok, live} = Meetings.open_meeting(mgr, meeting)
+
+      for _ <- 1..2 do
+        Attendance.record_join(live, emp.id, DateTime.utc_now())
+        Attendance.record_leave(live, emp.id, DateTime.utc_now())
+      end
+
+      conn = conn |> login(emp) |> get(~p"/admin/meetings/#{live.id}/call")
+
+      # 302, а не 403: по 4xx браузер за Location не идёт и человек увидел бы
+      # пустую страницу «You are being redirected» вместо своей встречи.
+      assert redirected_to(conn) == ~p"/admin/meetings/#{live.id}"
+      assert Phoenix.Flash.get(conn.assigns.flash, :error) =~ "второй раз"
+    end
+  end
 end

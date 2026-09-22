@@ -18,8 +18,11 @@ defmodule SvcWeb.CallController do
     # S45: то же правило, что и в мобильном API — второй выход закрывает вход.
     case Meetings.join_guard(user, meeting) do
       {:blocked, _} ->
+        # Именно 302, без `put_status(:forbidden)`: браузер НЕ идёт по Location
+        # при 4xx — человек видел бы пустую страницу «You are being redirected»
+        # вместо своей встречи с объяснением. Отказ фиксируется в аудите и
+        # журнале безопасности, а JSON-API по-прежнему отвечает 403.
         conn
-        |> put_status(:forbidden)
         |> put_flash(
           :error,
           gettext("Вы вышли из звонка второй раз — повторный вход закрыт.")
