@@ -561,7 +561,8 @@ enum Labels {
     static func meetingStatus(_ s: String) -> String {
         switch s {
         case "planned": return "Rejalashtirilgan"
-        case "active", "started", "in_progress": return "Davom etmoqda"
+        // server "live" yuboradi — avval tarjimasiz chiqardi
+        case "live", "active", "started", "in_progress": return "Davom etmoqda"
         case "finished", "ended", "completed": return "Yakunlangan"
         case "canceled", "cancelled": return "Bekor qilingan"
         default: return s

@@ -1828,7 +1828,8 @@ class MainActivity : ComponentActivity() {
 
     private fun statusLabel(status: String): String = when (status) {
         "planned" -> "Rejalashtirilgan"
-        "active", "started", "in_progress" -> "Davom etmoqda"
+        // server "live" yuboradi (Meeting.status enum) — avval tarjimasiz chiqardi
+        "live", "active", "started", "in_progress" -> "Davom etmoqda"
         "finished", "ended", "completed" -> "Yakunlangan"
         "canceled", "cancelled" -> "Bekor qilingan"
         else -> status
