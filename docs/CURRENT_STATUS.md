@@ -521,7 +521,7 @@
 ## ⏭️ СЛЕДУЮЩИЙ КВЕСТ
 - 🔒 **iOS на живой iPhone** — нужен Apple Developer ($99/год); сборка/паритет готовы, CI зелёный.
 - Приёмочный тест видео на 2 физических устройствах.
-- 🔴 **`svc-real` перевести с dev-режима на prod `mix release`** (сейчас mix в dev на сервере).
+- ✅ ~~`svc-real` перевести с dev-режима на prod `mix release`~~ — сделано 2026-09-15 (`bin/svc start`, см. RUNBOOK).
 - 🔴 **Tauri видео на Windows** — проверить реальное WebRTC-медиа в WebView2 + `setContentProtected` enforce (Linux webkit2gtk WebRTC ненадёжен; D-002 Windows-first).
 - **2-сторонний тест** — desktop ↔ web-call (`/admin/meetings/1/call`) / mobile: встречное видео.
 - **S36-детектор на Windows** — таблица сигнатур проверена на Linux; на реальном
